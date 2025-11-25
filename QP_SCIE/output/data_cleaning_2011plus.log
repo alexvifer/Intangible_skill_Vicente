@@ -1,0 +1,60 @@
+-----------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\output\data_cleaning_2011plus.log
+  log type:  text
+ opened on:   6 Nov 2025, 20:33:44
+
+. 
+. di _newline(2)
+
+
+
+
+. di "=========================================="
+==========================================
+
+. di "STARTING DATA CLEANING PROCESS"
+STARTING DATA CLEANING PROCESS
+
+. di "=========================================="
+==========================================
+
+. di "Root directory: $rootdir"
+Root directory: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE
+
+. di "Date: `c(current_date)'"
+Date:  6 Nov 2025
+
+. di "Time: `c(current_time)'"
+Time: 20:33:44
+
+. di "=========================================="
+==========================================
+
+. 
+. /*==============================================================================
+>    RUN CLEANING SCRIPTS IN ORDER
+> ==============================================================================*/
+. 
+. * 1. Clean SCIE data (balance sheet)
+. di _newline(2)
+
+
+
+
+. di "STEP 1/4: Cleaning SCIE data..."
+STEP 1/4: Cleaning SCIE data...
+
+. do "$rootdir/code/SCIE_clean.do"
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/code/SCIE_clean.do not found
+r(601);
+
+end of do-file
+
+r(601);
+
+. do "C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\do_all.do"
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\do_all.do not found
+r(601);
+
+. exit, clear

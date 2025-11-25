@@ -1,0 +1,3717 @@
+-----------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\code\data_cleaning_2011plus.log
+  log type:  text
+ opened on:  13 Nov 2025, 12:47:14
+
+. 
+. di _newline(2)
+
+
+
+
+. di "=========================================="
+==========================================
+
+. di "STARTING DATA CLEANING PROCESS"
+STARTING DATA CLEANING PROCESS
+
+. di "=========================================="
+==========================================
+
+. di "Root directory: $rootdir"
+Root directory: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE
+
+. di "Date: `c(current_date)'"
+Date: 13 Nov 2025
+
+. di "Time: `c(current_time)'"
+Time: 12:47:14
+
+. di "=========================================="
+==========================================
+
+. 
+. /*==============================================================================
+>    RUN CLEANING SCRIPTS IN ORDER
+> ==============================================================================*/
+. 
+. * 1. Clean SCIE data (balance sheet)
+. di _newline(2)
+
+
+
+
+. di "STEP 1/4: Cleaning SCIE data..."
+STEP 1/4: Cleaning SCIE data...
+
+. do "$rootdir/code/SCIE_clean.do"
+
+. /*==============================================================================
+>    MODULE 1: CLEAN SCIE DATA (2011-2022)
+>    
+>    Processes balance sheet data from SCIE/IES
+>    Creates: SCIE_2011_2022.dta, IES_age_2011_2022.dta
+>    
+> ==============================================================================*/
+. 
+. cd "$rootdir/input/SCIE_data"
+C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data
+
+. 
+. * Define variables to keep from SCIE
+. local vars = "ANO NPC_FIC EFJR0 CAE_COD I_NASC SV601201 SV601301 SV601501 SV601701 SV500101 SD000002 SV500601 SV804000 SV80
+> 4100 SV804200 SV804400 SV804600 SV804700 SV804800 SV806700 SV807100 SV569305 SV500801 SV602500 SV602700 SV603900 SD000102 S
+> V607604 SV501701 SV501801 SV502001 SV502201 SV510101 SV510201 SV510301 SV510401 SV511201 SV512501 SV512601 SV512701 SV51410
+> 1 SV514701 SV515901 SV516001 SV516101 SD557602 SD557603 SD000031 SD000118 SD000119 SD000047 SD000120 SD000046 SD000121 SD00
+> 0113 SD000122 SD000123 SD000124 SD000125 SD000126 SD000127 SD000128 SD000032 SD000036 SD000037 SD000038 SV558201 SD558202 S
+> D558203 SD558204 SV558205 SD563301 SD563302 SD563303 SD563304 SD563305 SD563306 SV563307 SD000044 SD000115 SD000011 SD00001
+> 2 SD000014 SD000016 SD000018 SD000019 SD000005 RND_PER IM_RND_EXPN"
+
+. 
+. * Load and append all years
+. forvalues ano=2011(1)2022 {
+  2.     local f : dir "." files "SCIE`ano'*"
+  3.         local fpath = "./" + `f'
+  4.     
+.     di "  Processing SCIE `ano'..."
+  5.     usespss `fpath', clear
+  6.     
+.     keep `vars'
+  7.     compress
+  8.     
+.     if `ano' != 2011 append using "$rootdir/output/SCIE_2011_2022.dta"
+  9.     save "$rootdir/output/SCIE_2011_2022.dta", replace
+ 10. }
+  Processing SCIE 2011...
+ 
+usespss is converting file ./scie2011s3_sec2010_fins cientificos_09-07-2024.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2011s
+> 3_sec2010_fins cientificos_09-07-2024.sav
+Processing started: 13/11/2025 12:47:16
+Number of cases: 1113559
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:09 Jul 24 15:55:30
+This is an SPSS/Windows file
+File size is 599176495 bytes
+File contains 1113559 cases
+Case size is 2280 bytes in 285 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[840*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[4992*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6138*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (280 variables)
+
+Busy - processing data (280 variables)
+Allocating buffer for decompressed data...
+2280 bytes
+Allocating buffer for variable descriptors...
+7840 bytes
+Memory set!
+Starting decompression: 12:47:17
+Optimized data record size is:1272
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 824 records
+All done: 12:47:48
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+NPC_FIC      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+FONTE        SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+EFJR0        SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+CAE_COD      SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+NUTSII_02    SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+NUTSII_13    SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+I_NASC       SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+I_MORT       SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PAIS         SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+  (0 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2012...
+ 
+usespss is converting file ./scie2012s3_sec2010_fins cientificos_09-07-2024.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2012s
+> 3_sec2010_fins cientificos_09-07-2024.sav
+Processing started: 13/11/2025 12:47:54
+Number of cases: 1065173
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:09 Jul 24 15:50:43
+This is an SPSS/Windows file
+File size is 573760839 bytes
+File contains 1065173 cases
+Case size is 2280 bytes in 285 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[840*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[4992*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6138*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (280 variables)
+
+Busy - processing data (280 variables)
+Allocating buffer for decompressed data...
+2280 bytes
+Allocating buffer for variable descriptors...
+7840 bytes
+Memory set!
+Starting decompression: 12:47:55
+Optimized data record size is:1268
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 826 records
+All done: 12:48:25
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+NPC_FIC      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+FONTE        SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+EFJR0        SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+CAE_COD      SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+NUTSII_02    SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+NUTSII_13    SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+I_NASC       SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+I_MORT       SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PAIS         SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+  (0 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2013...
+ 
+usespss is converting file ./scie2013s_sec2010_i_mort_fins cientificos_09-07-2024.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2013s
+> _sec2010_i_mort_fins cientificos_09-07-2024.sav
+Processing started: 13/11/2025 12:48:33
+Number of cases: 1098409
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:09 Jul 24 15:48:08
+This is an SPSS/Windows file
+File size is 585495839 bytes
+File contains 1098409 cases
+Case size is 2280 bytes in 285 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[840*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[4992*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6138*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (280 variables)
+
+Busy - processing data (280 variables)
+Allocating buffer for decompressed data...
+2280 bytes
+Allocating buffer for variable descriptors...
+7840 bytes
+Memory set!
+Starting decompression: 12:48:34
+Optimized data record size is:1272
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 824 records
+All done: 12:49:04
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+NPC_FIC      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+FONTE        SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+EFJR0        SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+CAE_COD      SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+NUTSII_02    SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+NUTSII_13    SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+I_NASC       SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+I_MORT       SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PAIS         SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+  (0 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2014...
+ 
+usespss is converting file ./scie2014s_sec2010_i_mortd_fins cientificos_09-07-2024.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2014s
+> _sec2010_i_mortd_fins cientificos_09-07-2024.sav
+Processing started: 13/11/2025 12:49:14
+Number of cases: 1128258
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:09 Jul 24 15:45:10
+This is an SPSS/Windows file
+File size is 600999031 bytes
+File contains 1128258 cases
+Case size is 2280 bytes in 285 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[840*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[4992*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6138*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (280 variables)
+
+Busy - processing data (280 variables)
+Allocating buffer for decompressed data...
+2280 bytes
+Allocating buffer for variable descriptors...
+7840 bytes
+Memory set!
+Starting decompression: 12:49:15
+Optimized data record size is:1264
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 829 records
+All done: 12:49:47
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+NPC_FIC      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+FONTE        SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+EFJR0        SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+NUTSII_02    SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+NUTSII_13    SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+I_NASC       SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+I_mort       SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+PAIS         SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+NEMP         SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+CAE_COD      SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+  (0 bytes saved)
+(note: variable SV510301 was long, now double to accommodate using data's values)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2015...
+ 
+usespss is converting file ./scie2015_sec2010_mortd_fins cientificos_09-07-2024.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2015_
+> sec2010_mortd_fins cientificos_09-07-2024.sav
+Processing started: 13/11/2025 12:50:01
+Number of cases: 1163082
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:09 Jul 24 15:41:22
+This is an SPSS/Windows file
+File size is 618005031 bytes
+File contains 1163082 cases
+Case size is 2280 bytes in 285 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[840*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[4992*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6138*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (280 variables)
+
+Busy - processing data (280 variables)
+Allocating buffer for decompressed data...
+2280 bytes
+Allocating buffer for variable descriptors...
+7840 bytes
+Memory set!
+Starting decompression: 12:50:02
+Optimized data record size is:1240
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 845 records
+All done: 12:50:34
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+NPC_FIC      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+FONTE        SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+EFJR0        SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+CAE_COD      SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+PAIS         SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+NUTSII_02    SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+NUTSII_13    SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+I_NASC       SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+I_mort       SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+  (0 bytes saved)
+(note: variable SV501701 was long, now double to accommodate using data's values)
+(note: variable SV502001 was long, now double to accommodate using data's values)
+(note: variable SV510301 was long, now double to accommodate using data's values)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2016...
+ 
+usespss is converting file ./scie2016_sec2010_mortd_fins cientificos_09-07-2024.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2016_
+> sec2010_mortd_fins cientificos_09-07-2024.sav
+Processing started: 13/11/2025 12:50:50
+Number of cases: 1196102
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:09 Jul 24 15:38:29
+This is an SPSS/Windows file
+File size is 633924975 bytes
+File contains 1196102 cases
+Case size is 2280 bytes in 285 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[840*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[4992*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6138*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (280 variables)
+
+Busy - processing data (280 variables)
+Allocating buffer for decompressed data...
+2280 bytes
+Allocating buffer for variable descriptors...
+7840 bytes
+Memory set!
+Starting decompression: 12:50:51
+Optimized data record size is:1244
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 842 records
+All done: 12:51:25
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+FONTE        SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+NPC_FIC      SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+EFJR0        SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+CAE_COD      SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+NUTSII_02    SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+NUTSII_13    SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+I_NASC       SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+I_MORT       SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PAIS         SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+  (0 bytes saved)
+(note: variable SV501701 was long, now double to accommodate using data's values)
+(note: variable SV502001 was long, now double to accommodate using data's values)
+(note: variable SV510301 was long, now double to accommodate using data's values)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2017...
+ 
+usespss is converting file ./scie2017_sec2010_fins cientificos_27-02-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2017_
+> sec2010_fins cientificos_27-02-2025.sav
+Processing started: 13/11/2025 12:51:47
+Number of cases: 1242693
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:27 Feb 25 15:35:11
+This is an SPSS/Windows file
+File size is 672763554 bytes
+File contains 1242693 cases
+Case size is 2352 bytes in 294 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[849*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[5040*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6201*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (283 variables)
+
+Busy - processing data (283 variables)
+Allocating buffer for decompressed data...
+2352 bytes
+Allocating buffer for variable descriptors...
+7924 bytes
+Memory set!
+Starting decompression: 12:51:51
+Optimized data record size is:1257
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 834 records
+All done: 12:52:26
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+NPC_FIC      SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+FONTE        SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+EFJR0        SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+CAE_COD      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+NUTSII_02    SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+NUTSII_13    SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+I_NASC       SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+I_mort       SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+PAIS         SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+PGRUPO1      SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+PGRUPO2      SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PGRUPO3      SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+  (0 bytes saved)
+(note: variable SV501701 was long, now double to accommodate using data's values)
+(note: variable SV502001 was long, now double to accommodate using data's values)
+(note: variable SV510301 was long, now double to accommodate using data's values)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2018...
+ 
+usespss is converting file ./scie2018_sec2010_fins cientificos_27-02-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2018_
+> sec2010_fins cientificos_27-02-2025.sav
+Processing started: 13/11/2025 12:52:53
+Number of cases: 1278164
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:27 Feb 25 15:27:52
+This is an SPSS/Windows file
+File size is 694721938 bytes
+File contains 1278164 cases
+Case size is 2352 bytes in 294 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[849*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[5040*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6201*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (283 variables)
+
+Busy - processing data (283 variables)
+Allocating buffer for decompressed data...
+2352 bytes
+Allocating buffer for variable descriptors...
+7924 bytes
+Memory set!
+Starting decompression: 12:52:58
+Optimized data record size is:1281
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 818 records
+All done: 12:53:36
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+NPC_FIC      SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+FONTE        SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+EFJR0        SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+CAE_COD      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+NUTSII_02    SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+NUTSII_13    SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+I_NASC       SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+I_mort       SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+PAIS         SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+PGRUPO1      SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+PGRUPO2      SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PGRUPO3      SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+  (0 bytes saved)
+(note: variable SV501701 was long, now double to accommodate using data's values)
+(note: variable SV502001 was long, now double to accommodate using data's values)
+(note: variable SV510301 was long, now double to accommodate using data's values)
+(label I_NASC already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2019...
+ 
+usespss is converting file ./scie2019_sec2010_fins cientificos_27-02-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2019_
+> sec2010_fins cientificos_27-02-2025.sav
+Processing started: 13/11/2025 12:54:19
+Number of cases: 1318330
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:27 Feb 25 15:36:27
+This is an SPSS/Windows file
+File size is 723545074 bytes
+File contains 1318330 cases
+Case size is 2352 bytes in 294 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[849*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[5040*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6201*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (283 variables)
+
+Busy - processing data (283 variables)
+Allocating buffer for decompressed data...
+2352 bytes
+Allocating buffer for variable descriptors...
+7924 bytes
+Memory set!
+Starting decompression: 12:54:22
+Optimized data record size is:1293
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 810 records
+All done: 12:55:00
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+NPC_FIC      SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+FONTE        SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+EFJR0        SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+CAE_COD      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+NUTSII_02    SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+NUTSII_13    SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+I_NASC       SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+I_mort       SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+PAIS         SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+PGRUPO1      SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+PGRUPO2      SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PGRUPO3      SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+  (0 bytes saved)
+(note: variable SV501701 was long, now double to accommodate using data's values)
+(note: variable SV502001 was long, now double to accommodate using data's values)
+(note: variable SV510301 was long, now double to accommodate using data's values)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2020...
+ 
+usespss is converting file ./scie2020_sec2010_fins cientificos_27-02-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2020_
+> sec2010_fins cientificos_27-02-2025.sav
+Processing started: 13/11/2025 12:55:48
+Number of cases: 1301000
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:27 Feb 25 15:34:15
+This is an SPSS/Windows file
+File size is 720466978 bytes
+File contains 1301000 cases
+Case size is 2352 bytes in 294 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[849*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[5040*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6201*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (283 variables)
+
+Busy - processing data (283 variables)
+Allocating buffer for decompressed data...
+2352 bytes
+Allocating buffer for variable descriptors...
+7924 bytes
+Memory set!
+Starting decompression: 12:55:50
+Optimized data record size is:1277
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 821 records
+All done: 12:56:29
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+NPC_FIC      SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+FONTE        SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+EFJR0        SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+CAE_COD      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+NUTSII_02    SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+NUTSII_13    SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+I_NASC       SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+I_mort       SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+PAIS         SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+PGRUPO1      SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+PGRUPO2      SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PGRUPO3      SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+  (0 bytes saved)
+(note: variable SV501701 was long, now double to accommodate using data's values)
+(note: variable SV502001 was long, now double to accommodate using data's values)
+(note: variable SV510301 was long, now double to accommodate using data's values)
+(note: variable IM_RND_EXPN was long, now double to accommodate using data's values)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2021...
+ 
+usespss is converting file ./scie2021_sec2010_fins cientificos_27-02-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2021_
+> sec2010_fins cientificos_27-02-2025.sav
+Processing started: 13/11/2025 12:57:45
+Number of cases: 1342116
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:27 Feb 25 15:37:37
+This is an SPSS/Windows file
+File size is 746098450 bytes
+File contains 1342116 cases
+Case size is 2352 bytes in 294 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[849*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[5040*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6201*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (283 variables)
+
+Busy - processing data (283 variables)
+Allocating buffer for decompressed data...
+2352 bytes
+Allocating buffer for variable descriptors...
+7924 bytes
+Memory set!
+Starting decompression: 12:57:48
+Optimized data record size is:1281
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 818 records
+All done: 12:58:27
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+NPC_FIC      SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+FONTE        SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+EFJR0        SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+CAE_COD      SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+NUTSII_02    SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+NUTSII_13    SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+I_MORT       SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+I_NASC       SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+PAIS         SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+PGRUPO1      SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+PGRUPO2      SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PGRUPO3      SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+NEMP         SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+SV601201     SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601301     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601401     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601501     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601601     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601701     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601801     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601901     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV602001     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602101     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+  (0 bytes saved)
+(note: variable SV501701 was long, now double to accommodate using data's values)
+(note: variable SV502001 was long, now double to accommodate using data's values)
+(note: variable SV510301 was long, now double to accommodate using data's values)
+(note: variable IM_RND_EXPN was long, now double to accommodate using data's values)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+  Processing SCIE 2022...
+ 
+usespss is converting file ./scie2022_sec2010_fins cientificos_27-02-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\SCIE_data\scie2022_
+> sec2010_fins cientificos_27-02-2025.sav
+Processing started: 13/11/2025 12:59:43
+Number of cases: 1437254
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:27 Feb 25 15:42:27
+This is an SPSS/Windows file
+File size is 790837298 bytes
+File contains 1437254 cases
+Case size is 2344 bytes in 293 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[846*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[5022*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[6179*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (282 variables)
+
+Busy - processing data (282 variables)
+Allocating buffer for decompressed data...
+2344 bytes
+Allocating buffer for variable descriptors...
+7896 bytes
+Memory set!
+Starting decompression: 12:59:47
+Optimized data record size is:1303
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 804 records
+All done: 13:00:28
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO          SV500401     SV807000     SV501601     SD000107     SV606802     SV513101     SD584924     SD563305
+NPC_FIC      SV500501     SV807100     SV808200     SD000108     SV606803     SV513201     SD000031     SD563306
+FONTE        SV500601     SV807200     SV810000     SV586500     SV510101     SV513301     SD000118     SV563307
+EFJR0        SV500701     SV807300     SV810100     SV586600     SV510201     SV513401     SD000119     SD572816
+CAE_COD      SV804000     SV807400     SV810300     SV586700     SV510301     SV513501     SD000047     SD572827
+NUTSII_02    SV804100     SV807500     SV501701     SV586800     SV510401     SV513601     SD000120     SD572838
+NUTSII_13    SV804200     SV569305     SV501801     SV588801     SV510501     SV513701     SD000046     SD585424
+I_NASC       SV804400     SV500801     SV501901     SD000109     SV510601     SV513801     SD000121     SD000044
+I_MORT       SV804500     SV602500     SV502001     SV588802     SV510701     SV514001     SD000113     SD000117
+PAIS         SV804600     SV602700     SV502101     SV588803     SV510801     SV514101     SD000122     SD000115
+PGRUPO1      SV804700     SV602900     SV502201     SV588901     SV510901     SV514201     SD000123     SD000129
+PGRUPO2      SV804800     SV603000     SV502301     SD000110     SV511001     SV514301     SD000124     SD000131
+PGRUPO3      SV804900     SV603100     SV502401     SV588902     SV511101     SV514401     SD000125     SD000033
+NEMP         SV805000     SV603400     SV502501     SV588903     SV511201     SV514501     SD000126     SD000011
+SV601201     SV805100     SV603500     SV586000     SV589001     SV511301     SV514601     SD000127     SD000012
+SV601301     SV805200     SV603600     SV586100     SD000111     SV511401     SV514701     SD000128     SD000014
+SV601401     SV805300     SV603700     SV586200     SV589002     SV511501     SV514801     SD000114     SD000015
+SV601501     SV805400     SV603800     SV586300     SV589003     SV511601     SV514901     SD000032     SD000016
+SV601601     SV805500     SV603900     SV586400     SV589101     SV511701     SV515001     SD000036     SD000013
+SV601701     SV805600     SV604000     SV587601     SD000112     SV511801     SV515101     SD000037     SD000017
+SV601801     SV805700     SD000102     SV587701     SV589102     SV511901     SV515201     SD000038     SD000018
+SV601901     SV805800     SD000022     SV587801     SV589103     SV512001     SV515301     SD000105     SD000019
+SV602001     SV805900     SV500901     SV587901     SV606501     SV512101     SV515401     SD000130     SD000005
+SV500101     SV806000     SV501001     SV588001     SV606502     SV512201     SV515501     SV558201     SD000034
+SV604204     SV806100     SV501101     SV587602     SV606503     SV512301     SV515601     SD558202     RND_PER
+SV604304     SV806200     SV501201     SV587702     SV606601     SV512401     SV515701     SD558203     IM_RND_EXPN
+SV604404     SV806300     SV501301     SV587802     SV606602     SV512501     SV515801     SD558204
+SD000100     SV806400     SV501401     SV587902     SV606603     SV512601     SV515901     SV558205
+SD000002     SV806500     SV501501     SV588002     SV606701     SV512701     SV516001     SD563301
+SV604504     SV806600     SV812800     SD000101     SV606702     SV512801     SV516101     SD563302
+SV500201     SV806700     SV607604     SD000104     SV606703     SV512901     SD557602     SD563303
+SV500301     SV806900     SV814000     SD000106     SV606801     SV513001     SD557603     SD563304
+  (0 bytes saved)
+(note: variable SV501701 was long, now double to accommodate using data's values)
+(note: variable SV502001 was long, now double to accommodate using data's values)
+(note: variable SV510301 was long, now double to accommodate using data's values)
+(note: variable IM_RND_EXPN was long, now double to accommodate using data's values)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/SCIE_2011_2022.dta saved
+
+. 
+. cd "$rootdir/output"
+C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\output
+
+. 
+. * Create clean variables
+. gen ano = real(ANO)
+
+. gen caeies = real(CAE_COD)
+(2,766 missing values generated)
+
+. drop ANO CAE_COD
+
+. 
+. * Remove missing identifiers
+. drop if NPC_FIC == . | NPC_FIC == 0
+(0 observations deleted)
+
+. 
+. * Remove duplicates (keep first occurrence)
+. duplicates tag NPC_FIC ano, gen(dup)
+
+Duplicates in terms of NPC_FIC ano
+
+. tab dup
+
+        dup |      Freq.     Percent        Cum.
+------------+-----------------------------------
+          0 | 14,684,138      100.00      100.00
+          1 |          2        0.00      100.00
+------------+-----------------------------------
+      Total | 14,684,140      100.00
+
+. drop if dup > 0
+(2 observations deleted)
+
+. drop dup
+
+. 
+. sort NPC_FIC ano
+
+. compress
+  variable ano was float now int
+  (29,368,276 bytes saved)
+
+. save "SCIE_2011_2022.dta", replace
+file SCIE_2011_2022.dta saved
+
+. 
+. di "  → SCIE data cleaned: SCIE_2011_2022.dta"
+  → SCIE data cleaned: SCIE_2011_2022.dta
+
+. 
+. * Create firm age variable from SCIE
+. use "SCIE_2011_2022.dta", clear
+
+. keep NPC_FIC ano I_NASC
+
+. gen anoconst = ano if I_NASC == 1
+(12,529,511 missing values generated)
+
+. sort NPC_FIC ano
+
+. by NPC_FIC: egen ano_constIES = min(anoconst)
+(6798433 missing values generated)
+
+. drop anoconst
+
+. compress
+  variable ano_constIES was float now int
+  (29,368,276 bytes saved)
+
+. save "IES_age_2011_2022.dta", replace
+file IES_age_2011_2022.dta saved
+
+. 
+. di "  → Firm age data created: IES_age_2011_2022.dta"
+  → Firm age data created: IES_age_2011_2022.dta
+
+. 
+end of do-file
+
+. 
+. * 2. Clean firm-level QP data
+. di _newline(2)
+
+
+
+
+. di "STEP 2/4: Cleaning firm-level QP data..."
+STEP 2/4: Cleaning firm-level QP data...
+
+. do "$rootdir/code/firm_clean.do"
+
+. /*==============================================================================
+>    MODULE 2: CLEAN FIRM-LEVEL QP DATA (2011-2022)
+>    
+>    Processes firm characteristics from Quadros de Pessoal
+>    Creates: firm_2011_2022.dta
+>    
+> ==============================================================================*/
+. 
+. cd "$rootdir/input/QP_data"
+C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data
+
+. 
+. * Load and append all years
+. forvalues ano=2011(1)2022 {
+  2.     di "  Processing QP Firms `ano'..."
+  3.     
+.     * Check for .dta first (2011 and 2022), then .sav
+.     local f : dir "." files "*Empresas_`ano'*.dta"
+  4.     if `"`f'"' != "" {
+  5.         use `f', clear
+  6.     }
+  7.     else {
+  8.         local f : dir "." files "*Empresas_`ano'*.sav"
+  9.         usespss `f', clear
+ 10.     }
+ 11.     
+.     * Standardize variable names (may vary by year)
+.     cap ren ANO ano
+ 12.         cap ren ANO_CONST ano_const
+ 13.     cap ren NUEMP nuemp
+ 14.     cap ren N_EMP nuemp    
+ 15.     cap ren natju nat_jur
+ 16.     cap ren NAT_JURIDICA nat_jur
+ 17.     cap ren cspub cap_soc_pub 
+ 18.     cap ren PERC_CAP_PUBL cap_soc_pub 
+ 19.         cap ren CAE_REV3_2DIG CAE2
+ 20.     
+.     * Calculate firm age
+.     cap gen ano_const = ano - antiguidade if antiguidade != 999
+ 21.     
+.     * Get sector code
+.     cap gen cae3 = real(CAE2)
+ 22.     
+.     * Keep relevant variables
+.     keep ano nuemp EMP_ID ano_const nat_jur ///
+>          cap_soc_pub NPC_FIC cae3
+ 23.     
+.     compress
+ 24.     
+.     if `ano' != 2011 append using "$rootdir/output/firm_2011_2022.dta"
+ 25.     save "$rootdir/output/firm_2011_2022.dta", replace
+ 26. }
+  Processing QP Firms 2011...
+ 
+usespss is converting file qp_empresas_2011_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2011_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:03:33
+Number of cases: 292369
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:14:32
+This is an SPSS/Windows file
+File size is 34125260 bytes
+File contains 292369 cases
+Case size is 256 bytes in 32 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[450*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[639*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[59654*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+256 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:03:33
+Optimized data record size is:90
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11650 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:03:35
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ancon         csoc          csocesc       CAE2          vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   cspri         nut1_emp      CAE4_COD      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  cspub         nut2_emp      vn            nest          pempl         trabsind
+EMP_ID        natju         csest         caem1l        vn_ano        pemp          escdim_lin~1
+  variable ano_const was float now int
+  variable cae3 was float now byte
+  (1,461,845 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2012...
+ 
+usespss is converting file qp_empresas_2012_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2012_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:03:36
+Number of cases: 279363
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:16:30
+This is an SPSS/Windows file
+File size is 32478408 bytes
+File contains 279363 cases
+Case size is 256 bytes in 32 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[450*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[639*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[59654*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+256 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:03:36
+Optimized data record size is:90
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11650 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:03:38
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ancon         csoc          csocesc       CAE2          vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   cspri         nut1_emp      CAE4_COD      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  cspub         nut2_emp      vn            nest          pempl         trabsind
+EMP_ID        natju         csest         caem1l        vn_ano        pemp          escdim_lin~1
+  variable ano_const was float now int
+  variable cae3 was float now byte
+  (1,396,815 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2013...
+ 
+usespss is converting file qp_empresas_2013_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2013_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:03:38
+Number of cases: 276746
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:18:37
+This is an SPSS/Windows file
+File size is 32081984 bytes
+File contains 276746 cases
+Case size is 256 bytes in 32 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[450*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[639*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[59654*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+256 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:03:38
+Optimized data record size is:90
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11650 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:03:40
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ancon         csoc          csocesc       CAE2          vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   cspri         nut1_emp      CAE4_COD      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  cspub         nut2_emp      vn            nest          pempl         trabsind
+EMP_ID        natju         csest         caem1l        vn_ano        pemp          escdim_lin~1
+  variable ano_const was float now int
+  variable cae3 was float now byte
+  (1,383,730 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2014...
+ 
+usespss is converting file qp_empresas_2014_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2014_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:03:41
+Number of cases: 281100
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:20:36
+This is an SPSS/Windows file
+File size is 32475728 bytes
+File contains 281100 cases
+Case size is 256 bytes in 32 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[450*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[639*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[59654*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+256 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:03:41
+Optimized data record size is:90
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11650 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:03:43
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ancon         csoc          csocesc       CAE2          vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   cspri         nut1_emp      CAE4_COD      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  cspub         nut2_emp      vn            nest          pempl         trabsind
+EMP_ID        natju         csest         caem1l        vn_ano        pemp          escdim_lin~1
+  variable ano_const was float now int
+  variable cae3 was float now byte
+  (1,405,500 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2015...
+ 
+usespss is converting file qp_empresas_2015_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2015_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:03:44
+Number of cases: 283714
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:22:27
+This is an SPSS/Windows file
+File size is 32661672 bytes
+File contains 283714 cases
+Case size is 256 bytes in 32 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[450*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[639*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[59654*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+256 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:03:44
+Optimized data record size is:90
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11650 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:03:46
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ancon         csoc          csocesc       CAE2          vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   cspri         nut1_emp      CAE4_COD      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  cspub         nut2_emp      vn            nest          pempl         trabsind
+EMP_ID        natju         csest         caem1l        vn_ano        pemp          escdim_lin~1
+  variable ano_const was float now int
+  variable cae3 was float now byte
+  (1,418,570 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2016...
+ 
+usespss is converting file qp_empresas_2016_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2016_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:03:47
+Number of cases: 287277
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:24:18
+This is an SPSS/Windows file
+File size is 32717790 bytes
+File contains 287277 cases
+Case size is 248 bytes in 31 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[450*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[639*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+248 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:03:47
+Optimized data record size is:90
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11650 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:03:49
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ancon         csoc          csocesc       CAE2          vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   cspri         nut1_emp      CAE4_COD      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  cspub         nut2_emp      vn            nest          pempl         trabsind
+EMP_ID        natju         csest         caem1l        vn_ano        pemp          escdim_lin~1
+  variable ano_const was float now int
+  variable cae3 was float now byte
+  (1,436,385 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2017...
+ 
+usespss is converting file qp_empresas_2017_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2017_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:03:50
+Number of cases: 290409
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:26:37
+This is an SPSS/Windows file
+File size is 33331753 bytes
+File contains 290409 cases
+Case size is 256 bytes in 32 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[464*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[650*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[59654*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+256 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:03:50
+Optimized data record size is:88
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11915 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:03:53
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ANO_CONSTI~O  csoc          csocesc       CAE2          vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   cspri         nut1_emp      CAE4_COD      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  cspub         nut2_emp      vn            nest          pempl         trabsind
+EMP_ID        natju         csest         caem1l        vn_ano        pemp          escdim_lin~1
+  variable cae3 was float now byte
+  (871,227 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2018...
+ 
+usespss is converting file qp_empresas_2018_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2018_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:03:54
+Number of cases: 293732
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:28:37
+This is an SPSS/Windows file
+File size is 33355467 bytes
+File contains 293732 cases
+Case size is 248 bytes in 31 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[464*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[650*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+248 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:03:54
+Optimized data record size is:88
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11915 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:03:56
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ANO_CONSTI~O  CAE2          cspri         nut1_emp      vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   CAE4_COD      cspub         nut2_emp      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  natju         csest         vn            nest          pempl         trabsind
+EMP_ID        caem1l        csoc          csocesc       vn_ano        pemp          escdim_lin~1
+  variable cae3 was float now byte
+  (881,196 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2019...
+ 
+usespss is converting file qp_empresas_2019_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2019_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:03:57
+Number of cases: 287172
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:30:25
+This is an SPSS/Windows file
+File size is 32881933 bytes
+File contains 287172 cases
+Case size is 256 bytes in 32 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[464*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[650*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[59654*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+256 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:03:57
+Optimized data record size is:88
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11915 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:03:59
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ANO_CONSTI~O  csoc          csocesc       CAE2          vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   cspri         nut1_emp      CAE4_COD      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  cspub         nut2_emp      vn            nest          pempl         trabsind
+EMP_ID        natju         csest         caem1l        vn_ano        pemp          escdim_lin~1
+  variable cae3 was float now byte
+  (861,516 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2020...
+ 
+usespss is converting file qp_empresas_2020_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2020_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:04:01
+Number of cases: 288847
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:32:10
+This is an SPSS/Windows file
+File size is 32730031 bytes
+File contains 288847 cases
+Case size is 248 bytes in 31 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[464*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[650*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+248 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:04:01
+Optimized data record size is:88
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11915 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:04:03
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ANO_CONSTI~O  csoc          csocesc       CAE2          vndesc1       escdim1       escdim_lin~2
+NPC_FIC       antiguidade   cspri         nut1_emp      CAE4_COD      vndesc2       escdim2       tcoemp
+NUEMP         esc_antig_~p  cspub         nut2_emp      vn            nest          pempl         trabsind
+EMP_ID        natju         csest         caem1l        vn_ano        pemp          escdim_lin~1
+  variable cae3 was float now byte
+  (866,541 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2021...
+ 
+usespss is converting file qp_empresas_2021_fins_cientificos_29-07-2025.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_empresas
+> _2021_fins_cientificos_29-07-2025.sav
+Processing started: 13/11/2025 15:04:04
+Number of cases: 282736
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 30.0.0.0         
+No file label found
+Creation date and time:29 Jul 25 11:35:18
+This is an SPSS/Windows file
+File size is 32297809 bytes
+File contains 282736 cases
+Case size is 256 bytes in 32 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     30
+    Release sub-number:                 0
+    Special release identifier number:  0
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[93*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[464*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[650*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[59654*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (31 variables)
+
+Busy - processing data (31 variables)
+Allocating buffer for decompressed data...
+256 bytes
+Allocating buffer for variable descriptors...
+868 bytes
+Memory set!
+Starting decompression: 15:04:04
+Optimized data record size is:88
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 11915 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:04:06
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           caem1l        antiguidade   cspri         nut1_emp      vndesc1       escdim1       escdim_lin~2
+NPC_FIC       CAE2          esc_antig_~p  cspub         nut2_emp      vndesc2       escdim2       tcoemp
+NUEMP         CAE4_COD      natju         csest         vn            nest          pempl         trabsind
+EMP_ID        ANO_CONSTI~O  csoc          csocesc       vn_ano        pemp          escdim_lin~1
+  variable cae3 was float now byte
+  (848,208 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+  Processing QP Firms 2022...
+  variable cae3 was float now byte
+  variable ano was double now int
+  variable nuemp was double now long
+  variable EMP_ID was double now long
+  variable NPC_FIC was double now long
+  variable ano_const was double now int
+  variable nat_jur was double now byte
+  (10,084,740 bytes saved)
+(label natju already defined)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/firm_2011_2022.dta saved
+
+. 
+. cd "$rootdir/output"
+C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\output
+
+. 
+. * Create public sector indicator
+. gen public = 1 if (nat_jur < 20 | nat_jur == 61 | nat_jur == 72 | nat_jur == 73) ///
+>                   | (cap_soc_pub >= 50 & cap_soc_pub != .)
+(3,313,429 missing values generated)
+
+. replace public = 0 if public == .
+(3,313,429 real changes made)
+
+. 
+. * Create firm identifier
+. gen firm_id = EMP_ID
+
+. label var firm_id "Firm identifier (EMP_ID)"
+
+. 
+. * Check for duplicates
+. duplicates report firm_id ano
+
+Duplicates in terms of firm_id ano
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |      3440075             0
+--------------------------------------
+
+. 
+. * Merge with SCIE data using NPC_FIC
+. merge 1:1 NPC_FIC ano using "SCIE_2011_2022.dta", keep(match master)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                       216,144
+        from master                   216,144  (_merge==1)
+        from using                          0  (_merge==2)
+
+    matched                         3,223,931  (_merge==3)
+    -----------------------------------------
+
+. gen scie_match = (_merge == 3)
+
+. drop _merge
+
+. 
+. * Merge with firm age from SCIE
+. merge m:1 NPC_FIC ano using "IES_age_2011_2022.dta", keep(match master) keepusing(ano_constIES)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                       216,144
+        from master                   216,144  (_merge==1)
+        from using                          0  (_merge==2)
+
+    matched                         3,223,931  (_merge==3)
+    -----------------------------------------
+
+. drop _merge
+
+. 
+. * Calculate firm age (use earliest available date)
+. replace ano_const = . if ano_const == 0
+(0 real changes made)
+
+. bysort firm_id: egen ano_const_QP = min(ano_const)
+(386 missing values generated)
+
+. bysort firm_id: egen ano_constIES_corr = min(ano_constIES)
+(2383487 missing values generated)
+
+. bysort firm_id (ano): replace ano_constIES_corr = . if ano_constIES_corr > ano[1]
+(70576 real changes made, 70576 to missing)
+
+. egen cohort = rowmin(ano_const_QP ano_constIES_corr)
+(367 missing values generated)
+
+. gen firm_age = ano - cohort
+(367 missing values generated)
+
+. 
+. drop ano_const_QP ano_constIES_corr I_NASC ano_constIES
+
+. 
+. * Order variables
+. order firm_id ano NPC_FIC EMP_ID
+
+. 
+. compress
+  variable public was float now byte
+  variable scie_match was float now byte
+  variable cohort was float now int
+  variable firm_age was float now int
+  variable SV501701 was double now long
+  variable SV502001 was double now long
+  (61,921,350 bytes saved)
+
+. save "firm_2011_2022.dta", replace
+file firm_2011_2022.dta saved
+
+. 
+. di "  → Firm data cleaned: firm_2011_2022.dta"
+  → Firm data cleaned: firm_2011_2022.dta
+
+. di "  → Observations: " _N
+  → Observations: 3440075
+
+. sum scie_match
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+  scie_match |  3,440,075    .9371688    .2426591          0          1
+
+. 
+end of do-file
+
+. 
+. * 3. Process worker-level data and create skill measures
+. di _newline(2)
+
+
+
+
+. di "STEP 3/4: Processing worker data and calculating skills..."
+STEP 3/4: Processing worker data and calculating skills...
+
+. do "$rootdir/code/worker_skills.do"
+
+. /*==============================================================================
+>    MODULE 3: PROCESS WORKER DATA AND CALCULATE SKILLS (2011-2022)
+>    
+>    Processes worker-level data and creates skill composition measures
+>    
+>    EDUCATION LEVELS (habil1):
+>    1 = No schooling
+>    2 = Primary (4 years)
+>    3 = Lower secondary (6 years)
+>    4 = Upper secondary (9 years)
+>    5 = Secondary (12 years)
+>    6 = Bacharelato (tertiary)
+>    7 = Licenciatura (tertiary)
+>    8 = Masters/PhD (tertiary)
+>    9 = IGNORADO (unknown) → treated as missing
+>    
+>    SKILL DEFINITION: Skilled = habil1 >= 6 (Tertiary education)
+>    TO CHANGE: Modify "gen skilled = (habil1 >= 6)" in collapse section
+>    
+>    Creates: worker_skills_2011_2022.dta, firm_skills_wages_2011_2022.dta
+>    
+> ==============================================================================*/
+. 
+. cd "$rootdir/input/QP_data"
+C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data
+
+. 
+. * Initialize output file
+. clear
+
+. gen ano = .
+
+. save "$rootdir/output/worker_skills_2011_2022.dta", replace
+(note: dataset contains 0 observations)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+
+. 
+. * Load and append all years
+. forvalues ano=2011(1)2022 {
+  2.     di "  Processing QP Workers `ano'..."
+  3.     
+.     * Check for .dta first (2011 and 2022), then .sav
+.     local f : dir "." files "*Trabalhadores_`ano'*.dta"
+  4.     if `"`f'"' != "" {
+  5.         use `f', clear
+  6.     }
+  7.     else {
+  8.         local f : dir "." files "*Trabalhadores_`ano'*.sav"
+  9.         usespss `f', clear
+ 10.     }
+ 11.     
+.     * Standardize variable names
+.     cap ren ANO ano
+ 12.     cap ren NUEMP nuemp
+ 13.     cap ren NUEST nuest
+ 14.     
+.     * Age (handle top/bottom coding)
+.     cap gen age = real(idade) 
+ 15.     cap replace age = 68 if idade == ">=68"
+ 16.     cap replace age = 17 if idade == "<=17"
+ 17.     cap drop if age == . | age == 0
+ 18.     
+.     * Keep only relevant variables for skill analysis
+.     keep ano nuemp nuest age NPC_FIC EMP_ID ntrab habil1 rbase prest_reg
+ 19.     
+.     append using "$rootdir/output/worker_skills_2011_2022.dta"
+ 20.     compress
+ 21.     save "$rootdir/output/worker_skills_2011_2022.dta", replace
+ 22. }
+  Processing QP Workers 2011...
+  variable age was float now byte
+  variable ano was double now int
+  variable NPC_FIC was double now long
+  variable nuemp was double now long
+  variable EMP_ID was double now long
+  variable nuest was double now long
+  variable ntrab was double now long
+  variable habil1 was double now byte
+  (102,471,804 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2012...
+ 
+usespss is converting file qp_trabalhadores_2012_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2012_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:05:54
+Number of cases: 2666492
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:55:43
+This is an SPSS/Windows file
+File size is 673159874 bytes
+File contains 2666492 cases
+Case size is 488 bytes in 61 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+488 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:05:57
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:06:40
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_FICTI~O  tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_LABEL    reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+Some variables are date/time and need to be recoded.
+This is a new experimental feature. Be careful.
+Adjust date/time variables
+(label habil1 already defined)
+  variable age was float now byte
+  (16,527,159 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2013...
+ 
+usespss is converting file qp_trabalhadores_2013_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2013_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:06:44
+Number of cases: 2656456
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:33:56
+This is an SPSS/Windows file
+File size is 672498186 bytes
+File contains 2656456 cases
+Case size is 488 bytes in 61 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+488 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:06:45
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:07:27
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_FICTI~O  tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_LABEL    reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+Some variables are date/time and need to be recoded.
+This is a new experimental feature. Be careful.
+Adjust date/time variables
+(label habil1 already defined)
+  variable age was float now byte
+  (24,485,616 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2014...
+ 
+usespss is converting file qp_trabalhadores_2014_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2014_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:07:31
+Number of cases: 2737586
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:34:57
+This is an SPSS/Windows file
+File size is 691499530 bytes
+File contains 2737586 cases
+Case size is 488 bytes in 61 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+488 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:07:32
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:08:15
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_FICTI~O  tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_LABEL    reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+Some variables are date/time and need to be recoded.
+This is a new experimental feature. Be careful.
+Adjust date/time variables
+(label habil1 already defined)
+  variable age was float now byte
+  (32,686,944 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2015...
+ 
+usespss is converting file qp_trabalhadores_2015_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2015_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:08:20
+Number of cases: 2818186
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:35:55
+This is an SPSS/Windows file
+File size is 710800906 bytes
+File contains 2818186 cases
+Case size is 488 bytes in 61 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+488 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:08:22
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:09:06
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_FICTI~O  tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_LABEL    reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+Some variables are date/time and need to be recoded.
+This is a new experimental feature. Be careful.
+Adjust date/time variables
+(label habil1 already defined)
+  variable age was float now byte
+  (41,129,535 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2016...
+ 
+usespss is converting file qp_trabalhadores_2016_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2016_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:09:11
+Number of cases: 2925918
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:37:24
+This is an SPSS/Windows file
+File size is 741647101 bytes
+File contains 2925918 cases
+Case size is 504 bytes in 63 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[37659*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+504 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:09:13
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:09:56
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_FICTI~O  tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_LABEL    reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+Some variables are date/time and need to be recoded.
+This is a new experimental feature. Be careful.
+Adjust date/time variables
+(label habil1 already defined)
+  variable age was float now byte
+  (49,894,656 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2017...
+ 
+usespss is converting file qp_trabalhadores_2017_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2017_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:10:02
+Number of cases: 3058916
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:48:44
+This is an SPSS/Windows file
+File size is 775154249 bytes
+File contains 3058916 cases
+Case size is 504 bytes in 63 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[37659*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+504 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:10:04
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:10:48
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_FICTI~O  tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_LABEL    reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+Some variables are date/time and need to be recoded.
+This is a new experimental feature. Be careful.
+Adjust date/time variables
+(label habil1 already defined)
+  variable age was float now byte
+  (59,058,174 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2018...
+ 
+usespss is converting file qp_trabalhadores_2018_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2018_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:10:55
+Number of cases: 3177414
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:49:54
+This is an SPSS/Windows file
+File size is 834695429 bytes
+File contains 3177414 cases
+Case size is 584 bytes in 73 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[64947*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+584 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:10:57
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+All done: 15:11:52
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_FICTI~O  tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_LABEL    reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+Some variables are date/time and need to be recoded.
+This is a new experimental feature. Be careful.
+Adjust date/time variables
+(label habil1 already defined)
+  variable age was float now byte
+  (68,575,983 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2019...
+ 
+usespss is converting file qp_trabalhadores_2019_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2019_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:12:01
+Number of cases: 3231636
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:52:10
+This is an SPSS/Windows file
+File size is 813272697 bytes
+File contains 3231636 cases
+Case size is 504 bytes in 63 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[37659*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+504 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:12:03
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:12:45
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_FICTI~O  tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_LABEL    reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+Some variables are date/time and need to be recoded.
+This is a new experimental feature. Be careful.
+Adjust date/time variables
+(label habil1 already defined)
+  variable age was float now byte
+  (78,268,311 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2020...
+ 
+usespss is converting file qp_trabalhadores_2020_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2020_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:12:54
+Number of cases: 3200511
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:53:08
+This is an SPSS/Windows file
+File size is 837558223 bytes
+File contains 3200511 cases
+Case size is 584 bytes in 73 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[65365*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+584 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:12:56
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+All done: 15:13:59
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_LABEL    tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_FICTI~O  reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+Some variables are date/time and need to be recoded.
+This is a new experimental feature. Be careful.
+Adjust date/time variables
+(label habil1 already defined)
+  variable age was float now byte
+  (87,868,386 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2021...
+ 
+usespss is converting file qp_trabalhadores_2021_fins_cientificos_20-11-2023.sav
+ 
+USESPSS
+Attempting to convert: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\QP_data\qp_trabalha
+> dores_2021_fins_cientificos_20-11-2023.sav
+Processing started: 13/11/2025 15:14:10
+Number of cases: 3221122
+Signature (must be "$FL2"):$FL2
+Product line: @(#) IBM SPSS STATISTICS 64-bit MS Windows 28.0.1.0         
+No file label found
+Creation date and time:20 Nov 23 14:54:09
+This is an SPSS/Windows file
+File size is 806894827 bytes
+File contains 3221122 cases
+Case size is 504 bytes in 63 chunks (1chunk = 8bytes)
+Data compression: yes (compression bias is 100)
+Weighting is not set
+
+
+Found record 7.3[8*4]: Source system characteristics
+    Release number:                     28
+    Release sub-number:                 0
+    Special release identifier number:  100
+    Machine code:                       suppressed
+    Floating-point representation code: 1 (IEEE)
+    Compression scheme code:            1
+    Byte order code:                    2 (little-endian)
+    Character representation code:      65001
+
+Found record 7.4[3*8]: Source system floating pt constants
+    skipped
+
+Found record 7.11[126*4]: Msmt level, col width, & alignment
+    processed
+
+Found record 7.13[645*1]: Extended variable names
+    processed
+
+Found record 7.16[2*8]: 64 bit N of cases
+    skipped
+
+Found record 7.18[892*1]: Variable attributes
+    skipped
+
+Found record 7.20[5*1]: Code page
+    Codepage: utf-8
+    processed
+
+Found record 7.21[38101*1]: Value labels for long strings
+    skipped
+
+Busy - processing variables (42 variables)
+
+Busy - processing data (42 variables)
+Allocating buffer for decompressed data...
+504 bytes
+Allocating buffer for variable descriptors...
+1176 bytes
+Memory set!
+Starting decompression: 15:14:12
+Optimized data record size is:187
+Allocated 1048576 bytes for the write buffer
+Write buffer capacity is 5607 records
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+Can't accomodate value labels for a string variable
+All done: 15:15:13
+Data saved to C:\Users\alexv\AppData\Local\Temp\ST_32c0_000001.tmp
+ANO           ESTAB_ID      dt_adm        ctpro         habil1        prof_3d       rganho        esc_rem_ga~o  reminf_mot2
+NPC_FIC       ntrab         antig         sitpro        habil2        prof_2d       rextra        pnt           reminf_mot3
+NUEMP         nacio         dt_prom       tipo_contr    habil         prof_1d       prest_reg     hnormais
+EMP_ID        sexo          IRCT_LABEL    tipo_contr1   nqual1        ctrem         prest_irreg   hextra
+NUEST         idade_Cod     IRCT_FICTI~O  reg_dur       prof_4d       rbase         esc_rem_base  reminf_mot1
+(label habil1 already defined)
+  variable age was float now byte
+  (97,528,563 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+  Processing QP Workers 2022...
+(label habil1 already defined)
+  variable age was float now byte
+  variable ano was double now int
+  variable NPC_FIC was double now long
+  variable nuemp was double now long
+  variable EMP_ID was double now long
+  variable nuest was double now long
+  variable ntrab was double now long
+  variable habil1 was double now byte
+  (1,295,100,900 bytes saved)
+file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output/worker_skills_2011_2022.dta saved
+
+. 
+. cd "$rootdir/output"
+C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\output
+
+. 
+. drop if ano == .
+(0 observations deleted)
+
+. 
+. /*==============================================================================
+>    CALCULATE WAGES
+> ==============================================================================*/
+. 
+. * Total nominal wage (base + regular benefits)
+. egen nominal_wage = rowtotal(rbase prest_reg)
+
+. replace nominal_wage = . if nominal_wage == 0
+(3,212,709 real changes made, 3,212,709 to missing)
+
+. 
+. * Drop observations with missing wage or education
+. drop if nominal_wage == . | nominal_wage <= 0
+(3,212,709 observations deleted)
+
+. 
+. * Treat habil1 = 9 as missing (IGNORADO)
+. replace habil1 = . if habil1 == 9
+(80,847 real changes made, 80,847 to missing)
+
+. drop if habil1 == . | habil1 == 0
+(92,463 observations deleted)
+
+. 
+. /*==============================================================================
+>    GET FIRM IDENTIFIER
+> ==============================================================================*/
+. 
+. * If EMP_ID missing, try to get from firm data
+. cap confirm variable EMP_ID
+
+. if _rc == 0 {
+.     gen has_empid = (EMP_ID != .)
+.     sum has_empid
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+   has_empid | 32,669,853           1           0          1          1
+.     if r(mean) < 0.5 {
+.         di "  Warning: Many missing EMP_ID, attempting merge with firm data..."
+.         merge m:1 nuemp ano using "firm_2011_2022.dta", keepusing(EMP_ID) keep(match master) nogen
+.     }
+. }
+
+. else {
+.     di "  EMP_ID not found, merging with firm data..."
+.     merge m:1 nuemp ano using "firm_2011_2022.dta", keepusing(EMP_ID) keep(match master) nogen
+. }
+
+. 
+. * Create firm identifier
+. gen firm_id = EMP_ID
+
+. label var firm_id "Firm identifier"
+
+. 
+. * Drop if missing firm ID
+. drop if firm_id == .
+(0 observations deleted)
+
+. 
+. compress
+  variable has_empid was float now byte
+  (98,009,559 bytes saved)
+
+. save "worker_skills_2011_2022.dta", replace
+file worker_skills_2011_2022.dta saved
+
+. 
+. di "  → Worker data cleaned: worker_skills_2011_2022.dta"
+  → Worker data cleaned: worker_skills_2011_2022.dta
+
+. di "  → Observations: " _N
+  → Observations: 32669853
+
+. 
+. /*==============================================================================
+>    COLLAPSE TO FIRM-YEAR LEVEL
+> ==============================================================================*/
+. 
+. di "  → Aggregating to firm-year level..."
+  → Aggregating to firm-year level...
+
+. 
+. * Generate skill dummies from habil1 (tertiary = 6,7,8,9)
+. gen skilled = (habil1 >= 6) if habil1 != .
+
+. gen unskilled = (habil1 < 6) if habil1 != .
+
+. 
+. * Create wage variables by education level
+. gen wage_skilled = nominal_wage if skilled == 1
+(26,747,914 missing values generated)
+
+. gen wage_unskilled = nominal_wage if unskilled == 1
+(5,921,939 missing values generated)
+
+. 
+. * Collapse to firm-year level
+. collapse (count) n_workers = ntrab ///
+>          (sum) n_skilled = skilled ///
+>                n_unskilled = unskilled ///
+>          (mean) avg_wage_all = nominal_wage ///
+>                 avg_wage_skilled = wage_skilled ///
+>                 avg_wage_unskilled = wage_unskilled ///         
+>          , by(firm_id ano)
+
+. 
+. * Calculate shares
+. gen share_skilled = n_skilled / n_workers
+
+. gen share_unskilled = n_unskilled / n_workers
+
+. 
+. * Label variables
+. label var n_workers "Total number of workers"
+
+. label var n_skilled "Number of workers with tertiary education (habil1>=6)"
+
+. label var n_unskilled "Number of workers without tertiary education (habil1<6)"
+
+. label var avg_wage_all "Average wage (all workers)"
+
+. label var avg_wage_skilled "Average wage (tertiary education)"
+
+. label var avg_wage_unskilled "Average wage (non-tertiary)"
+
+. label var share_skilled "Share of workers with tertiary education"
+
+. label var share_unskilled "Share of workers without tertiary education"
+
+. 
+. compress
+  variable n_workers was long now int
+  variable n_skilled was double now int
+  variable n_unskilled was double now int
+  (43,479,478 bytes saved)
+
+. save "firm_skills_wages_2011_2022.dta", replace
+file firm_skills_wages_2011_2022.dta saved
+
+. 
+. di "  → Firm-level skills data created: firm_skills_wages_2011_2022.dta"
+  → Firm-level skills data created: firm_skills_wages_2011_2022.dta
+
+. di "  → Firm-year observations: " _N
+  → Firm-year observations: 3105677
+
+. 
+. 
+end of do-file
+
+. 
+. * 4. Merge everything together
+. di _newline(2)
+
+
+
+
+. di "STEP 4/4: Merging all datasets..."
+STEP 4/4: Merging all datasets...
+
+. do "$rootdir/code/merge_final.do"
+
+. /*==============================================================================
+>    MODULE 4: MERGE ALL DATASETS (2011-2022)
+>    
+>    Combines firm characteristics, SCIE data, and worker skill measures
+>    Creates: final_data_2011_2022.dta (complete merged dataset)
+>    
+> ==============================================================================*/
+. 
+. cd "$rootdir/output"
+C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\output
+
+. 
+. di "  → Starting final merge..."
+  → Starting final merge...
+
+. 
+. /*==============================================================================
+>    START WITH FIRM-LEVEL SKILL DATA
+> ==============================================================================*/
+. 
+. use "firm_skills_wages_2011_2022.dta", clear
+
+. 
+. di "  Starting with firm skills data: " _N " observations"
+  Starting with firm skills data: 3105677 observations
+
+. 
+. /*==============================================================================
+>    MERGE WITH FIRM CHARACTERISTICS
+> ==============================================================================*/
+. 
+. merge 1:1 firm_id ano using "firm_2011_2022.dta", keep(match master)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                         3,105,677  (_merge==3)
+    -----------------------------------------
+
+. 
+. tab _merge
+
+                 _merge |      Freq.     Percent        Cum.
+------------------------+-----------------------------------
+            matched (3) |  3,105,677      100.00      100.00
+------------------------+-----------------------------------
+                  Total |  3,105,677      100.00
+
+. gen has_firm_data = (_merge == 3)
+
+. drop _merge
+
+. 
+. di "  After merging firm characteristics: " _N " observations"
+  After merging firm characteristics: 3105677 observations
+
+. 
+. /*==============================================================================
+>    CLEAN AND FINALIZE
+> ==============================================================================*/
+. 
+. * Label key variables
+. label var has_firm_data "Matched with firm characteristics"
+
+. label var scie_match "Matched with SCIE balance sheet data"
+
+. 
+. compress
+  variable has_firm_data was float now byte
+  (9,317,031 bytes saved)
+
+. save "final_data_2011_2022.dta", replace
+file final_data_2011_2022.dta saved
+
+. 
+. di "  → Final merged dataset created: final_data_2011_2022.dta"
+  → Final merged dataset created: final_data_2011_2022.dta
+
+. di "  → Total observations: " _N
+  → Total observations: 3105677
+
+. 
+. /*==============================================================================
+>    SUMMARY STATISTICS
+> ==============================================================================*/
+. 
+. di _newline(2)
+
+
+
+
+. di "=========================================="
+==========================================
+
+. di "FINAL DATASET SUMMARY"
+FINAL DATASET SUMMARY
+
+. di "=========================================="
+==========================================
+
+. 
+. * Coverage
+. di _newline
+
+
+
+. di "Data coverage:"
+Data coverage:
+
+. tab ano
+
+     Ano de |
+ referência |      Freq.     Percent        Cum.
+------------+-----------------------------------
+       2011 |    263,403        8.48        8.48
+       2012 |    248,870        8.01       16.49
+       2013 |    245,712        7.91       24.41
+       2014 |    250,190        8.06       32.46
+       2015 |    254,750        8.20       40.67
+       2016 |    259,149        8.34       49.01
+       2017 |    263,054        8.47       57.48
+       2018 |    266,667        8.59       66.07
+       2019 |    261,718        8.43       74.49
+       2020 |    262,085        8.44       82.93
+       2021 |    258,136        8.31       91.24
+       2022 |    271,943        8.76      100.00
+------------+-----------------------------------
+      Total |  3,105,677      100.00
+
+. di _newline
+
+
+
+. sum has_firm_data scie_match
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+has_firm_d~a |  3,105,677           1           0          1          1
+  scie_match |  3,105,677    .9351655    .2462336          0          1
+
+. 
+. di _newline
+
+
+
+. di "=========================================="
+==========================================
+
+. di "Files created in $rootdir/output:"
+Files created in C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/output:
+
+. di "  - SCIE_2011_2022.dta"
+  - SCIE_2011_2022.dta
+
+. di "  - IES_age_2011_2022.dta"
+  - IES_age_2011_2022.dta
+
+. di "  - firm_2011_2022.dta"
+  - firm_2011_2022.dta
+
+. di "  - worker_skills_2011_2022.dta"
+  - worker_skills_2011_2022.dta
+
+. di "  - firm_skills_wages_2011_2022.dta"
+  - firm_skills_wages_2011_2022.dta
+
+. di "  - final_data_2011_2022.dta <-- USE THIS"
+  - final_data_2011_2022.dta <-- USE THIS
+
+. di "=========================================="
+==========================================
+
+. 
+end of do-file
+
+. 
+. /*==============================================================================
+>    SUMMARY
+> ==============================================================================*/
+. 
+. di _newline(2)
+
+
+
+
+. di "=========================================="
+==========================================
+
+. di "DATA CLEANING COMPLETE!"
+DATA CLEANING COMPLETE!
+
+. di "=========================================="
+==========================================
+
+. di "Final datasets created:"
+Final datasets created:
+
+. di "  - SCIE_2011_2022.dta"
+  - SCIE_2011_2022.dta
+
+. di "  - firm_2011_2022.dta"
+  - firm_2011_2022.dta
+
+. di "  - worker_skills_2011_2022.dta"
+  - worker_skills_2011_2022.dta
+
+. di "  - firm_skills_wages_2011_2022.dta (aggregated)"
+  - firm_skills_wages_2011_2022.dta (aggregated)
+
+. di "  - final_data_2011_2022.dta (ALL MERGED)"
+  - final_data_2011_2022.dta (ALL MERGED)
+
+. di "=========================================="
+==========================================
+
+. 
+. * Close log
+. cap log close
