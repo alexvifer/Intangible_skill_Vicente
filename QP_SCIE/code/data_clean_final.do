@@ -1,16 +1,18 @@
 /*==============================================================================
-   DATA CLEANING AND FINALIZATION
+   DATA CLEANING - CLEAN SOURCE VARIABLES BEFORE INTANGIBLES CONSTRUCTION
    
-   Input:  final_data_2011_2022_intangibles.dta
+   Prerequisites: prepare_deflators.do (creates deflators.dta)
+   Input:  final_data_2011_2022.dta (from merge_final.do)
+           deflators.dta (from prepare_deflators.do)
    Output: final_data_2011_2022_cleaned.dta
-           final_data_2011_2022_cleaned_winsorized.dta
    
-   Cleaning steps:
-   1. Remove structural problems (missing IDs, duplicates)
-   2. Clean variable-specific issues (negatives where inappropriate)
-   3. Flag missing activity (no workers/capital/revenue/production/wagebill)
-   4. Identify extreme incoherence (top 1% vs bottom 1% in key variables)
-   5. Winsorize at 99.5th percentile (top 0.5% only)
+   This file:
+   1. Merges deflators
+   2. Deflates all variables to real 2020 prices
+   3. Cleans source variables (removes missing/negative balance sheet items)
+   4. Applies basic sample restrictions
+   
+   Next step: construct_intangibles.do builds capital stocks from clean data
    
 ==============================================================================*/
 
@@ -23,24 +25,156 @@ cap log close
 log using "data_cleaning_final.log", replace
 
 di "=========================================="
-di "DATA CLEANING & FINALIZATION"
+di "DATA CLEANING & DEFLATION"
 di "=========================================="
 di "Date: `c(current_date)'"
 di ""
 
-use "final_data_2011_2022_intangibles.dta", clear
+/*==============================================================================
+   STEP 1: LOAD DATA AND MERGE DEFLATORS
+==============================================================================*/
 
+di "STEP 1: Loading merged dataset and deflators..."
+
+use "final_data_2011_2022.dta", clear
+
+* Keep only SCIE-matched observations
 keep if scie_match == 1
 
+* Keep only private, non-incorporated businesses
+keep if public == 0
+keep if EFJR0 == "soc" 
+
 local n_start = _N
-di "Starting observations: " %12.0fc `n_start'
+di "  Starting observations: " %12.0fc `n_start'
+
+* Merge deflators (created by prepare_deflators.do)
+merge m:1 ano using "$rootdir/input/deflators.dta", keep(match master)
+
+* Verify all observations matched
+count if _merge != 3
+if r(N) > 0 {
+    di as error "ERROR: Some observations did not match with deflators!"
+    di as error "Make sure prepare_deflators.do has been run."
+    exit 111
+}
+drop _merge
+
+di "  → Deflators merged successfully"
 di ""
 
 /*==============================================================================
-   STEP 1: STRUCTURAL PROBLEMS
+   STEP 2: DEFLATE ALL VARIABLES TO REAL 2020 PRICES
 ==============================================================================*/
 
-di "STEP 1: Removing structural problems..."
+di "STEP 2: Deflating variables to real 2020 prices..."
+di "  Base year: 2020 (deflators = 100)"
+di ""
+
+*------------------------------------------------------------------------------
+* A. Revenue and sales (GDP deflator)
+*------------------------------------------------------------------------------
+
+foreach var in SV500101 SD000002 {
+    cap confirm variable `var'
+    if _rc == 0 {
+        gen `var'_real = (`var' / gdp_deflator) * 100
+    }
+}
+
+*------------------------------------------------------------------------------
+* B. Cost variables (GDP deflator)
+*------------------------------------------------------------------------------
+
+foreach var in SV500601 SV500801 SD000102 SV602500 SV602700 SV603900 ///
+               SV804000 SV804100 SV804200 SV804400 SV804600 SV804700 ///
+               SV804800 SV806700 SV807100 SV569305 {
+    cap confirm variable `var'
+    if _rc == 0 {
+        gen `var'_real = (`var' / gdp_deflator) * 100
+    }
+}
+
+*------------------------------------------------------------------------------
+* C. Result variables (GDP deflator)
+*------------------------------------------------------------------------------
+
+foreach var in SV501701 SV501801 SV502001 SV502201 SD000011 SD000012 ///
+               SD000014 SD000016 SD000018 SD000019 {
+    cap confirm variable `var'
+    if _rc == 0 {
+        gen `var'_real = (`var' / gdp_deflator) * 100
+    }
+}
+
+*------------------------------------------------------------------------------
+* D. Investment flows (GFCF deflator)
+*------------------------------------------------------------------------------
+
+foreach var in SD000031 SD000032 SD000036 SD000037 SD000038 SD000113 ///
+               SD000046 SD000047 SD000118 SD000119 SD000120 SD000121 ///
+               SD000122 SD000123 SD000124 SD000125 SD000126 SD000127 ///
+               SD000128 SD557602 SD557603 {
+    cap confirm variable `var'
+    if _rc == 0 {
+        gen `var'_real = (`var' / gfcf_deflator) * 100
+    }
+}
+
+*------------------------------------------------------------------------------
+* E. Disinvestment flows (GFCF deflator)
+*------------------------------------------------------------------------------
+
+foreach var in SV558201 SD558202 SD558203 SD558204 SV558205 SD563301 ///
+               SD563302 SD563303 SD563304 SD563305 SD563306 SV563307 ///
+               SD000044 SD000115 {
+    cap confirm variable `var'
+    if _rc == 0 {
+        gen `var'_real = (`var' / gfcf_deflator) * 100
+    }
+}
+
+*------------------------------------------------------------------------------
+* F. R&D expenditures (GDP deflator)
+*------------------------------------------------------------------------------
+
+cap confirm variable IM_RND_EXPN
+if _rc == 0 {
+    gen RD_real = (IM_RND_EXPN / gdp_deflator) * 100
+}
+
+*------------------------------------------------------------------------------
+* G. Balance sheet variables (Capital deflator)
+*------------------------------------------------------------------------------
+
+foreach var in SV510101 SV510201 SV510301 SV510401 SV511201 SV512501 ///
+               SV512601 SV512701 SD000005 SV514101 SV514701 SV515901 ///
+               SV516001 SV516101 {
+    cap confirm variable `var'
+    if _rc == 0 {
+        gen `var'_real = (`var' / capital_deflator) * 100
+    }
+}
+
+*------------------------------------------------------------------------------
+* H. Wages from QP (GDP deflator)
+*------------------------------------------------------------------------------
+
+foreach var in avg_wage_all avg_wage_skilled avg_wage_unskilled {
+    cap confirm variable `var'
+    if _rc == 0 {
+        gen `var'_real = (`var' / gdp_deflator) * 100
+    }
+}
+
+di "  → All variables deflated"
+di ""
+
+/*==============================================================================
+   STEP 3: REMOVE STRUCTURAL PROBLEMS
+==============================================================================*/
+
+di "STEP 3: Removing structural problems..."
 
 * Remove missing identifiers
 drop if firm_id == . | ano == .
@@ -48,320 +182,127 @@ drop if firm_id == . | ano == .
 * Remove duplicates
 duplicates drop firm_id ano, force
 
-local n_after_step1 = _N
-local n_dropped_step1 = `n_start' - `n_after_step1'
-di "  Dropped: " %8.0fc `n_dropped_step1' " (missing IDs, duplicates)"
-di "  Remaining: " %12.0fc `n_after_step1'
+local n_after_step3 = _N
+local n_dropped_step3 = `n_start' - `n_after_step3'
+di "  Dropped: " %8.0fc `n_dropped_step3' " (missing IDs, duplicates)"
+di "  Remaining: " %12.0fc `n_after_step3'
 di ""
 
 /*==============================================================================
-   STEP 2: FLAG INCORRECT VALUES (NEGATIVES IN REAL VARIABLES)
+   STEP 4: DROP OBSERVATIONS WITH MISSING OR NEGATIVE VALUES
 ==============================================================================*/
 
-di "STEP 2: Flagging incorrect values (negatives in real variables)..."
+di "STEP 4: Dropping observations with missing or negative values..."
+di ""
 
-/*------------------------------------------------------------------------------
-   A. Production variables
-------------------------------------------------------------------------------*/
+* Count observations before this step
+local n_before_step4 = _N
 
-* Revenue
-gen flag_bad_revenue = (SV500101_real < 0) if SV500101_real != .
-qui replace SV500101_real = . if flag_bad_revenue == 1
+* List of variables to check (must exist and be non-negative)
+* SV510101_real: Tangible fixed assets (physical capital)
+* SV510401_real: Intangible assets (excluding goodwill)
+* SV500101_real: Revenue
+* SD000011_real: Production value
+* SV500801_real: Wagebill
+* SV516001_real: Total debt
+* SV514701_real: Long-term debt
+* SV515901_real: Short-term debt
+* SV502201_real: Interest expenses
+* SD000032_real: Tangible investment
+* RD_real: R&D expenditures
+* SV804400_real: Advertising expenses
+* SV603900_real: Training expenses
 
-* Production
-gen flag_bad_production = (SD000011_real < 0) if SD000011_real != .
-qui replace SD000011_real = . if flag_bad_production == 1
+local vars_check "SV510101_real SV510401_real SV500101_real SD000011_real SV500801_real SV516001_real SV514701_real SV515901_real SV502201_real SD000032_real"
 
-* Wagebill
-gen flag_bad_wagebill = (SV500801_real < 0) if SV500801_real != .
-qui replace SV500801_real = . if flag_bad_wagebill == 1
-
-/*------------------------------------------------------------------------------
-   B. Capital stocks (already in real terms from construct_intangibles.do)
-------------------------------------------------------------------------------*/
-
-* Physical capital (K_physical already real)
-gen flag_bad_capital = (K_physical < 0) if K_physical != .
-qui replace K_physical = . if flag_bad_capital == 1
-
-* Balance sheet intangibles
-gen flag_bad_BS_intang = (SV510401_real < 0) if SV510401_real != .
-qui replace SV510401_real = . if flag_bad_BS_intang == 1
-
-/*------------------------------------------------------------------------------
-   C. Financial variables
-------------------------------------------------------------------------------*/
-
-* Total debt
-gen flag_bad_debt = (SV516001_real < 0) if SV516001_real != .
-qui replace SV516001_real = . if flag_bad_debt == 1
-
-* Long-term debt
-gen flag_bad_LTdebt = (SV514701_real < 0) if SV514701_real != .
-qui replace SV514701_real = . if flag_bad_LTdebt == 1
-
-* Short-term debt
-gen flag_bad_STdebt = (SV515901_real < 0) if SV515901_real != .
-qui replace SV515901_real = . if flag_bad_STdebt == 1
-
-* Interest expenses
-gen flag_bad_interest = (SV502201_real < 0) if SV502201_real != .
-qui replace SV502201_real = . if flag_bad_interest == 1
-
-* Note: Equity (SV514101_real) CAN be negative - not flagged
-
-/*------------------------------------------------------------------------------
-   D. Investment variables (already in real terms)
-------------------------------------------------------------------------------*/
-
-* Tangible investment
-gen flag_bad_tang_inv = (SD000032_real < 0) if SD000032_real != .
-qui replace SD000032_real = . if flag_bad_tang_inv == 1
-
-* R&D expenditures (RD_real created in construct_intangibles.do)
+* Add intangible construction inputs if they exist
 cap confirm variable RD_real
 if _rc == 0 {
-    gen flag_bad_RD = (RD_real < 0) if RD_real != .
-    qui replace RD_real = . if flag_bad_RD == 1
+    local vars_check "`vars_check' RD_real"
 }
 
-* Advertising
-gen flag_bad_adv = (SV804400_real < 0) if SV804400_real != .
-qui replace SV804400_real = . if flag_bad_adv == 1
-
-* Training
-gen flag_bad_train = (SV603900_real < 0) if SV603900_real != .
-qui replace SV603900_real = . if flag_bad_train == 1
-
-/*------------------------------------------------------------------------------
-   E. Recalculate capital stocks if components were flagged
-------------------------------------------------------------------------------*/
-
-* If RD, advertising, or training were bad, we need to recalculate K_knowledge and K_org
-* This requires re-running the perpetual inventory method
-
-* Flag firms that need K_knowledge recalculated
-cap confirm variable flag_bad_RD
+cap confirm variable SV804400_real
 if _rc == 0 {
-    gen needs_K_knowledge_fix = (flag_bad_RD == 1)
-}
-else {
-    gen needs_K_knowledge_fix = 0
+    local vars_check "`vars_check' SV804400_real"
 }
 
-* Flag firms that need K_org recalculated
-gen needs_K_org_fix = (flag_bad_adv == 1 | flag_bad_train == 1)
-
-* For simplicity, set these capital stocks to missing if source data was bad
-* (Proper fix would require re-running PIM, but that's complex)
-qui replace K_knowledge = . if needs_K_knowledge_fix == 1
-qui replace K_org = . if needs_K_org_fix == 1
-
-* Recalculate aggregates
-qui replace K_intangible_external = . if flag_bad_BS_intang == 1
-qui replace K_intangible_internal = K_knowledge + K_org
-qui replace K_intangible_total = K_intangible_internal + K_intangible_external
-qui replace K_total = K_physical + K_intangible_total
-
-drop needs_K_knowledge_fix needs_K_org_fix
-
-/*------------------------------------------------------------------------------
-   F. Create overall "incorrect values" flag
-------------------------------------------------------------------------------*/
-
-gen flag_incorrect_values = 0
-qui replace flag_incorrect_values = 1 if flag_bad_revenue == 1 | ///
-                                          flag_bad_production == 1 | ///
-                                          flag_bad_wagebill == 1 | ///
-                                          flag_bad_capital == 1 | ///
-                                          flag_bad_BS_intang == 1 | ///
-                                          flag_bad_debt == 1 | ///
-                                          flag_bad_LTdebt == 1 | ///
-                                          flag_bad_STdebt == 1 | ///
-                                          flag_bad_interest == 1 | ///
-                                          flag_bad_tang_inv == 1
-
-cap confirm variable flag_bad_RD
+cap confirm variable SV603900_real
 if _rc == 0 {
-    qui replace flag_incorrect_values = 1 if flag_bad_RD == 1
+    local vars_check "`vars_check' SV603900_real"
 }
 
-qui replace flag_incorrect_values = 1 if flag_bad_adv == 1 | flag_bad_train == 1
-
-count if flag_incorrect_values == 1
-local n_incorrect = r(N)
-di "  Flagged: " %8.0fc `n_incorrect' " observations (negative values in real variables)"
-di ""
-
-/*==============================================================================
-   STEP 3: FLAG MISSING ACTIVITY (ZEROS IN REAL OUTCOME VARIABLES)
-==============================================================================*/
-
-di "STEP 3: Flagging missing activity (zeros/missing in real outcome variables)..."
-
-* Core outcome variables (all in real terms)
-gen flag_no_workers = (n_workers == 0 | n_workers == .)
-gen flag_no_capital = (K_physical <= 0 | K_physical == .)
-gen flag_no_revenue = (SV500101_real <= 0 | SV500101_real == .)
-gen flag_no_production = (SD000011_real <= 0 | SD000011_real == .)
-gen flag_no_wagebill = (SV500801_real <= 0 | SV500801_real == .)
-
-* Overall missing activity flag
-gen flag_missing_activity = 0
-qui replace flag_missing_activity = 1 if flag_no_workers == 1 | ///
-                                          flag_no_capital == 1 | ///
-                                          flag_no_revenue == 1 | ///
-                                          flag_no_production == 1 | ///
-                                          flag_no_wagebill == 1
-
-count if flag_missing_activity == 1
-local n_no_activity = r(N)
-di "  Flagged: " %8.0fc `n_no_activity' " observations (no economic activity)"
-di ""
-
-/*==============================================================================
-   STEP 4: IDENTIFY EXTREME INCOHERENCE (1% vs 99%)
-==============================================================================*/
-
-di "STEP 4: Identifying extreme incoherence (top 1% vs bottom 1%)..."
-
-* Calculate percentiles on clean observations (not flagged in Steps 2-3)
-gen sample_for_percentiles = (flag_incorrect_values == 0 & flag_missing_activity == 0)
-
-* Key real variables for coherence checks
-foreach var in SD000011_real K_total SV500101_real n_workers {
+* Drop observations with missing or negative values
+local n_dropped = 0
+foreach var of local vars_check {
     cap confirm variable `var'
     if _rc == 0 {
-        qui sum `var' if sample_for_percentiles == 1, d
-        scalar p1_`var' = r(p1)
-        scalar p99_`var' = r(p99)
-    }
-}
-
-* Incoherence patterns: top 1% of one variable, bottom 1% of another
-qui gen flag_high_prod_low_K = (SD000011_real > p99_SD000011_real & ///
-                                 K_total < p1_K_total & ///
-                                 SD000011_real != . & K_total != .) ///
-                                 if sample_for_percentiles == 1
-
-qui gen flag_high_prod_low_L = (SD000011_real > p99_SD000011_real & ///
-                                 n_workers < p1_n_workers & ///
-                                 SD000011_real != . & n_workers != .) ///
-                                 if sample_for_percentiles == 1
-
-qui gen flag_high_K_low_prod = (K_total > p99_K_total & ///
-                                 SD000011_real < p1_SD000011_real & ///
-                                 K_total != . & SD000011_real != .) ///
-                                 if sample_for_percentiles == 1
-
-qui gen flag_high_K_low_rev = (K_total > p99_K_total & ///
-                                SV500101_real < p1_SV500101_real & ///
-                                K_total != . & SV500101_real != .) ///
-                                if sample_for_percentiles == 1
-
-qui gen flag_high_L_low_prod = (n_workers > p99_n_workers & ///
-                                 SD000011_real < p1_SD000011_real & ///
-                                 n_workers != . & SD000011_real != .) ///
-                                 if sample_for_percentiles == 1
-
-qui gen flag_high_L_low_rev = (n_workers > p99_n_workers & ///
-                                SV500101_real < p1_SV500101_real & ///
-                                n_workers != . & SV500101_real != .) ///
-                                if sample_for_percentiles == 1
-
-qui gen flag_high_rev_low_K = (SV500101_real > p99_SV500101_real & ///
-                                K_total < p1_K_total & ///
-                                SV500101_real != . & K_total != .) ///
-                                if sample_for_percentiles == 1
-
-qui gen flag_high_rev_low_L = (SV500101_real > p99_SV500101_real & ///
-                                n_workers < p1_n_workers & ///
-                                SV500101_real != . & n_workers != .) ///
-                                if sample_for_percentiles == 1
-
-* Overall incoherence flag
-gen flag_incoherent = 0
-qui foreach pattern in high_prod_low_K high_prod_low_L high_K_low_prod ///
-                       high_K_low_rev high_L_low_prod high_L_low_rev ///
-                       high_rev_low_K high_rev_low_L {
-    replace flag_incoherent = 1 if flag_`pattern' == 1
-}
-
-count if flag_incoherent == 1
-local n_incoherent = r(N)
-di "  Flagged: " %8.0fc `n_incoherent' " observations (extreme incoherence)"
-di ""
-
-drop sample_for_percentiles
-
-/*==============================================================================
-   COMBINE FLAGS AND CREATE DROP_FLAG
-==============================================================================*/
-
-* Combine all flags for final sample restriction
-gen drop_flag = 0
-qui replace drop_flag = 1 if flag_incorrect_values == 1 | ///
-                             flag_missing_activity == 1 | ///
-                             flag_incoherent == 1
-
-count if drop_flag == 1
-local n_total_dropped = r(N)
-
-di "Combined sample restriction:"
-di "  Total flagged: " %8.0fc `n_total_dropped'
-di ""
-
-/*==============================================================================
-   STEP 5: ASYMMETRIC WINSORIZATION (TOP 0.5%) FOR ROBUSTNESS
-==============================================================================*/
-
-di "STEP 5: Winsorizing at 99.5th percentile (top 0.5% only)..."
-di ""
-
-* Real variables to winsorize (all in 2020 prices)
-local winsor_vars "K_total K_physical K_intangible_total                 SV500101_real SD000011_real SV500801_real SV516001_real SV514701_real SV515901_real SD000032_real n_workers"
-
-* Variable descriptions for clean output
-local lab_K_total "Total capital"
-local lab_K_physical "Physical capital"
-local lab_K_intangible_total "Intangible capital"
-local lab_SV500101_real "Revenue"
-local lab_SD000011_real "Production"
-local lab_SV500801_real "Wagebill"
-local lab_SV516001_real "Total debt"
-local lab_SV514701_real "Long-term debt"
-local lab_SV515901_real "Short-term debt"
-local lab_SD000032_real "Tangible investment"
-local lab_n_workers "Workers"
-
-local n_winsorized = 0
-
-* Winsorize each variable
-qui foreach var of local winsor_vars {
-    cap confirm variable `var'
-    if _rc == 0 {
-        * Calculate 99.5th percentile on clean sample
-        _pctile `var' if drop_flag == 0, p(99.5)
-        local p995 = r(r1)
-        
-        count if `var' != . & drop_flag == 0
-        local n_valid = r(N)
-        
-        if `n_valid' > 0 & `p995' != . {
-            gen `var'_w = `var'
-            replace `var'_w = `p995' if `var' > `p995' & `var' != .
-            label var `var'_w "`var' (winsorized top 0.5%)"
-            local n_winsorized = `n_winsorized' + 1
+        count if (`var' == . | `var' < 0)
+        local n_bad = r(N)
+        if `n_bad' > 0 {
+            qui drop if (`var' == . | `var' < 0)
+            local n_dropped = `n_dropped' + `n_bad'
         }
     }
 }
 
-di "  Completed: " `n_winsorized' " real variables winsorized at top 0.5%"
+local n_after_step4 = _N
+local n_dropped_step4 = `n_before_step4' - `n_after_step4'
+
+di "  Variables checked (must exist and be non-negative):"
+di "    SV510101_real, SV510401_real, SV500101_real, SD000011_real,"
+di "    SV500801_real, SV516001_real, SV514701_real, SV515901_real,"
+di "    SV502201_real, SD000032_real, RD_real, SV804400_real, SV603900_real"
+di ""
+di "  Total dropped: " %8.0fc `n_dropped_step4'
+di "  Remaining: " %12.0fc `n_after_step4'
+di ""
+di "  Note: SV514101_real (equity) NOT checked - can be negative"
 di ""
 
 /*==============================================================================
-   STEP 6: CREATE FLAG TO IDENTIFY FIRMS WITH AT LEAST 2 CONSECUTIVE OBSERVATIONS
+   STEP 5: DROP OBSERVATIONS WITH MISSING ECONOMIC ACTIVITY
 ==============================================================================*/
+
+di "STEP 5: Dropping observations with missing economic activity..."
+di ""
+
+gen flag_no_activity = 0
+
+* No workers
+replace flag_no_activity = 1 if n_workers == 0 | n_workers == .
+
+* No tangible fixed assets
+replace flag_no_activity = 1 if SV510101_real == 0 | SV510101_real == .
+
+* No revenue
+replace flag_no_activity = 1 if SV500101_real == 0 | SV500101_real == .
+
+* No production
+replace flag_no_activity = 1 if SD000011_real == 0 | SD000011_real == .
+
+* No wagebill
+replace flag_no_activity = 1 if SV500801_real == 0 | SV500801_real == .
+
+count if flag_no_activity == 1
+local n_no_activity = r(N)
+di "  No economic activity: " %8.0fc `n_no_activity'
+di "    (Missing/zero: workers, tangible capital, revenue, production, or wagebill)"
+
+drop if flag_no_activity == 1
+drop flag_no_activity
+
+local n_after_step5 = _N
+di ""
+di "  Total dropped: " %8.0fc `n_no_activity'
+di "  Remaining: " %12.0fc `n_after_step5'
+di ""
+
+/*==============================================================================
+   STEP 6: REQUIRE 2+ CONSECUTIVE OBSERVATIONS
+==============================================================================*/
+
+di "STEP 6: Requiring 2+ consecutive observations..."
+di ""
 
 * Declare panel structure
 xtset firm_id ano
@@ -370,37 +311,33 @@ xtset firm_id ano
 gen temp_consecutive = (F.firm_id == firm_id & !missing(F.ano))
 
 * Flag ALL observations for firms that have at least one consecutive pair
-bysort firm_id: egen flag_2consecutive = max(temp_consecutive)
+bysort firm_id: egen has_2consecutive = max(temp_consecutive)
 
 drop temp_consecutive
 
-label var flag_2consecutive "Firm has at least 2 consecutive years"
+count if has_2consecutive == 0
+local n_no_consecutive = r(N)
+di "  Firms without consecutive obs: " %8.0fc `n_no_consecutive'
 
+keep if has_2consecutive == 1
+drop has_2consecutive
+
+local n_after_step6 = _N
+di "  Remaining: " %12.0fc `n_after_step6'
+di ""
 
 /*==============================================================================
-   STEP 7: SAVE DATASETS
+   STEP 7: SAVE CLEANED DATASET
 ==============================================================================*/
 
-di "STEP 7: Saving final datasets..."
+di "STEP 7: Saving cleaned dataset..."
 di ""
 
-* Save full dataset with all flags
 compress
-save "final_data_2011_2022_flag.dta", replace
-local n_all = _N
-di "  → Saved: final_data_2011_2022_flag.dta"
-di "     All observations: " %12.0fc `n_all'
-di "     (includes flagged observations for robustness checks)"
-di ""
+save "final_data_2011_2022_cleaned.dta", replace
 
-* Save clean sample only (main analysis dataset)
-keep if drop_flag == 0 & flag_2consecutive == 1
-compress
-save "final_data_2011_2022_clean.dta", replace
-local n_final = _N
-di "  → Saved: final_data_2011_2022_clean.dta"
-di "     Clean sample: " %12.0fc `n_final'
-di "     (ready for analysis)"
+di "  → Saved: final_data_2011_2022_cleaned.dta"
+di "     Observations: " %12.0fc `n_after_step6'
 di ""
 
 /*==============================================================================
@@ -411,34 +348,54 @@ di "=========================================="
 di "CLEANING SUMMARY"
 di "=========================================="
 di ""
-di "Initial observations:              " %12.0fc `n_start'
+di "Initial observations:                  " %12.0fc `n_start'
 di ""
-di "Step 1 - Structural problems:      " %12.0fc `n_dropped_step1'
-di "Step 2 - Incorrect values:         " %12.0fc `n_incorrect'
-di "Step 3 - Missing activity:         " %12.0fc `n_no_activity'
-di "Step 4 - Extreme incoherence:      " %12.0fc `n_incoherent'
-di "                                    " "─────────────"
-di "Total excluded:                    " %12.0fc `n_total_dropped'
+di "Step 3 - Structural problems:          " %12.0fc `n_dropped_step3'
+di "Step 4 - Missing/negative values:      " %12.0fc `n_dropped_step4'
+di "Step 5 - No economic activity:         " %12.0fc `n_no_activity'
+di "Step 6 - No consecutive obs:           " %12.0fc `n_no_consecutive'
+di "                                        " "─────────────"
+local total_dropped = `n_start' - `n_after_step6'
+di "Total excluded:                        " %12.0fc `total_dropped'
 di ""
-di "Final clean sample:                " %12.0fc `n_final'
+di "Final clean sample:                    " %12.0fc `n_after_step6'
 di ""
-di "Retention rate:                    " %6.2f (100 * `n_final' / `n_start') "%"
-di ""
-di "Variables checked: REAL (2020 prices)"
-di "Winsorization: TOP 0.5% only (asymmetric)"
+di "Retention rate:                        " %6.2f (100 * `n_after_step6' / `n_start') "%"
 di ""
 di "=========================================="
-di "FILES CREATED"
+di "CLEANING CHECKS PERFORMED"
 di "=========================================="
 di ""
-di "1. final_data_2011_2022_flag.dta"
-di "   → All observations with quality flags"
-di "   → Use for robustness checks"
+di "Step 4: Missing or negative values (dropped):"
+di "   Variables: SV510101_real, SV510401_real, SV500101_real,"
+di "              SD000011_real, SV500801_real, SV516001_real,"
+di "              SV514701_real, SV515901_real, SV502201_real,"
+di "              SD000032_real, RD_real, SV804400_real, SV603900_real"
 di ""
-di "2. final_data_2011_2022_clean.dta"
-di "   → Clean sample (drop_flag == 0)"
-di "   → Winsorized variables (*_w suffix)"
-di "   → READY FOR ANALYSIS"
+di "Step 5: Missing economic activity (dropped if zero/missing):"
+di "   Variables: n_workers, SV510101_real, SV500101_real,"
+di "              SD000011_real, SV500801_real"
+di ""
+di "Step 6: Panel structure:"
+di "   Required 2+ consecutive observations per firm"
+di ""
+di "Note: SV514101_real (equity) NOT checked - can be negative"
+di "Note: SV510101_real (tangible fixed assets) checked in BOTH steps:"
+di "      Step 4 drops if negative or missing (data error)"
+di "      Step 5 drops if zero (no activity)"
+di ""
+di "=========================================="
+di "NEXT STEP"
+di "=========================================="
+di ""
+di "Run: construct_intangibles.do"
+di ""
+di "This will build capital stocks from the"
+di "clean source variables created here."
+di ""
+di "Note: Missing R&D, advertising, training"
+di "      will be set to 0 in the PIM (standard"
+di "      assumption: missing flow = no investment)"
 di ""
 di "=========================================="
 
