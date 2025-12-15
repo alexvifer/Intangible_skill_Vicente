@@ -1,0 +1,297 @@
+-----------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\deflator_preparation.log
+  log type:  text
+ opened on:   2 Dec 2025, 11:42:45
+
+. 
+. di "=========================================="
+==========================================
+
+. di "PREPARING DEFLATORS"
+PREPARING DEFLATORS
+
+. di "Date: `c(current_date)'"
+Date:  2 Dec 2025
+
+. di "=========================================="
+==========================================
+
+. 
+. /*==============================================================================
+>    STEP 1: IMPORT GDP DEFLATOR (.CSV FROM FRED)
+> ==============================================================================*/
+. 
+. di _newline
+
+
+
+. di "STEP 1: Importing GDP deflator from FRED..."
+STEP 1: Importing GDP deflator from FRED...
+
+. 
+. * Import the CSV file
+. import delimited "PRTGDPDEFQISMEI_NBD20200101.csv", clear varnames(1)
+(2 vars, 29 obs)
+
+. 
+. * Rename variables to standard names
+. rename observation_date date_string
+
+. rename prtgdpdefqismei_nbd20200101 gdp_deflator
+
+. 
+. * Extract year from date string
+. gen year_str = substr(date_string, 1, 4)
+
+. gen ano = real(year_str)
+
+. drop date_string year_str
+
+. 
+. keep ano gdp_deflator
+
+. keep if ano >= 2011 & ano <= 2022
+(17 observations deleted)
+
+. sort ano
+
+. 
+. label var gdp_deflator "GDP deflator (2020=100)"
+
+. label var ano "Year"
+
+. 
+. di "  ✓ GDP deflator imported (2011-2022)"
+  ✓ GDP deflator imported (2011-2022)
+
+. list, sep(0)
+
+     +-----------------+
+     | gdp_de~r    ano |
+     |-----------------|
+  1. | 87.54852   2011 |
+  2. | 87.21919   2012 |
+  3. | 89.17008   2013 |
+  4. | 89.80024   2014 |
+  5. | 91.61272   2015 |
+  6. | 93.18476   2016 |
+  7. | 94.59189   2017 |
+  8. | 96.30811   2018 |
+  9. | 97.99368   2019 |
+ 10. |      100   2020 |
+ 11. | 101.8562   2021 |
+ 12. | 106.9411   2022 |
+     +-----------------+
+
+. 
+. * Save temporary file
+. save "deflators_temp.dta", replace
+file deflators_temp.dta saved
+
+. 
+. /*==============================================================================
+>    STEP 2: IMPORT DATA FOR CAPITAL (.XLSX FROM EUKLEMS-INTANPROD)
+> ==============================================================================*/
+. 
+. * Import GFCF tangible (Ip_Tang, row 57, columns V-AF for 2011-2021)
+. import excel "PT_intangible analytical.xlsx", sheet("Ip_Tang") cellrange(V57:AF57) clear
+(11 vars, 1 obs)
+
+. xpose, clear varname
+
+. gen ano = 2010 + _n
+
+. rename v1 gfcf_deflator
+
+. destring gfcf_deflator, replace
+gfcf_deflator already numeric; no replace
+
+. keep ano gfcf_deflator
+
+. label var gfcf_deflator "GFCF deflator (2020=100)"
+
+. tempfile gfcf
+
+. save `gfcf'
+file C:\Users\alexv\AppData\Local\Temp\ST_2be0_000001.tmp saved
+
+. 
+. * Import Capital nominal (K_Tang, row 57, columns V-AF for 2011-2021)
+. import excel "PT_intangible analytical.xlsx", sheet("K_Tang") cellrange(V57:AF57) clear
+(11 vars, 1 obs)
+
+. xpose, clear varname
+
+. gen ano = 2010 + _n
+
+. rename v1 k_nom
+
+. destring k_nom, replace
+k_nom already numeric; no replace
+
+. tempfile k_nom
+
+. save `k_nom'
+file C:\Users\alexv\AppData\Local\Temp\ST_2be0_000002.tmp saved
+
+. 
+. * Import Capital volume (Kq_Tang, row 57, columns V-AF for 2011-2021)
+. import excel "PT_intangible analytical.xlsx", sheet("Kq_Tang") cellrange(V57:AF57) clear
+(11 vars, 1 obs)
+
+. xpose, clear varname
+
+. gen ano = 2010 + _n
+
+. rename v1 k_vol
+
+. destring k_vol, replace
+k_vol already numeric; no replace
+
+. 
+. * Merge and calculate capital deflator
+. merge 1:1 ano using `k_nom', nogen
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                                11  
+    -----------------------------------------
+
+. gen capital_deflator = (k_nom / k_vol) * 100
+
+. keep ano capital_deflator
+
+. label var capital_deflator "Capital deflator (2020=100)"
+
+. 
+. /*==============================================================================
+>    STEP 3: MERGE ALL
+> ==============================================================================*/
+. 
+. merge 1:1 ano using `gfcf', nogen
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                                11  
+    -----------------------------------------
+
+. merge 1:1 ano using "deflators_temp.dta"
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             1
+        from master                         0  (_merge==1)
+        from using                          1  (_merge==2)
+
+    matched                                11  (_merge==3)
+    -----------------------------------------
+
+. keep if _merge == 2 | _merge == 3
+(0 observations deleted)
+
+. drop _merge
+
+. sort ano
+
+. 
+. order ano gdp_deflator gfcf_deflator capital_deflator
+
+. 
+. /*------------------------------------------------------------------------------
+>    EXTRAPOLATE 2022 for GFCF and Capital deflators
+> ------------------------------------------------------------------------------*/
+. 
+. di _newline
+
+
+
+. di "Extrapolating 2022 deflators..."
+Extrapolating 2022 deflators...
+
+. 
+. * Calculate 2021-2022 growth rate from GDP deflator
+. qui sum gdp_deflator if ano == 2021
+
+. local gdp_2021 = r(mean)
+
+. qui sum gdp_deflator if ano == 2022
+
+. local gdp_2022 = r(mean)
+
+. local gdp_growth = (`gdp_2022' / `gdp_2021') - 1
+
+. 
+. di "  GDP growth 2021-2022: " %5.2f (100*`gdp_growth') "%"
+  GDP growth 2021-2022:  4.99%
+
+. 
+. * Extrapolate GFCF deflator
+. qui sum gfcf_deflator if ano == 2021
+
+. local gfcf_2021 = r(mean)
+
+. replace gfcf_deflator = `gfcf_2021' * (1 + `gdp_growth') if ano == 2022
+(1 real change made)
+
+. qui sum gfcf_deflator if ano == 2022
+
+. di "  GFCF 2022 (extrapolated): " %6.2f r(mean)
+  GFCF 2022 (extrapolated): 110.03
+
+. 
+. * Extrapolate Capital deflator
+. qui sum capital_deflator if ano == 2021
+
+. local cap_2021 = r(mean)
+
+. replace capital_deflator = `cap_2021' * (1 + `gdp_growth') if ano == 2022
+(1 real change made)
+
+. qui sum capital_deflator if ano == 2022
+
+. 
+. order ano gdp_deflator gfcf_deflator capital_deflator
+
+. 
+. save "deflators.dta", replace
+(note: file deflators.dta not found)
+file deflators.dta saved
+
+. 
+. di _newline
+
+
+
+. di "=========================================="
+==========================================
+
+. di "DEFLATORS READY (2020=100)"
+DEFLATORS READY (2020=100)
+
+. di "=========================================="
+==========================================
+
+. list, sep(0)
+
+     +---------------------------------------+
+     |  ano   gdp_de~r   gfcf_d~r   capita~r |
+     |---------------------------------------|
+  1. | 2011   87.54852     88.648   79.16257 |
+  2. | 2012   87.21919   87.29865   77.65109 |
+  3. | 2013   89.17008   86.64021   77.04943 |
+  4. | 2014   89.80024   87.93331   78.72913 |
+  5. | 2015   91.61272   89.08302   80.38254 |
+  6. | 2016   93.18476   90.56117   82.59998 |
+  7. | 2017   94.59189   92.75762   86.49403 |
+  8. | 2018   96.30811   95.72912   91.54532 |
+  9. | 2019   97.99368   98.24214   96.20034 |
+ 10. | 2020        100        100        100 |
+ 11. | 2021   101.8562    104.801   106.8196 |
+ 12. | 2022   106.9411   110.0329   112.1523 |
+     +---------------------------------------+
+
+. 
+. cap log close
