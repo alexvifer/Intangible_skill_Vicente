@@ -1,0 +1,464 @@
+------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\output\analysis_prep.log
+  log type:  text
+ opened on:  16 Dec 2025, 15:41:06
+
+. 
+. di "=========================================="
+==========================================
+
+. di "ANALYSIS PREPARATION"
+ANALYSIS PREPARATION
+
+. di "=========================================="
+==========================================
+
+. di "Date: `c(current_date)'"
+Date: 16 Dec 2025
+
+. di ""
+
+
+. 
+. /*==============================================================================
+>    STEP 1: LOAD DATA WITH INTANGIBLES
+> ==============================================================================*/
+. 
+. di "STEP 1: Loading dataset with intangible capital stocks..."
+STEP 1: Loading dataset with intangible capital stocks...
+
+. 
+. use "final_data_2011_2022_intangibles.dta", clear
+
+. 
+. local n_start = _N
+
+. di "  Starting observations: " %12.0fc `n_start'
+  Starting observations:    1,980,485
+
+. di ""
+
+
+. 
+. * Declare panel structure
+. xtset firm_id ano
+       panel variable:  firm_id (unbalanced)
+        time variable:  ano, 2011 to 2022, but with gaps
+                delta:  1 unit
+
+. 
+. /*==============================================================================
+>    STEP 2: MERGE RISK-FREE RATE (PORTUGUESE GOVERNMENT BONDS)
+> ==============================================================================*/
+. 
+. di "STEP 2: Merging risk-free rate (10-year Portuguese government bonds)..."
+STEP 2: Merging risk-free rate (10-year Portuguese government bonds)...
+
+. di ""
+
+
+. 
+. * Merge risk-free rate data (created by prepare_rfr.do)
+. merge m:1 ano using "$rootdir/input/rfr.dta", keep(match master)
+(note: variable ano was int, now float to accommodate using data's values)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                         1,980,485  (_merge==3)
+    -----------------------------------------
+
+. 
+. * Verify merge
+. count if _merge != 3
+  0
+
+. if r(N) > 0 {
+.     di as error "ERROR: Some observations did not match with risk-free rate!"
+.     di as error "Make sure prepare_rfr.do has been run."
+.     exit 111
+. }
+
+. drop _merge
+
+. 
+. label var rfr "Risk-free rate (10-year PT gov bond, %)"
+
+. 
+. di "  ✓ Risk-free rate merged successfully"
+  ✓ Risk-free rate merged successfully
+
+. di ""
+
+
+. 
+. /*==============================================================================
+>    STEP 3: CONSTRUCT KEY RATIOS AND MEASURES
+> ==============================================================================*/
+. 
+. di "STEP 3: Constructing key ratios and measures..."
+STEP 3: Constructing key ratios and measures...
+
+. di ""
+
+
+. 
+. *------------------------------------------------------------------------------
+. * A. Capital intensity measures
+. *------------------------------------------------------------------------------
+. 
+. gen intang_intensity = K_intangible_total / K_total
+
+. label var intang_intensity "Intangible intensity (K_intang / K_total)"
+
+. 
+. gen knowledge_intensity = K_knowledge / K_intangible_total if K_intangible_total > 0
+(603,383 missing values generated)
+
+. label var knowledge_intensity "Knowledge intensity (K_knowledge / K_intang)"
+
+. 
+. gen org_intensity = K_org / K_intangible_total if K_intangible_total > 0
+(603,383 missing values generated)
+
+. label var org_intensity "Organization intensity (K_org / K_intang)"
+
+. 
+. gen external_intang_share = K_intangible_external / K_intangible_total if K_intangible_total > 0
+(603,383 missing values generated)
+
+. label var external_intang_share "External intangibles share"
+
+. 
+. di "  ✓ Capital intensity measures"
+  ✓ Capital intensity measures
+
+. 
+. *------------------------------------------------------------------------------
+. * B. Financial ratios
+. *------------------------------------------------------------------------------
+. 
+. gen total_debt = SV516001_real
+
+. label var total_debt "Total debt (real 2020 prices)"
+
+. 
+. gen leverage = total_debt / K_total if K_total > 0
+
+. label var leverage "Leverage ratio (Debt / K_total)"
+
+. 
+. gen debt_to_assets = total_debt / SV512701_real if SV512701_real > 0
+(3 missing values generated)
+
+. label var debt_to_assets "Debt to total assets"
+
+. 
+. gen interest_rate = (SV502201_real / total_debt) * 100 if total_debt > 0
+(1,065 missing values generated)
+
+. label var interest_rate "Implicit interest rate (%)"
+
+. 
+. gen credit_spread = interest_rate - rfr
+(1,065 missing values generated)
+
+. label var credit_spread "Credit spread over risk-free rate (pp)"
+
+. 
+. di "  ✓ Financial ratios"
+  ✓ Financial ratios
+
+. 
+. *------------------------------------------------------------------------------
+. * C. Skill and R&D measures
+. *------------------------------------------------------------------------------
+. 
+. * Number of R&D workers (RND_PER is NUMBER, not share)
+. gen n_rnd_workers = RND_PER if RND_PER != .
+
+. label var n_rnd_workers "Number of R&D workers"
+
+. 
+. * Share of R&D workers
+. gen share_rnd_workers = n_rnd_workers / n_workers if n_workers > 0
+
+. label var share_rnd_workers "Share of R&D workers"
+
+. 
+. * R&D intensity
+. cap confirm variable RD_real
+
+. if _rc == 0 {
+.     gen rnd_intensity = RD_real / SV500101_real if SV500101_real > 0
+.     label var rnd_intensity "R&D intensity (R&D / Revenue)"
+. }
+
+. 
+. di "  ✓ Skill and R&D measures"
+  ✓ Skill and R&D measures
+
+. 
+. *------------------------------------------------------------------------------
+. * D. Productivity measures
+. *------------------------------------------------------------------------------
+. 
+. * Labor productivity (Revenue per worker)
+. gen labor_productivity = SV500101_real / n_workers if n_workers > 0
+
+. label var labor_productivity "Labor productivity (Revenue / worker, real 2020)"
+
+. 
+. * TODO: Consider adding TFP measures:
+. * - Solow residual: TFP = Y - alpha*K - (1-alpha)*L
+. * - Levinsohn-Petrin or Olley-Pakes estimation
+. * - Wooldridge's method for panel data
+. 
+. di "  ✓ Productivity measures"
+  ✓ Productivity measures
+
+. 
+. *------------------------------------------------------------------------------
+. * E. Investment rates
+. *------------------------------------------------------------------------------
+. 
+. gen inv_rate_physical = SD000032_real / K_total if K_total > 0
+
+. label var inv_rate_physical "Physical investment rate (I_physical / K_total)"
+
+. 
+. cap confirm variable RD_real
+
+. if _rc == 0 {
+.     gen inv_rate_knowledge = RD_real / K_total if K_total > 0
+.     label var inv_rate_knowledge "Knowledge investment rate (R&D / K_total)"
+. }
+
+. 
+. gen inv_rate_org = SGA_inv_real / K_total if K_total > 0
+
+. label var inv_rate_org "Organization investment rate (SG&A / K_total)"
+
+. 
+. * Balance sheet intangible investment (acquisitions, software, licenses)
+. cap confirm variable SD000031_real
+
+. if _rc == 0 {
+.     gen inv_bs_intangible = SD000031_real
+.     label var inv_bs_intangible "Balance sheet intangible investment (real 2020)"
+.     
+.     gen inv_rate_bs_intangible = SD000031_real / K_total if K_total > 0
+.     label var inv_rate_bs_intangible "BS intangible investment rate"
+. }
+
+. 
+. * Total intangible investment = R&D + SG&A + Balance sheet purchases
+. gen total_intang_inv = SGA_inv_real
+
+. if missing(total_intang_inv) total_intang_inv = 0
+
+. 
+. cap confirm variable RD_real
+
+. if _rc == 0 {
+.     replace total_intang_inv = total_intang_inv + RD_real if RD_real != .
+(31,531 real changes made)
+. }
+
+. 
+. cap confirm variable SD000031_real
+
+. if _rc == 0 {
+.     replace total_intang_inv = total_intang_inv + SD000031_real if SD000031_real != .
+(148,918 real changes made)
+. }
+
+. 
+. label var total_intang_inv "Total intangible investment (R&D + SG&A + BS, real 2020)"
+
+. 
+. * Total intangible investment rate
+. gen inv_rate_intangible = total_intang_inv / K_total if K_total > 0
+
+. label var inv_rate_intangible "Total intangible investment rate"
+
+. 
+. di "  ✓ Investment rates"
+  ✓ Investment rates
+
+. 
+. *------------------------------------------------------------------------------
+. * F. Size and age
+. *------------------------------------------------------------------------------
+. 
+. gen ln_emp = ln(n_workers)
+
+. label var ln_emp "Log employment"
+
+. 
+. cap confirm variable firm_age
+
+. if _rc == 0 {
+.     gen ln_age = ln(firm_age + 1)
+(9 missing values generated)
+.     label var ln_age "Log firm age (+1)"
+. }
+
+. 
+. di "  ✓ Size and age measures"
+  ✓ Size and age measures
+
+. di ""
+
+
+. 
+. /*==============================================================================
+>    STEP 4: WINSORIZATION (1%-99%)
+> ==============================================================================*/
+. 
+. di "STEP 4: Winsorizing extreme values (1%-99%)..."
+STEP 4: Winsorizing extreme values (1%-99%)...
+
+. di ""
+
+
+. 
+. local winsor_vars "intang_intensity leverage interest_rate credit_spread     labor_productivity inv_rate_physical inv_rate_i
+> ntangible                  inv_rate_bs_intangible rnd_intensity"
+
+. 
+. * Add R&D investment rate if exists
+. cap confirm variable inv_rate_knowledge
+
+. if _rc == 0 {
+.     local winsor_vars "`winsor_vars' inv_rate_knowledge"
+. }
+
+. 
+. * Winsorize each variable
+. foreach var of local winsor_vars {
+  2.     cap confirm variable `var'
+  3.     if _rc == 0 {
+  4.         qui sum `var', d
+  5.         local p1 = r(p1)
+  6.         local p99 = r(p99)
+  7.         
+.         gen `var'_w = `var'
+  8.         qui replace `var'_w = `p1' if `var' < `p1' & `var' != .
+  9.         qui replace `var'_w = `p99' if `var' > `p99' & `var' != .
+ 10.         
+.         local lab: variable label `var'
+ 11.         label var `var'_w "`lab' (winsorized 1%-99%)"
+ 12.     }
+ 13. }
+(1,065 missing values generated)
+(1,065 missing values generated)
+
+. 
+. di "  ✓ Winsorization complete (suffix '_w')"
+  ✓ Winsorization complete (suffix '_w')
+
+. di ""
+
+
+. 
+. /*==============================================================================
+>    STEP 5: SAVE ANALYSIS-READY DATASET
+> ==============================================================================*/
+. 
+. di "STEP 5: Saving analysis-ready dataset..."
+STEP 5: Saving analysis-ready dataset...
+
+. di ""
+
+
+. 
+. compress
+  variable ano was float now int
+  variable n_rnd_workers was float now int
+  (7,921,940 bytes saved)
+
+. save "final_data_2011_2022_analysis.dta", replace
+(note: file final_data_2011_2022_analysis.dta not found)
+file final_data_2011_2022_analysis.dta saved
+
+. 
+. local n_final = _N
+
+. di "  ✓ Saved: final_data_2011_2022_analysis.dta"
+  ✓ Saved: final_data_2011_2022_analysis.dta
+
+. di "     Observations: " %12.0fc `n_final'
+     Observations:    1,980,485
+
+. di ""
+
+
+. 
+. /*==============================================================================
+>    COMPLETION
+> ==============================================================================*/
+. 
+. di "=========================================="
+==========================================
+
+. di "ANALYSIS PREPARATION COMPLETE"
+ANALYSIS PREPARATION COMPLETE
+
+. di "=========================================="
+==========================================
+
+. di ""
+
+
+. di "Output: final_data_2011_2022_analysis.dta"
+Output: final_data_2011_2022_analysis.dta
+
+. di ""
+
+
+. di "Key variables created:"
+Key variables created:
+
+. di "  • Capital: intang_intensity, knowledge_intensity, org_intensity"
+  • Capital: intang_intensity, knowledge_intensity, org_intensity
+
+. di "  • Financial: leverage, interest_rate, credit_spread"
+  • Financial: leverage, interest_rate, credit_spread
+
+. di "  • Skills: share_skilled, share_rnd_workers, rnd_intensity"
+  • Skills: share_skilled, share_rnd_workers, rnd_intensity
+
+. di "  • Productivity: labor_productivity (consider adding TFP)"
+  • Productivity: labor_productivity (consider adding TFP)
+
+. di "  • Investment: inv_rate_physical, inv_rate_knowledge, inv_rate_org"
+  • Investment: inv_rate_physical, inv_rate_knowledge, inv_rate_org
+
+. di "               inv_rate_bs_intangible, inv_rate_intangible (total)"
+               inv_rate_bs_intangible, inv_rate_intangible (total)
+
+. di ""
+
+
+. di "Total intangible investment = R&D + SG&A + Balance sheet purchases"
+Total intangible investment = R&D + SG&A + Balance sheet purchases
+
+. di ""
+
+
+. di "Winsorized versions available (suffix '_w')"
+Winsorized versions available (suffix '_w')
+
+. di ""
+
+
+. di ""
+
+
+. di "=========================================="
+==========================================
+
+. 
+. cap log close

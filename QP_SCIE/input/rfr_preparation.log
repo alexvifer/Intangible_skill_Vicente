@@ -1,0 +1,143 @@
+------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\rfr_preparation.log
+  log type:  text
+ opened on:  16 Dec 2025, 15:39:54
+
+. 
+. di "=========================================="
+==========================================
+
+. di "PREPARING RISK-FREE RATE DATA"
+PREPARING RISK-FREE RATE DATA
+
+. di "Date: `c(current_date)'"
+Date: 16 Dec 2025
+
+. di "=========================================="
+==========================================
+
+. 
+. /*==============================================================================
+>    IMPORT PORTUGUESE 10-YEAR GOVERNMENT BOND YIELDS FROM FRED
+> ==============================================================================*/
+. 
+. di _newline
+
+
+
+. di "Importing Portuguese 10-year bond yields from FRED..."
+Importing Portuguese 10-year bond yields from FRED...
+
+. di "  Series: IRLTLT01PTM156N"
+  Series: IRLTLT01PTM156N
+
+. di ""
+
+
+. 
+. * Import the CSV file
+. import delimited "IRLTLT01PTM156N.csv", clear varnames(1) encoding("UTF-8")
+(2 vars, 12 obs)
+
+. 
+. * Extract year from date string (format: YYYY-MM-DD)
+. gen year_str = substr(observation_date, 1, 4)
+
+. gen ano = real(year_str)
+
+. drop observation_date year_str
+
+. 
+. * Rename interest rate variable to rfr
+. * Adjust the variable name to match your CSV column header
+. rename irltlt01ptm156n rfr
+
+. 
+. * Keep only relevant years
+. keep ano rfr
+
+. keep if ano >= 2011 & ano <= 2022
+(0 observations deleted)
+
+. 
+. * Ensure rfr is numeric
+. destring rfr, replace force
+rfr already numeric; no replace
+
+. 
+. * Check for missing values
+. count if missing(rfr)
+  0
+
+. if r(N) > 0 {
+.     di as error "  WARNING: " r(N) " missing values in rfr"
+.     di as error "  Years with missing rfr:"
+.     list ano rfr if missing(rfr), clean noobs
+. }
+
+. 
+. * Sort by year
+. sort ano
+
+. 
+. label var rfr "Risk-free rate (10-year PT gov bond, %)"
+
+. label var ano "Year"
+
+. 
+. di "  ✓ Risk-free rate imported (2011-2022)"
+  ✓ Risk-free rate imported (2011-2022)
+
+. di ""
+
+
+. di "  Portuguese 10-year bond yields (%):"
+  Portuguese 10-year bond yields (%):
+
+. list ano rfr, sep(0) clean noobs
+
+     ano     rfr  
+    2011   10.24  
+    2012   10.55  
+    2013    6.29  
+    2014    3.75  
+    2015    2.42  
+    2016    3.17  
+    2017    3.05  
+    2018    1.84  
+    2019     .76  
+    2020     .42  
+    2021      .3  
+    2022    2.17  
+
+. 
+. * Save dataset
+. save "rfr.dta", replace
+(note: file rfr.dta not found)
+file rfr.dta saved
+
+. 
+. di ""
+
+
+. di "=========================================="
+==========================================
+
+. di "RISK-FREE RATE DATA READY"
+RISK-FREE RATE DATA READY
+
+. di "=========================================="
+==========================================
+
+. di "  Saved: rfr.dta"
+  Saved: rfr.dta
+
+. di "  Years: 2011-2022"
+  Years: 2011-2022
+
+. di "=========================================="
+==========================================
+
+. 
+. cap log close

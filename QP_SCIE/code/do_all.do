@@ -1,7 +1,7 @@
 /*==============================================================================
    MASTER DO FILE: QP-SCIE Data Processing Pipeline (2011-2022)
    
-   This file orchestrates the complete data processing workflow in a modular,
+   This file orchestrates the complete data processing workflow in a modular
    structure.
    
    WORKFLOW STRUCTURE:
@@ -15,15 +15,23 @@
    └── 4. merge_final.do         → Merge all sources
                                     Output: final_data_2011_2022.dta
    
-   Phase 3: Variable Construction
-   ├── 5. prepare_deflators.do   → Import & prepare deflators
+   Phase 3: Auxiliary Data Preparation
+   ├── 5. prepare_deflators.do   → Import & prepare price deflators
    │                                Output: deflators.dta
-   └── 6. construct_intangibles.do → Deflate variables & build intangible capital
+   └── 6. prepare_rfr.do         → Import & prepare risk-free rate
+                                    Output: rfr.dta
+   
+   Phase 4: Data Cleaning & Deflation
+   └── 7. data_clean_final.do    → Deflate variables & apply sample restrictions
+                                    Output: final_data_2011_2022_cleaned.dta
+   
+   Phase 5: Intangible Capital Construction
+   └── 8. construct_intangibles.do → Build intangible capital stocks (PIM)
                                       Output: final_data_2011_2022_intangibles.dta
    
-   Phase 4: Finalization
-   └── 7. data_clean_final.do    → Clean, winsorize & create derived variables
-                                    Output: final_data_2011_2022_cleaned_winsorized.dta
+   Phase 6: Analysis Preparation
+   └── 9. analysis_prep.do       → Create analytical variables & winsorize
+                                    Output: final_data_2011_2022_analysis.dta
      
 ==============================================================================*/
 
@@ -50,7 +58,7 @@ cd "$rootdir/code"
 
 * Start master log file
 cap log close
-log using "master_pipeline.log", replace
+log using "$rootdir/output/master_pipeline.log", replace
 
 di _newline(2)
 di "╔════════════════════════════════════════════════════════════════╗"
@@ -67,9 +75,11 @@ di "  1. Clean SCIE balance sheet data"
 di "  2. Clean QP firm-level data"
 di "  3. Process QP worker data & calculate skills"
 di "  4. Merge all datasets"
-di "  5. Prepare price deflators"
-di "  6. Construct intangible capital stocks"
-di "  7. Finalize dataset with cleaning & derived variables"
+di "  5. Prepare price deflators (GDP, GFCF, Capital)"
+di "  6. Prepare risk-free rate (Portuguese 10-year bonds)"
+di "  7. Deflate variables & clean data"
+di "  8. Construct intangible capital stocks (sector-specific)"
+di "  9. Prepare analysis-ready dataset"
 di ""
 
 /*==============================================================================
@@ -84,7 +94,7 @@ di ""
 * Module 1: Clean SCIE data
 di _newline(2)
 di "┌────────────────────────────────────────────────────────────────┐"
-di "│ MODULE 1/7: Cleaning SCIE balance sheet data                  │"
+di "│ MODULE 1/9: Cleaning SCIE balance sheet data                  │"
 di "└────────────────────────────────────────────────────────────────┘"
 local start_time = clock(c(current_time), "hms")
 
@@ -97,7 +107,7 @@ di "  ✓ Completed in `elapsed' minutes"
 * Module 2: Clean firm-level QP data
 di _newline(2)
 di "┌────────────────────────────────────────────────────────────────┐"
-di "│ MODULE 2/7: Cleaning QP firm-level data                       │"
+di "│ MODULE 2/9: Cleaning QP firm-level data                       │"
 di "└────────────────────────────────────────────────────────────────┘"
 local start_time = clock(c(current_time), "hms")
 
@@ -110,7 +120,7 @@ di "  ✓ Completed in `elapsed' minutes"
 * Module 3: Process worker data and create skill measures
 di _newline(2)
 di "┌────────────────────────────────────────────────────────────────┐"
-di "│ MODULE 3/7: Processing workers & calculating skills           │"
+di "│ MODULE 3/9: Processing workers & calculating skills           │"
 di "└────────────────────────────────────────────────────────────────┘"
 local start_time = clock(c(current_time), "hms")
 
@@ -133,7 +143,7 @@ di ""
 * Module 4: Merge all datasets
 di _newline(2)
 di "┌────────────────────────────────────────────────────────────────┐"
-di "│ MODULE 4/7: Merging QP + SCIE datasets                        │"
+di "│ MODULE 4/9: Merging QP + SCIE datasets                        │"
 di "└────────────────────────────────────────────────────────────────┘"
 local start_time = clock(c(current_time), "hms")
 
@@ -145,19 +155,20 @@ di "  ✓ Completed in `elapsed' minutes"
 di "  Output: final_data_2011_2022.dta"
 
 /*==============================================================================
-   PHASE 3: VARIABLE CONSTRUCTION
+   PHASE 3: AUXILIARY DATA PREPARATION
 ==============================================================================*/
 
 di _newline(2)
 di "╔════════════════════════════════════════════════════════════════╗"
-di "║               PHASE 3: VARIABLE CONSTRUCTION                   ║"
+di "║            PHASE 3: AUXILIARY DATA PREPARATION                 ║"
 di "╚════════════════════════════════════════════════════════════════╝"
 di ""
 
 * Module 5: Prepare deflators
 di _newline(2)
 di "┌────────────────────────────────────────────────────────────────┐"
-di "│ MODULE 5/7: Preparing price deflators                         │"
+di "│ MODULE 5/9: Preparing price deflators                         │"
+di "│ GDP, GFCF, Capital deflators (2020=100)                       │"
 di "└────────────────────────────────────────────────────────────────┘"
 local start_time = clock(c(current_time), "hms")
 
@@ -168,11 +179,63 @@ local elapsed = round((`end_time' - `start_time') / 1000 / 60, 0.1)
 di "  ✓ Completed in `elapsed' minutes"
 di "  Output: deflators.dta"
 
-* Module 6: Construct intangible capital
+* Module 6: Prepare risk-free rate
 di _newline(2)
 di "┌────────────────────────────────────────────────────────────────┐"
-di "│ MODULE 6/7: Constructing intangible capital stocks            │"
-di "│ Method: Peters & Taylor (2017) - Perpetual Inventory Method   │"
+di "│ MODULE 6/9: Preparing risk-free rate data                     │"
+di "│ Portuguese 10-year government bonds (FRED)                    │"
+di "└────────────────────────────────────────────────────────────────┘"
+local start_time = clock(c(current_time), "hms")
+
+do "$rootdir/code/prepare_rfr.do"
+
+local end_time = clock(c(current_time), "hms")
+local elapsed = round((`end_time' - `start_time') / 1000 / 60, 0.1)
+di "  ✓ Completed in `elapsed' minutes"
+di "  Output: rfr.dta"
+
+/*==============================================================================
+   PHASE 4: DATA CLEANING & DEFLATION
+==============================================================================*/
+
+di _newline(2)
+di "╔════════════════════════════════════════════════════════════════╗"
+di "║              PHASE 4: DATA CLEANING & DEFLATION                ║"
+di "╚════════════════════════════════════════════════════════════════╝"
+di ""
+
+* Module 7: Clean and deflate data
+di _newline(2)
+di "┌────────────────────────────────────────────────────────────────┐"
+di "│ MODULE 7/9: Deflating & cleaning data                         │"
+di "│ Merges deflators, converts to real 2020 prices, applies       │"
+di "│ sample restrictions                                            │"
+di "└────────────────────────────────────────────────────────────────┘"
+local start_time = clock(c(current_time), "hms")
+
+do "$rootdir/code/data_clean_final.do"
+
+local end_time = clock(c(current_time), "hms")
+local elapsed = round((`end_time' - `start_time') / 1000 / 60, 0.1)
+di "  ✓ Completed in `elapsed' minutes"
+di "  Output: final_data_2011_2022_cleaned.dta"
+
+/*==============================================================================
+   PHASE 5: INTANGIBLE CAPITAL CONSTRUCTION
+==============================================================================*/
+
+di _newline(2)
+di "╔════════════════════════════════════════════════════════════════╗"
+di "║          PHASE 5: INTANGIBLE CAPITAL CONSTRUCTION              ║"
+di "╚════════════════════════════════════════════════════════════════╝"
+di ""
+
+* Module 8: Construct intangible capital
+di _newline(2)
+di "┌────────────────────────────────────────────────────────────────┐"
+di "│ MODULE 8/9: Constructing intangible capital stocks            │"
+di "│ Method: Perpetual Inventory Method (PIM)                      │"
+di "│ Sector-specific parameters (Ewens, Peters & Wang 2025)        │"
 di "└────────────────────────────────────────────────────────────────┘"
 local start_time = clock(c(current_time), "hms")
 
@@ -184,27 +247,29 @@ di "  ✓ Completed in `elapsed' minutes"
 di "  Output: final_data_2011_2022_intangibles.dta"
 
 /*==============================================================================
-   PHASE 4: FINALIZATION
+   PHASE 6: ANALYSIS PREPARATION
 ==============================================================================*/
 
 di _newline(2)
 di "╔════════════════════════════════════════════════════════════════╗"
-di "║                    PHASE 4: FINALIZATION                       ║"
+di "║                PHASE 6: ANALYSIS PREPARATION                   ║"
 di "╚════════════════════════════════════════════════════════════════╝"
 di ""
 
-* Module 7: Final cleaning and derived variables
+* Module 9: Prepare analysis-ready dataset
 di _newline(2)
 di "┌────────────────────────────────────────────────────────────────┐"
-di "│ MODULE 7/7: Final cleaning, winsorization & derived variables │"
+di "│ MODULE 9/9: Creating analytical variables                     │"
+di "│ Credit spreads, ratios, intensities, winsorization            │"
 di "└────────────────────────────────────────────────────────────────┘"
 local start_time = clock(c(current_time), "hms")
 
-do "$rootdir/code/data_clean_final.do"
+do "$rootdir/code/analysis_prep.do"
 
 local end_time = clock(c(current_time), "hms")
 local elapsed = round((`end_time' - `start_time') / 1000 / 60, 0.1)
 di "  ✓ Completed in `elapsed' minutes"
+di "  Output: final_data_2011_2022_analysis.dta"
 
 /*==============================================================================
    PIPELINE COMPLETION SUMMARY
@@ -223,29 +288,25 @@ di "═════════════════════════�
 di ""
 di "Intermediate files (for reference):"
 di "  1. SCIE_2011_2022.dta"
-di "  2. firm_2011_2022.dta"
-di "  3. worker_skills_2011_2022.dta"
-di "  4. firm_skills_wages_2011_2022.dta"
-di "  5. final_data_2011_2022.dta"
-di "  6. deflators.dta"
-di "  7. final_data_2011_2022_intangibles.dta"
+di "  2. IES_age_2011_2022.dta"
+di "  3. firm_2011_2022.dta"
+di "  4. worker_skills_2011_2022.dta"
+di "  5. firm_skills_wages_2011_2022.dta"
+di "  6. final_data_2011_2022.dta"
+di "  7. deflators.dta"
+di "  8. rfr.dta"
+di "  9. final_data_2011_2022_cleaned.dta"
+di "  10. final_data_2011_2022_intangibles.dta"
 di ""
-di "Final analysis-ready datasets:"
-di "  → final_data_2011_2022_cleaned.dta"
-di "    (All observations with quality flags for robustness checks)"
-di ""
-di "  → final_data_2011_2022_cleaned_winsorized.dta ⭐ RECOMMENDED"
-di "    (Clean sample, winsorized, ready for analysis)"
-di ""
-di "  → cleaning_summary_by_year.xlsx"
-di "    (Summary statistics by year)"
+di "Final analysis-ready dataset:"
+di "  → final_data_2011_2022_analysis.dta ⭐ READY FOR ANALYSIS"
 di ""
 di "══════════════════════════════════════════════════════════════════"
 di "KEY VARIABLES IN FINAL DATASET"
 di "══════════════════════════════════════════════════════════════════"
 di ""
 di "Intangible Capital Stocks (real 2020 prices):"
-di "  • K_knowledge              Knowledge capital (from R&D)"
+di "  • K_knowledge              Knowledge capital (from R&D, sector-specific δ)"
 di "  • K_org                    Organization capital (from SG&A)"
 di "  • K_intangible_total       Total intangible capital"
 di "  • K_physical               Physical capital"
@@ -256,48 +317,48 @@ di "  • intang_intensity         K_intangible / K_total"
 di "  • knowledge_intensity      K_knowledge / K_intangible"
 di "  • org_intensity            K_org / K_intangible"
 di "  • share_skilled            Share of workers with tertiary education"
+di "  • share_rnd_workers        Share of R&D workers"
+di "  • rnd_intensity            R&D / Revenue"
 di ""
-di "Investment Rates:"
-di "  • inv_rate_knowledge       R&D investment / K_total"
-di "  • inv_rate_org             SG&A investment / K_total"
-di "  • inv_rate_physical        Physical investment / K_total"
+di "Financial Variables:"
+di "  • leverage                 Total debt / K_total"
+di "  • interest_rate            Implicit interest rate (%)"
+di "  • credit_spread            Spread over Portuguese 10-year bonds (pp)"
+di "  • rfr                      Risk-free rate (10-year PT government bonds)"
+di ""
+di "Investment Rates (relative to K_total):"
+di "  • inv_rate_physical        Physical investment rate"
+di "  • inv_rate_knowledge       R&D investment rate"
+di "  • inv_rate_org             SG&A investment rate"
+di "  • inv_rate_bs_intangible   Balance sheet intangible investment rate"
+di "  • inv_rate_intangible      Total intangible investment rate"
 di ""
 di "Productivity Measures:"
 di "  • labor_productivity       Revenue per worker"
-di "  • capital_intensity        Capital per worker"
 di ""
-di "All monetary variables in real 2020 prices with '_real' suffix"
-di "All key variables winsorized (1%-99%) with '_w' suffix"
+di "Industry Classification:"
+di "  • ff5_industry             Fama-French 5 (Consumer, Manufacturing,"
+di "                             High Tech, Health, Other)"
+di ""
+di "Winsorized versions available (suffix '_w') at 1%-99%"
+di ""
+di "All monetary variables in real 2020 prices"
 di ""
 di "══════════════════════════════════════════════════════════════════"
 di "METHODOLOGICAL NOTES"
 di "══════════════════════════════════════════════════════════════════"
 di ""
 di "Intangible Capital Construction:"
-di "  • Method: Peters & Taylor (2017) - Perpetual Inventory Method"
-di "  • Knowledge capital: δ = 15% (from R&D expenditures)"
-di "  • Organization capital: δ = 20% (from Advertising + Training)"
+di "  • Method: Perpetual Inventory Method (PIM)"
+di "  • Sector-specific knowledge capital depreciation (EPW 2025):"
+di "    - Consumer: δ = 43%"
+di "    - Manufacturing: δ = 50%"
+di "    - High Tech: δ = 42%"
+di "    - Health: δ = 33%"
+di "    - Other: δ = 35%"
+di "  • Organization capital: δ = 20% (all sectors)"
 di "  • Initial stocks: K_0 = 0"
 di "  • Base year: 2020 (all prices in 2020 constant prices)"
 di ""
 di "Deflators:"
-di "  • GDP deflator: Revenue, costs, wages, R&D, SG&A"
-di "  • GFCF deflator: Investment & disinvestment flows"
-di "  • Capital deflator: Balance sheet stocks"
-di "  • Source: FRED (GDP), EU KLEMS-INTAN (Capital, GFCF)"
-di ""
-di "Data Cleaning:"
-di "  • Negative values set to missing where economically inappropriate"
-di "  • Quality flags for robustness checks"
-di "  • Winsorization at 1% and 99% percentiles"
-di ""
-di "══════════════════════════════════════════════════════════════════"
-
-* Close master log
-cap log close
-
-di ""
-di "Full log saved to: master_pipeline.log"
-di ""
-di "Ready for analysis! Use: final_data_2011_2022_cleaned_winsorized.dta"
-di ""
+di "  • GDP deflator: Revenue,

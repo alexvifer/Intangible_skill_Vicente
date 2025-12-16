@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\output\construct_intangibles.log
   log type:  text
- opened on:  15 Dec 2025, 16:33:25
+ opened on:  16 Dec 2025, 15:17:54
 
 . 
 . di "=========================================="
@@ -15,7 +15,7 @@ CONSTRUCTING INTANGIBLE CAPITAL
 ==========================================
 
 . di "Date: `c(current_date)'"
-Date: 15 Dec 2025
+Date: 16 Dec 2025
 
 . di ""
 
@@ -23,8 +23,8 @@ Date: 15 Dec 2025
 . di "Method: Perpetual Inventory Method (PIM)"
 Method: Perpetual Inventory Method (PIM)
 
-. di "Following Peters & Taylor (2017)"
-Following Peters & Taylor (2017)
+. di "Following Peters & Taylor (2017) + Ewens, Peters & Wang (2025)"
+Following Peters & Taylor (2017) + Ewens, Peters & Wang (2025)
 
 . di ""
 
@@ -32,8 +32,8 @@ Following Peters & Taylor (2017)
 . di "Parameters:"
 Parameters:
 
-. di "  - Knowledge capital (R&D): δ = 15%"
-  - Knowledge capital (R&D): δ = 15%
+. di "  - Knowledge capital (R&D): δ varies by sector"
+  - Knowledge capital (R&D): δ varies by sector
 
 . di "  - Organization capital (SG&A): δ = 20%"
   - Organization capital (SG&A): δ = 20%
@@ -52,11 +52,11 @@ Parameters:
 
 . 
 . /*==============================================================================
->    STEP 1: LOAD CLEANED DATA
+>    STEP 1: LOAD CLEANED DATA AND ADD SECTOR CLASSIFICATION
 > ==============================================================================*/
 . 
-. di "STEP 1: Loading cleaned dataset..."
-STEP 1: Loading cleaned dataset...
+. di "STEP 1: Loading cleaned dataset and adding sector classification..."
+STEP 1: Loading cleaned dataset and adding sector classification...
 
 . 
 . use "final_data_2011_2022_cleaned.dta", clear
@@ -66,6 +66,69 @@ STEP 1: Loading cleaned dataset...
 
 . di "  Observations: " %12.0fc `n_start'
   Observations:    1,980,485
+
+. 
+. * Add sector classification based on CAE codes
+. * Following Ewens, Peters & Wang (2025) Fama-French 5 classification
+. gen ff5_industry = ""
+(1,980,485 missing values generated)
+
+. 
+. * Consumer
+. replace ff5_industry = "Consumer" if inlist(cae3, 10, 11, 12, 13, 14, 15)
+variable ff5_industry was str1 now str8
+(116,395 real changes made)
+
+. replace ff5_industry = "Consumer" if inlist(cae3, 45, 46, 47, 55, 56, 95, 96)
+(806,927 real changes made)
+
+. 
+. * Manufacturing
+. replace ff5_industry = "Manufacturing" if inlist(cae3, 16, 17, 18, 19, 20, 22, 23)
+variable ff5_industry was str8 now str13
+(64,708 real changes made)
+
+. replace ff5_industry = "Manufacturing" if inlist(cae3, 24, 25, 28, 29, 30, 31, 32, 33)
+(108,375 real changes made)
+
+. 
+. * High Tech
+. replace ff5_industry = "High Tech" if inlist(cae3, 26, 27, 61, 62, 63)
+(32,436 real changes made)
+
+. 
+. * Health (Pharma moved from Manufacturing to Health per EPW)
+. replace ff5_industry = "Health" if inlist(cae3, 21, 86, 87, 88)
+(110,970 real changes made)
+
+. 
+. * Other (everything else)
+. replace ff5_industry = "Other" if ff5_industry == ""
+(740,674 real changes made)
+
+. 
+. label var ff5_industry "Fama-French 5 Industry (EPW 2025)"
+
+. 
+. di ""
+
+
+. di "  Sector distribution:"
+  Sector distribution:
+
+. tab ff5_industry, missing
+
+Fama-French 5 |
+Industry (EPW |
+        2025) |      Freq.     Percent        Cum.
+--------------+-----------------------------------
+     Consumer |    923,322       46.62       46.62
+       Health |    110,970        5.60       52.22
+    High Tech |     32,436        1.64       53.86
+Manufacturing |    173,083        8.74       62.60
+        Other |    740,674       37.40      100.00
+--------------+-----------------------------------
+        Total |  1,980,485      100.00
 
 . di ""
 
@@ -168,7 +231,7 @@ STEP 2: Creating SG&A investment measure...
 
 . 
 . /*==============================================================================
->    STEP 3: CONSTRUCT KNOWLEDGE CAPITAL STOCK (FROM R&D)
+>    STEP 3: CONSTRUCT KNOWLEDGE CAPITAL STOCK (SECTOR-SPECIFIC δ)
 > ==============================================================================*/
 . 
 . di "STEP 3: Constructing Knowledge Capital (from R&D)..."
@@ -177,8 +240,14 @@ STEP 3: Constructing Knowledge Capital (from R&D)...
 . di "  Formula: K_t = (1 - δ) × K_{t-1} + I_t"
   Formula: K_t = (1 - δ) × K_{t-1} + I_t
 
-. di "  where δ = 0.15, I_t = R&D expenditures"
-  where δ = 0.15, I_t = R&D expenditures
+. di "  Sector-specific δ from Ewens, Peters & Wang (2025):"
+  Sector-specific δ from Ewens, Peters & Wang (2025):
+
+. di "    Consumer: δ = 43%, Manufacturing: δ = 50%"
+    Consumer: δ = 43%, Manufacturing: δ = 50%
+
+. di "    High Tech: δ = 42%, Health: δ = 33%, Other: δ = 35%"
+    High Tech: δ = 42%, Health: δ = 33%, Other: δ = 35%
 
 . di ""
 
@@ -197,40 +266,45 @@ STEP 3: Constructing Knowledge Capital (from R&D)...
 .     by firm_id: replace K_knowledge = 0 if _n == 1  // Initial stock = 0
 (0 real changes made)
 .     
-.     * Apply perpetual inventory method
-.     * δ_R&D = 0.15 → (1-δ) = 0.85
-.     by firm_id: replace K_knowledge = 0.85 * K_knowledge[_n-1] + RD_flow if _n > 1
-(40865 real changes made)
+.     * Apply perpetual inventory method with SECTOR-SPECIFIC depreciation
+.     * Consumer: δ = 0.43 → (1-δ) = 0.57
+.     by firm_id: replace K_knowledge = 0.57 * K_knowledge[_n-1] + RD_flow ///
+>         if _n > 1 & ff5_industry == "Consumer"
+(9202 real changes made)
 .     
-.     label var K_knowledge "Knowledge capital stock (from R&D, real 2020 prices)"
+.     * Manufacturing: δ = 0.50 → (1-δ) = 0.50
+.     by firm_id: replace K_knowledge = 0.50 * K_knowledge[_n-1] + RD_flow ///
+>         if _n > 1 & ff5_industry == "Manufacturing"
+(12748 real changes made)
 .     
-.     sum K_knowledge, d
-
-        Knowledge capital stock (from R&D, real 2020
-                           prices)
--------------------------------------------------------------
-      Percentiles      Smallest
- 1%            0              0
- 5%            0              0
-10%            0              0       Obs           1,980,485
-25%            0              0       Sum of Wgt.   1,980,485
-
-50%            0                      Mean           22038.02
-                        Largest       Std. Dev.       1032742
-75%            0       3.03e+08
-90%            0       3.05e+08       Variance       1.07e+12
-95%            0       3.05e+08       Skewness       178.9623
-99%     195337.7       3.13e+08       Kurtosis       41760.75
-.     di "  Knowledge capital constructed:"
-  Knowledge capital constructed:
-.     di "    Mean:   " %12.0f r(mean)
-    Mean:          22038
-.     di "    Median: " %12.0f r(p50)
-    Median:            0
-.     di "    Max:    " %12.0f r(max)
-    Max:       313277952
-.     di "    N:      " r(N)
-    N:      1980485
+.     * High Tech: δ = 0.42 → (1-δ) = 0.58
+.     by firm_id: replace K_knowledge = 0.58 * K_knowledge[_n-1] + RD_flow ///
+>         if _n > 1 & ff5_industry == "High Tech"
+(7017 real changes made)
+.     
+.     * Health: δ = 0.33 → (1-δ) = 0.67
+.     by firm_id: replace K_knowledge = 0.67 * K_knowledge[_n-1] + RD_flow ///
+>         if _n > 1 & ff5_industry == "Health"
+(1040 real changes made)
+.     
+.     * Other: δ = 0.35 → (1-δ) = 0.65
+.     by firm_id: replace K_knowledge = 0.65 * K_knowledge[_n-1] + RD_flow ///
+>         if _n > 1 & ff5_industry == "Other"
+(10644 real changes made)
+.     
+.     label var K_knowledge "Knowledge capital stock (sector-specific δ, real 2020 prices)"
+.     
+.     di "  Knowledge capital by sector:"
+  Knowledge capital by sector:
+.     foreach sector in "Consumer" "Manufacturing" "High Tech" "Health" "Other" {
+  2.         qui sum K_knowledge if ff5_industry == "`sector'", d
+  3.         di "    `sector': Mean = " %12.0f r(mean) ", Median = " %12.0f r(p50)
+  4.     }
+    Consumer: Mean =         4181, Median =            0
+    Manufacturing: Mean =        33390, Median =            0
+    High Tech: Mean =       211703, Median =            0
+    Health: Mean =        26006, Median =            0
+    Other: Mean =         8735, Median =            0
 . }
 
 . else {
@@ -385,18 +459,18 @@ STEP 5: Creating capital aggregates...
 10%            0              0       Obs           1,980,485
 25%            0              0       Sum of Wgt.   1,980,485
 
-50%     400.2332                      Mean           199410.3
-                        Largest       Std. Dev.      1.30e+07
-75%     3658.507       3.45e+09
-90%     27400.49       3.67e+09       Variance       1.69e+14
-95%     98483.29       3.79e+09       Skewness       182.5949
-99%      1144034       3.83e+09       Kurtosis       39247.08
+50%     400.1413                      Mean           190430.7
+                        Largest       Std. Dev.      1.29e+07
+75%      3649.24       3.45e+09
+90%     27036.57       3.67e+09       Variance       1.66e+14
+95%     94811.45       3.79e+09       Skewness         184.37
+99%      1004133       3.83e+09       Kurtosis        39998.9
 
 . di "  Total intangible capital:"
   Total intangible capital:
 
 . di "    Mean:   " %12.0f r(mean)
-    Mean:         199410
+    Mean:         190431
 
 . di "    Median: " %12.0f r(p50)
     Median:          400
@@ -423,29 +497,29 @@ STEP 5: Creating capital aggregates...
                            prices)
 -------------------------------------------------------------
       Percentiles      Smallest
- 1%     273.8502        .891645
- 5%      1214.29        .891645
-10%     2776.617        .891645       Obs           1,980,485
-25%        10813        .891645       Sum of Wgt.   1,980,485
+ 1%     273.8361        .891645
+ 5%     1214.194        .891645
+10%     2776.052        .891645       Obs           1,980,485
+25%     10808.61        .891645       Sum of Wgt.   1,980,485
 
-50%     42891.32                      Mean           780009.7
-                        Largest       Std. Dev.      2.50e+07
-75%     178980.5       7.41e+09
-90%     656957.6       7.41e+09       Variance       6.23e+14
-95%      1522093       7.55e+09       Skewness       179.8611
-99%      8607670       7.61e+09       Kurtosis       41888.27
+50%     42843.06                      Mean           771030.1
+                        Largest       Std. Dev.      2.48e+07
+75%     178508.6       7.41e+09
+90%     652215.1       7.41e+09       Variance       6.16e+14
+95%      1505377       7.55e+09       Skewness        180.483
+99%      8463048       7.61e+09       Kurtosis       42196.36
 
 . di "  Total capital:"
   Total capital:
 
 . di "    Mean:   " %12.0f r(mean)
-    Mean:         780010
+    Mean:         771030
 
 . di "    Median: " %12.0f r(p50)
-    Median:        42891
+    Median:        42843
 
 . di "    Max:    " %12.0f r(max)
-    Max:      7608561664
+    Max:      7608204288
 
 . di ""
 
@@ -503,15 +577,6 @@ STEP 6: Verifying consistency...
 . gen check3 = abs(K_total - (K_physical + K_intangible_total))
 
 . 
-. sum check1 check2 check3
-
-    Variable |        Obs        Mean    Std. Dev.       Min        Max
--------------+---------------------------------------------------------
-      check1 |  1,980,485     .000835    .0462427          0         16
-      check2 |  1,980,485    .0036652    .3296987          0        128
-      check3 |  1,980,485    .0154682     .619767          0        256
-
-. 
 . qui sum check1
 
 . if r(max) > 0.01 {
@@ -561,7 +626,6 @@ STEP 7: Saving dataset with intangible capital...
   (0 bytes saved)
 
 . save "final_data_2011_2022_intangibles.dta", replace
-(note: file final_data_2011_2022_intangibles.dta not found)
 file final_data_2011_2022_intangibles.dta saved
 
 . 
@@ -605,11 +669,11 @@ Output file:
 . di "Key variables created:"
 Key variables created:
 
-. di "  • K_knowledge           - Knowledge capital (from R&D)"
-  • K_knowledge           - Knowledge capital (from R&D)
+. di "  • K_knowledge           - Knowledge capital (sector-specific δ)"
+  • K_knowledge           - Knowledge capital (sector-specific δ)
 
-. di "  • K_org                 - Organization capital (from SG&A)"
-  • K_org                 - Organization capital (from SG&A)
+. di "  • K_org                 - Organization capital (δ = 20%)"
+  • K_org                 - Organization capital (δ = 20%)
 
 . di "  • K_intangible_internal - Internal intangibles (K_knowledge + K_org)"
   • K_intangible_internal - Internal intangibles (K_knowledge + K_org)
@@ -626,17 +690,29 @@ Key variables created:
 . di "  • K_total               - Total capital (Physical + Intangible)"
   • K_total               - Total capital (Physical + Intangible)
 
+. di "  • ff5_industry          - Sector classification"
+  • ff5_industry          - Sector classification
+
+. di ""
+
+
+. di "Sector-specific R&D depreciation (Ewens, Peters & Wang 2025):"
+Sector-specific R&D depreciation (Ewens, Peters & Wang 2025):
+
+. di "  Consumer: 43%, Manufacturing: 50%, High Tech: 42%"
+  Consumer: 43%, Manufacturing: 50%, High Tech: 42%
+
+. di "  Health: 33%, Other: 35%"
+  Health: 33%, Other: 35%
+
 . di ""
 
 
 . di "All capital stocks are:"
 All capital stocks are:
 
-. di "  ✓ Non-negative"
-  ✓ Non-negative
-
-. di "  ✓ Non-missing"
-  ✓ Non-missing
+. di "  ✓ Non-negative (where appropriate)"
+  ✓ Non-negative (where appropriate)
 
 . di "  ✓ In real 2020 prices"
   ✓ In real 2020 prices
@@ -644,20 +720,8 @@ All capital stocks are:
 . di "  ✓ Internally consistent"
   ✓ Internally consistent
 
-. di ""
-
-
-. di "Next steps (optional):"
-Next steps (optional):
-
-. di "  → Create derived variables (intensities, ratios)"
-  → Create derived variables (intensities, ratios)
-
-. di "  → Winsorize for specific analyses"
-  → Winsorize for specific analyses
-
-. di "  → Generate descriptive statistics"
-  → Generate descriptive statistics
+. di "  ✓ Sector-heterogeneous (knowledge capital)"
+  ✓ Sector-heterogeneous (knowledge capital)
 
 . di ""
 

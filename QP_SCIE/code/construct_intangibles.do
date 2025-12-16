@@ -4,15 +4,9 @@
    Input:  final_data_2011_2022_cleaned.dta (from data_clean_final.do)
    Output: final_data_2011_2022_intangibles.dta
    
-   This file constructs intangible capital stocks using perpetual inventory
-   method (PIM) following Peters & Taylor (2017).
-   
-   All source variables are already:
-   - Deflated to real 2020 prices
-   - Cleaned (no missing/negative balance sheet items)
-   
-   Method: Peters & Taylor (2017) with two intangible capital stocks:
-           - Knowledge Capital (from R&D): δ = 15%
+   Method: Peters & Taylor (2017) with sector-specific parameters from
+           Ewens, Peters & Wang (2025)
+           - Knowledge Capital (from R&D): δ varies by sector
            - Organization Capital (from SG&A): δ = 20%
            - Initial stocks: K_0 = 0
    
@@ -32,10 +26,10 @@ di "=========================================="
 di "Date: `c(current_date)'"
 di ""
 di "Method: Perpetual Inventory Method (PIM)"
-di "Following Peters & Taylor (2017)"
+di "Following Peters & Taylor (2017) + Ewens, Peters & Wang (2025)"
 di ""
 di "Parameters:"
-di "  - Knowledge capital (R&D): δ = 15%"
+di "  - Knowledge capital (R&D): δ varies by sector"
 di "  - Organization capital (SG&A): δ = 20%"
 di "  - Initial stocks: K_0 = 0"
 di ""
@@ -43,15 +37,42 @@ di "=========================================="
 di ""
 
 /*==============================================================================
-   STEP 1: LOAD CLEANED DATA
+   STEP 1: LOAD CLEANED DATA AND ADD SECTOR CLASSIFICATION
 ==============================================================================*/
 
-di "STEP 1: Loading cleaned dataset..."
+di "STEP 1: Loading cleaned dataset and adding sector classification..."
 
 use "final_data_2011_2022_cleaned.dta", clear
 
 local n_start = _N
 di "  Observations: " %12.0fc `n_start'
+
+* Add sector classification based on CAE codes
+* Following Ewens, Peters & Wang (2025) Fama-French 5 classification
+gen ff5_industry = ""
+
+* Consumer
+replace ff5_industry = "Consumer" if inlist(cae3, 10, 11, 12, 13, 14, 15)
+replace ff5_industry = "Consumer" if inlist(cae3, 45, 46, 47, 55, 56, 95, 96)
+
+* Manufacturing
+replace ff5_industry = "Manufacturing" if inlist(cae3, 16, 17, 18, 19, 20, 22, 23)
+replace ff5_industry = "Manufacturing" if inlist(cae3, 24, 25, 28, 29, 30, 31, 32, 33)
+
+* High Tech
+replace ff5_industry = "High Tech" if inlist(cae3, 26, 27, 61, 62, 63)
+
+* Health (Pharma moved from Manufacturing to Health per EPW)
+replace ff5_industry = "Health" if inlist(cae3, 21, 86, 87, 88)
+
+* Other (everything else)
+replace ff5_industry = "Other" if ff5_industry == ""
+
+label var ff5_industry "Fama-French 5 Industry (EPW 2025)"
+
+di ""
+di "  Sector distribution:"
+tab ff5_industry, missing
 di ""
 
 * Sort panel data
@@ -99,12 +120,14 @@ di "    N:      " r(N)
 di ""
 
 /*==============================================================================
-   STEP 3: CONSTRUCT KNOWLEDGE CAPITAL STOCK (FROM R&D)
+   STEP 3: CONSTRUCT KNOWLEDGE CAPITAL STOCK (SECTOR-SPECIFIC δ)
 ==============================================================================*/
 
 di "STEP 3: Constructing Knowledge Capital (from R&D)..."
 di "  Formula: K_t = (1 - δ) × K_{t-1} + I_t"
-di "  where δ = 0.15, I_t = R&D expenditures"
+di "  Sector-specific δ from Ewens, Peters & Wang (2025):"
+di "    Consumer: δ = 43%, Manufacturing: δ = 50%"
+di "    High Tech: δ = 42%, Health: δ = 33%, Other: δ = 35%"
 di ""
 
 cap confirm variable RD_real
@@ -117,18 +140,34 @@ if _rc == 0 {
     gen K_knowledge = 0
     by firm_id: replace K_knowledge = 0 if _n == 1  // Initial stock = 0
     
-    * Apply perpetual inventory method
-    * δ_R&D = 0.15 → (1-δ) = 0.85
-    by firm_id: replace K_knowledge = 0.85 * K_knowledge[_n-1] + RD_flow if _n > 1
+    * Apply perpetual inventory method with SECTOR-SPECIFIC depreciation
+    * Consumer: δ = 0.43 → (1-δ) = 0.57
+    by firm_id: replace K_knowledge = 0.57 * K_knowledge[_n-1] + RD_flow ///
+        if _n > 1 & ff5_industry == "Consumer"
     
-    label var K_knowledge "Knowledge capital stock (from R&D, real 2020 prices)"
+    * Manufacturing: δ = 0.50 → (1-δ) = 0.50
+    by firm_id: replace K_knowledge = 0.50 * K_knowledge[_n-1] + RD_flow ///
+        if _n > 1 & ff5_industry == "Manufacturing"
     
-    sum K_knowledge, d
-    di "  Knowledge capital constructed:"
-    di "    Mean:   " %12.0f r(mean)
-    di "    Median: " %12.0f r(p50)
-    di "    Max:    " %12.0f r(max)
-    di "    N:      " r(N)
+    * High Tech: δ = 0.42 → (1-δ) = 0.58
+    by firm_id: replace K_knowledge = 0.58 * K_knowledge[_n-1] + RD_flow ///
+        if _n > 1 & ff5_industry == "High Tech"
+    
+    * Health: δ = 0.33 → (1-δ) = 0.67
+    by firm_id: replace K_knowledge = 0.67 * K_knowledge[_n-1] + RD_flow ///
+        if _n > 1 & ff5_industry == "Health"
+    
+    * Other: δ = 0.35 → (1-δ) = 0.65
+    by firm_id: replace K_knowledge = 0.65 * K_knowledge[_n-1] + RD_flow ///
+        if _n > 1 & ff5_industry == "Other"
+    
+    label var K_knowledge "Knowledge capital stock (sector-specific δ, real 2020 prices)"
+    
+    di "  Knowledge capital by sector:"
+    foreach sector in "Consumer" "Manufacturing" "High Tech" "Health" "Other" {
+        qui sum K_knowledge if ff5_industry == "`sector'", d
+        di "    `sector': Mean = " %12.0f r(mean) ", Median = " %12.0f r(p50)
+    }
 }
 else {
     gen K_knowledge = .
@@ -266,8 +305,6 @@ gen check1 = abs(K_intangible_internal - (K_knowledge + K_org))
 gen check2 = abs(K_intangible_total - (K_intangible_internal + K_intangible_external))
 gen check3 = abs(K_total - (K_physical + K_intangible_total))
 
-sum check1 check2 check3
-
 qui sum check1
 if r(max) > 0.01 {
     di as error "  ERROR: K_intangible_internal inconsistent with components!"
@@ -315,24 +352,24 @@ di "Output file:"
 di "  → final_data_2011_2022_intangibles.dta"
 di ""
 di "Key variables created:"
-di "  • K_knowledge           - Knowledge capital (from R&D)"
-di "  • K_org                 - Organization capital (from SG&A)"
+di "  • K_knowledge           - Knowledge capital (sector-specific δ)"
+di "  • K_org                 - Organization capital (δ = 20%)"
 di "  • K_intangible_internal - Internal intangibles (K_knowledge + K_org)"
 di "  • K_intangible_external - External intangibles (from balance sheet)"
 di "  • K_intangible_total    - Total intangible capital"
 di "  • K_physical            - Physical capital (from balance sheet)"
 di "  • K_total               - Total capital (Physical + Intangible)"
+di "  • ff5_industry          - Sector classification"
+di ""
+di "Sector-specific R&D depreciation (Ewens, Peters & Wang 2025):"
+di "  Consumer: 43%, Manufacturing: 50%, High Tech: 42%"
+di "  Health: 33%, Other: 35%"
 di ""
 di "All capital stocks are:"
-di "  ✓ Non-negative"
-di "  ✓ Non-missing"
+di "  ✓ Non-negative (where appropriate)"
 di "  ✓ In real 2020 prices"
 di "  ✓ Internally consistent"
-di ""
-di "Next steps (optional):"
-di "  → Create derived variables (intensities, ratios)"
-di "  → Winsorize for specific analyses"
-di "  → Generate descriptive statistics"
+di "  ✓ Sector-heterogeneous (knowledge capital)"
 di ""
 di "=========================================="
 
