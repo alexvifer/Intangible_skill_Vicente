@@ -1,0 +1,28 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Complementarity Between Intangibles and Skilled Labor\label{tab:complementarity}}
+\begin{tabular}{l*{3}{c}}
+\toprule
+            &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}\\
+            &\multicolumn{1}{c}{Log Revenue}&\multicolumn{1}{c}{Log Production}&\multicolumn{1}{c}{Log GVA}\\
+\midrule
+Intangible Intensity $\times$ Share Skilled&       0.026\sym{*}  &       0.042\sym{***}&       0.040\sym{**} \\
+            &     (0.014)         &     (0.013)         &     (0.017)         \\
+\addlinespace
+Intangible Intensity&      -0.102\sym{***}&      -0.111\sym{***}&      -0.125\sym{***}\\
+            &     (0.006)         &     (0.006)         &     (0.009)         \\
+\addlinespace
+Share Skilled Workers&      -0.013\sym{***}&      -0.008\sym{**} &      -0.015\sym{***}\\
+            &     (0.004)         &     (0.003)         &     (0.005)         \\
+\midrule
+\(N\)       &     1759084         &     1759084         &     1759076         \\
+Year FE     &         Yes         &         Yes         &         Yes         \\
+Industry FE &         Yes         &         Yes         &         Yes         \\
+Firm FE     &         Yes         &         Yes         &         Yes         \\
+Controls    &         Yes         &         Yes         &         Yes         \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize Controls include log total capital, log employment, and log firm age.}\\
+\multicolumn{4}{l}{\footnotesize Industry FE based on 3-digit CAE codes. Robust standard errors in parentheses.}\\
+\multicolumn{4}{l}{\footnotesize * $p < 0.10$, ** $p < 0.05$, *** $p < 0.01$}\\
+\end{tabular}
+\end{table}

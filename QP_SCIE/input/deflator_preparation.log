@@ -1,8 +1,8 @@
------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------
       name:  <unnamed>
        log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\deflator_preparation.log
   log type:  text
- opened on:   2 Dec 2025, 11:42:45
+ opened on:  18 Dec 2025, 16:00:40
 
 . 
 . di "=========================================="
@@ -12,7 +12,7 @@
 PREPARING DEFLATORS
 
 . di "Date: `c(current_date)'"
-Date:  2 Dec 2025
+Date: 18 Dec 2025
 
 . di "=========================================="
 ==========================================
@@ -87,6 +87,7 @@ STEP 1: Importing GDP deflator from FRED...
 . 
 . * Save temporary file
 . save "deflators_temp.dta", replace
+(note: file deflators_temp.dta not found)
 file deflators_temp.dta saved
 
 . 
@@ -114,7 +115,7 @@ gfcf_deflator already numeric; no replace
 . tempfile gfcf
 
 . save `gfcf'
-file C:\Users\alexv\AppData\Local\Temp\ST_2be0_000001.tmp saved
+file C:\Users\alexv\AppData\Local\Temp\ST_3164_000001.tmp saved
 
 . 
 . * Import Capital nominal (K_Tang, row 57, columns V-AF for 2011-2021)
@@ -133,7 +134,7 @@ k_nom already numeric; no replace
 . tempfile k_nom
 
 . save `k_nom'
-file C:\Users\alexv\AppData\Local\Temp\ST_2be0_000002.tmp saved
+file C:\Users\alexv\AppData\Local\Temp\ST_3164_000002.tmp saved
 
 . 
 . * Import Capital volume (Kq_Tang, row 57, columns V-AF for 2011-2021)
@@ -257,7 +258,6 @@ Extrapolating 2022 deflators...
 
 . 
 . save "deflators.dta", replace
-(note: file deflators.dta not found)
 file deflators.dta saved
 
 . 

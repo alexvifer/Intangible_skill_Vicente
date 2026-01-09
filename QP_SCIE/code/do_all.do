@@ -179,6 +179,20 @@ local elapsed = round((`end_time' - `start_time') / 1000 / 60, 0.1)
 di "  ✓ Completed in `elapsed' minutes"
 di "  Output: deflators.dta"
 
+* Module 5.5: Prepare 2010 debt for lag structure
+di _newline(2)
+di "┌────────────────────────────────────────────────────────────────┐"
+di "│ MODULE 5.5/9: Preparing 2010 debt (for 2011 lags)            │"
+di "└────────────────────────────────────────────────────────────────┘"
+local start_time = clock(c(current_time), "hms")
+
+do "$rootdir/code/prepare_2010_debt.do"
+
+local end_time = clock(c(current_time), "hms")
+local elapsed = round((`end_time' - `start_time') / 1000 / 60, 0.1)
+di "  ✓ Completed in `elapsed' minutes"
+di "  Output: debt_2010.dta"
+
 * Module 6: Prepare risk-free rate
 di _newline(2)
 di "┌────────────────────────────────────────────────────────────────┐"
@@ -344,21 +358,3 @@ di "Winsorized versions available (suffix '_w') at 1%-99%"
 di ""
 di "All monetary variables in real 2020 prices"
 di ""
-di "══════════════════════════════════════════════════════════════════"
-di "METHODOLOGICAL NOTES"
-di "══════════════════════════════════════════════════════════════════"
-di ""
-di "Intangible Capital Construction:"
-di "  • Method: Perpetual Inventory Method (PIM)"
-di "  • Sector-specific knowledge capital depreciation (EPW 2025):"
-di "    - Consumer: δ = 43%"
-di "    - Manufacturing: δ = 50%"
-di "    - High Tech: δ = 42%"
-di "    - Health: δ = 33%"
-di "    - Other: δ = 35%"
-di "  • Organization capital: δ = 20% (all sectors)"
-di "  • Initial stocks: K_0 = 0"
-di "  • Base year: 2020 (all prices in 2020 constant prices)"
-di ""
-di "Deflators:"
-di "  • GDP deflator: Revenue,

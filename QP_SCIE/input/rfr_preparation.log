@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\input\rfr_preparation.log
   log type:  text
- opened on:  16 Dec 2025, 15:39:54
+ opened on:  18 Dec 2025, 16:01:34
 
 . 
 . di "=========================================="
@@ -12,7 +12,7 @@
 PREPARING RISK-FREE RATE DATA
 
 . di "Date: `c(current_date)'"
-Date: 16 Dec 2025
+Date: 18 Dec 2025
 
 . di "=========================================="
 ==========================================
@@ -114,7 +114,6 @@ rfr already numeric; no replace
 . 
 . * Save dataset
 . save "rfr.dta", replace
-(note: file rfr.dta not found)
 file rfr.dta saved
 
 . 

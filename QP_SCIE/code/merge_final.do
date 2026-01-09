@@ -72,4 +72,3 @@ di "  - final_data_2011_2022.dta <-- USE THIS"
 di "=========================================="
 
 
-Attached in the project are the do files for Stata I used to merge my data sources and have the preliminar final dataset of firms with balance sheet and income statements  (SCIE) + skill composition (QP). I want to clean the dataset following standard procedures: remove incorrect values (negatives for variables that should be =>0, etc), extreme observations, etc. I want to follow a parsimonious approach, give me suggestions on the cleaning procedure, given the variables I kept from SCIE (you can find the meaning in the attached excel file).

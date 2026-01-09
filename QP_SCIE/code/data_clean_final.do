@@ -64,11 +64,29 @@ di "  → Deflators merged successfully"
 di ""
 
 /*==============================================================================
-   STEP 2: DEFLATE ALL VARIABLES TO REAL 2020 PRICES
+   STEP 1.5: MERGE 2010 DEBT FOR LAG STRUCTURE
+==============================================================================*/
+
+di "STEP 1.5: Merging 2010 debt data for lagged interest rate calculation..."
+
+* Merge 2010 debt (needed for 2011 interest rates)
+merge m:1 NPC_FIC using "$rootdir/output/debt_2010.dta", keep(match master)
+
+count if _merge == 3
+local n_matched = r(N)
+di "  → Matched " %8.0fc `n_matched' " observations with 2010 debt"
+
+drop _merge
+
+di ""
+
+/*==============================================================================
+   STEP 2: DEFLATE VARIABLES 
 ==============================================================================*/
 
 di "STEP 2: Deflating variables to real 2020 prices..."
 di "  Base year: 2020 (deflators = 100)"
+di "  NOTE: Debt variables kept NOMINAL for interest rate calculations"
 di ""
 
 *------------------------------------------------------------------------------
@@ -99,12 +117,23 @@ foreach var in SV500601 SV500801 SD000102 SV602500 SV602700 SV603900 ///
 * C. Result variables (GDP deflator)
 *------------------------------------------------------------------------------
 
-foreach var in SV501701 SV501801 SV502001 SV502201 SD000011 SD000012 ///
+foreach var in SV501701 SV501801 SV502001 SD000011 SD000012 ///
                SD000014 SD000016 SD000018 SD000019 {
     cap confirm variable `var'
     if _rc == 0 {
         gen `var'_real = (`var' / gdp_deflator) * 100
     }
+}
+
+*------------------------------------------------------------------------------
+* C2. Interest expenses
+*------------------------------------------------------------------------------
+
+* Real interest expenses
+cap confirm variable SV502201
+if _rc == 0 {
+    gen SV502201_real = (SV502201 / gdp_deflator) * 100
+    label var SV502201_real "Interest expenses (real 2020 prices)"
 }
 
 *------------------------------------------------------------------------------
@@ -144,12 +173,11 @@ if _rc == 0 {
 }
 
 *------------------------------------------------------------------------------
-* G. Balance sheet variables (Capital deflator)
+* G. Balance sheet CAPITAL variables (Capital deflator)
 *------------------------------------------------------------------------------
 
 foreach var in SV510101 SV510201 SV510301 SV510401 SV511201 SV512501 ///
-               SV512601 SV512701 SD000005 SV514101 SV514701 SV515901 ///
-               SV516001 SV516101 {
+               SV512601 SV512701 SD000005 {
     cap confirm variable `var'
     if _rc == 0 {
         gen `var'_real = (`var' / capital_deflator) * 100
@@ -157,7 +185,28 @@ foreach var in SV510101 SV510201 SV510301 SV510401 SV511201 SV512501 ///
 }
 
 *------------------------------------------------------------------------------
-* H. Wages from QP (GDP deflator)
+* H. Debt variables (GDP deflator)
+*------------------------------------------------------------------------------
+
+foreach var in SV514301 SV515201 {
+    cap confirm variable `var'
+    if _rc == 0 {
+        gen `var'_real = (`var' / gdp_deflator) * 100
+    }
+}
+
+*------------------------------------------------------------------------------
+* I. Equity (GDP deflator)
+*------------------------------------------------------------------------------
+
+cap confirm variable SV514101
+if _rc == 0 {
+    gen SV514101_real = (SV514101 / gdp_deflator) * 100
+    label var SV514101_real "Equity"
+}
+
+*------------------------------------------------------------------------------
+* J. Wages from QP (GDP deflator)
 *------------------------------------------------------------------------------
 
 foreach var in avg_wage_all avg_wage_skilled avg_wage_unskilled {
@@ -203,17 +252,19 @@ local n_before_step4 = _N
 * SV510401_real: Intangible assets (excluding goodwill)
 * SV500101_real: Revenue
 * SD000011_real: Production value
+* SD000002_real: Sales
+* SD000014_real: GVA
 * SV500801_real: Wagebill
-* SV516001_real: Total debt
-* SV514701_real: Long-term debt
-* SV515901_real: Short-term debt
+* SV514301_real: Long-term debt
+* SV515201_real: Short-term debt
 * SV502201_real: Interest expenses
 * SD000032_real: Tangible investment
 * RD_real: R&D expenditures
 * SV804400_real: Advertising expenses
 * SV603900_real: Training expenses
+* SV512701_real: Total assets  
 
-local vars_check "SV510101_real SV510401_real SV500101_real SD000011_real SV500801_real SV516001_real SV514701_real SV515901_real SV502201_real SD000032_real"
+local vars_check "SV510101_real SV510401_real SV500101_real SD000011_real SD000002_real SV500801_real SD000014_real SV516001_nom SV514301_real SV515201_real SV502201_real SD000032_real SV512701_real"
 
 * Add intangible construction inputs if they exist
 cap confirm variable RD_real
@@ -248,22 +299,16 @@ foreach var of local vars_check {
 local n_after_step4 = _N
 local n_dropped_step4 = `n_before_step4' - `n_after_step4'
 
-di "  Variables checked (must exist and be non-negative):"
-di "    SV510101_real, SV510401_real, SV500101_real, SD000011_real,"
-di "    SV500801_real, SV516001_real, SV514701_real, SV515901_real,"
-di "    SV502201_real, SD000032_real, RD_real, SV804400_real, SV603900_real"
 di ""
 di "  Total dropped: " %8.0fc `n_dropped_step4'
 di "  Remaining: " %12.0fc `n_after_step4'
 di ""
-di "  Note: SV514101_real (equity) NOT checked - can be negative"
-di ""
 
 /*==============================================================================
-   STEP 5: DROP OBSERVATIONS WITH MISSING ECONOMIC ACTIVITY
+   STEP 5: DROP OBSERVATIONS WITHOUT MEANINGFUL ECONOMIC ACTIVITY
 ==============================================================================*/
 
-di "STEP 5: Dropping observations with missing economic activity..."
+di "STEP 5: Dropping observations without meaningful economic activity..."
 di ""
 
 gen flag_no_activity = 0
@@ -271,17 +316,17 @@ gen flag_no_activity = 0
 * No workers
 replace flag_no_activity = 1 if n_workers == 0 | n_workers == .
 
-* No tangible fixed assets
-replace flag_no_activity = 1 if SV510101_real == 0 | SV510101_real == .
+* Less than 1000 euros in tangible fixed assets
+replace flag_no_activity = 1 if SV510101_real < 1000 | SV510101_real == .
 
-* No revenue
-replace flag_no_activity = 1 if SV500101_real == 0 | SV500101_real == .
+* Less than 1000 euros in revenue
+replace flag_no_activity = 1 if SV500101_real < 1000 | SV500101_real == .
 
-* No production
-replace flag_no_activity = 1 if SD000011_real == 0 | SD000011_real == .
+* Less than 1000 euros in production
+replace flag_no_activity = 1 if SD000011_real < 1000 | SD000011_real == .
 
-* No wagebill
-replace flag_no_activity = 1 if SV500801_real == 0 | SV500801_real == .
+* Less than 500 euros in wagebill
+replace flag_no_activity = 1 if SV500801_real < 500 | SV500801_real == .
 
 count if flag_no_activity == 1
 local n_no_activity = r(N)
@@ -367,22 +412,15 @@ di "CLEANING CHECKS PERFORMED"
 di "=========================================="
 di ""
 di "Step 4: Missing or negative values (dropped):"
-di "   Variables: SV510101_real, SV510401_real, SV500101_real,"
-di "              SD000011_real, SV500801_real, SV516001_real,"
-di "              SV514701_real, SV515901_real, SV502201_real,"
-di "              SD000032_real, RD_real, SV804400_real, SV603900_real"
+di 
 di ""
 di "Step 5: Missing economic activity (dropped if zero/missing):"
-di "   Variables: n_workers, SV510101_real, SV500101_real,"
-di "              SD000011_real, SV500801_real"
+di
 di ""
 di "Step 6: Panel structure:"
 di "   Required 2+ consecutive observations per firm"
 di ""
-di "Note: SV514101_real (equity) NOT checked - can be negative"
-di "Note: SV510101_real (tangible fixed assets) checked in BOTH steps:"
-di "      Step 4 drops if negative or missing (data error)"
-di "      Step 5 drops if zero (no activity)"
+di 
 di ""
 di "=========================================="
 di "NEXT STEP"

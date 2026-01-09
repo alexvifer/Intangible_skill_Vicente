@@ -1,14 +1,60 @@
 /*==============================================================================
-   CONSTRUCT INTANGIBLE CAPITAL FROM CLEAN DATA
+   CONSTRUCT INTANGIBLE CAPITAL FROM CLEAN DATA - FLEXIBLE SYSTEM
    
    Input:  final_data_2011_2022_cleaned.dta (from data_clean_final.do)
    Output: final_data_2011_2022_intangibles.dta
    
-   Method: Peters & Taylor (2017) with sector-specific parameters from
-           Ewens, Peters & Wang (2025)
-           - Knowledge Capital (from R&D): δ varies by sector
-           - Organization Capital (from SG&A): δ = 20%
-           - Initial stocks: K_0 = 0
+   This file constructs intangible capital stocks using perpetual inventory
+   method (PIM) with a FLEXIBLE SYSTEM supporting multiple definitions.
+   
+   All source variables are already:
+   - Deflated to real 2020 prices
+   - Cleaned (no missing/negative balance sheet items)
+   
+   INTANGIBLE CAPITAL DEFINITIONS:
+   ================================
+   
+   MEASURE 1: Peters & Taylor (2017) - Full Specification
+   --------------------------------------------------------
+   Components:
+   - Knowledge Capital (from R&D): δ = SECTOR-SPECIFIC (EPW 2025)
+   - Organization Capital (from SG&A): δ = 20%
+   - Balance Sheet Intangibles: δ = N/A (stock variable)
+   
+   Variables created:
+   - K_intangible_pt     : Full P&T measure (Knowledge + Org + BS)
+   - K_intangible_pt_int : Internal only (Knowledge + Org)
+   
+   MEASURE 2: Balance Sheet + R&D Only
+   -------------------------------------
+   Components:
+   - Knowledge Capital (from R&D): δ = SECTOR-SPECIFIC (EPW 2025)
+   - Balance Sheet Intangibles: δ = N/A (stock variable)
+   
+   Variables created:
+   - K_intangible_bs_rd  : BS + R&D measure
+   
+   COMMON COMPONENTS:
+   ------------------
+   - K_knowledge         : Knowledge capital from R&D (sector-specific δ)
+   - K_org               : Organization capital from SG&A (δ=20%)
+   - K_intangible_bs     : Balance sheet intangibles (direct from BS)
+   - K_physical          : Physical capital (tangible fixed assets)
+   
+   SECTOR-SPECIFIC R&D DEPRECIATION (Ewens, Peters & Wang 2025):
+   --------------------------------------------------------------
+   - Consumer: δ = 43%
+   - Manufacturing: δ = 50%
+   - High Tech: δ = 42%
+   - Health: δ = 33%
+   - Other: δ = 35%
+   
+   TOTAL CAPITAL VARIABLES:
+   ------------------------
+   For each intangible definition X, we create:
+   - K_total_X = K_physical + K_intangible_X
+   
+   Example: K_total_pt = K_physical + K_intangible_pt
    
 ==============================================================================*/
 
@@ -22,16 +68,25 @@ log using "construct_intangibles.log", replace
 
 di "=========================================="
 di "CONSTRUCTING INTANGIBLE CAPITAL"
+di "FLEXIBLE MULTI-MEASURE SYSTEM"
 di "=========================================="
 di "Date: `c(current_date)'"
 di ""
-di "Method: Perpetual Inventory Method (PIM)"
-di "Following Peters & Taylor (2017) + Ewens, Peters & Wang (2025)"
+di "This system constructs multiple intangible"
+di "capital measures simultaneously:"
 di ""
-di "Parameters:"
-di "  - Knowledge capital (R&D): δ varies by sector"
-di "  - Organization capital (SG&A): δ = 20%"
-di "  - Initial stocks: K_0 = 0"
+di "  1. Peters & Taylor (2017) Full"
+di "     → K + Org + BS intangibles"
+di ""
+di "  2. Balance Sheet + R&D Only"
+di "     → K + BS intangibles (NO Org)"
+di ""
+di "Knowledge capital (R&D) uses sector-specific"
+di "depreciation rates from Ewens, Peters & Wang (2025):"
+di "  Consumer: 43%, Manufacturing: 50%, High Tech: 42%"
+di "  Health: 33%, Other: 35%"
+di ""
+di "Organization capital uses δ = 20% (all sectors)"
 di ""
 di "=========================================="
 di ""
@@ -46,6 +101,7 @@ use "final_data_2011_2022_cleaned.dta", clear
 
 local n_start = _N
 di "  Observations: " %12.0fc `n_start'
+di ""
 
 * Add sector classification based on CAE codes
 * Following Ewens, Peters & Wang (2025) Fama-French 5 classification
@@ -70,7 +126,6 @@ replace ff5_industry = "Other" if ff5_industry == ""
 
 label var ff5_industry "Fama-French 5 Industry (EPW 2025)"
 
-di ""
 di "  Sector distribution:"
 tab ff5_industry, missing
 di ""
@@ -80,12 +135,17 @@ sort firm_id ano
 xtset firm_id ano
 
 /*==============================================================================
-   STEP 2: CREATE SG&A INVESTMENT MEASURE
+   STEP 2: CREATE INVESTMENT FLOW MEASURES
 ==============================================================================*/
 
-di "STEP 2: Creating SG&A investment measure..."
-di "  SG&A = Advertising (SV804400_real) + Training (SV603900_real)"
+di "STEP 2: Creating investment flow measures..."
 di ""
+
+*------------------------------------------------------------------------------
+* A. SG&A Investment (for Organization Capital)
+*------------------------------------------------------------------------------
+
+di "  → SG&A Investment (Advertising + Training)..."
 
 * Generate SG&A investment = Advertising + Training
 gen SGA_inv_real = 0
@@ -113,76 +173,91 @@ label var SGA_inv_real "SG&A investment (Advertising + Training, real 2020 price
 label var SGA_flow "SG&A flow for PIM (missing → 0)"
 
 sum SGA_inv_real, d
-di "  SG&A investment summary:"
-di "    Mean:   " %12.0f r(mean)
-di "    Median: " %12.0f r(p50)
-di "    N:      " r(N)
+di "     Mean:   " %12.0f r(mean)
+di "     Median: " %12.0f r(p50)
+di "     N:      " r(N)
 di ""
 
-/*==============================================================================
-   STEP 3: CONSTRUCT KNOWLEDGE CAPITAL STOCK (SECTOR-SPECIFIC δ)
-==============================================================================*/
+*------------------------------------------------------------------------------
+* B. R&D Investment (for Knowledge Capital)
+*------------------------------------------------------------------------------
 
-di "STEP 3: Constructing Knowledge Capital (from R&D)..."
-di "  Formula: K_t = (1 - δ) × K_{t-1} + I_t"
-di "  Sector-specific δ from Ewens, Peters & Wang (2025):"
-di "    Consumer: δ = 43%, Manufacturing: δ = 50%"
-di "    High Tech: δ = 42%, Health: δ = 33%, Other: δ = 35%"
-di ""
+di "  → R&D Investment..."
 
 cap confirm variable RD_real
 if _rc == 0 {
     * For PIM, missing flows = no investment = 0
     gen RD_flow = RD_real
     replace RD_flow = 0 if RD_flow == .
+    label var RD_flow "R&D flow for PIM (missing → 0)"
     
-    * Generate Knowledge Capital stock
-    gen K_knowledge = 0
-    by firm_id: replace K_knowledge = 0 if _n == 1  // Initial stock = 0
-    
-    * Apply perpetual inventory method with SECTOR-SPECIFIC depreciation
-    * Consumer: δ = 0.43 → (1-δ) = 0.57
-    by firm_id: replace K_knowledge = 0.57 * K_knowledge[_n-1] + RD_flow ///
-        if _n > 1 & ff5_industry == "Consumer"
-    
-    * Manufacturing: δ = 0.50 → (1-δ) = 0.50
-    by firm_id: replace K_knowledge = 0.50 * K_knowledge[_n-1] + RD_flow ///
-        if _n > 1 & ff5_industry == "Manufacturing"
-    
-    * High Tech: δ = 0.42 → (1-δ) = 0.58
-    by firm_id: replace K_knowledge = 0.58 * K_knowledge[_n-1] + RD_flow ///
-        if _n > 1 & ff5_industry == "High Tech"
-    
-    * Health: δ = 0.33 → (1-δ) = 0.67
-    by firm_id: replace K_knowledge = 0.67 * K_knowledge[_n-1] + RD_flow ///
-        if _n > 1 & ff5_industry == "Health"
-    
-    * Other: δ = 0.35 → (1-δ) = 0.65
-    by firm_id: replace K_knowledge = 0.65 * K_knowledge[_n-1] + RD_flow ///
-        if _n > 1 & ff5_industry == "Other"
-    
-    label var K_knowledge "Knowledge capital stock (sector-specific δ, real 2020 prices)"
-    
-    di "  Knowledge capital by sector:"
-    foreach sector in "Consumer" "Manufacturing" "High Tech" "Health" "Other" {
-        qui sum K_knowledge if ff5_industry == "`sector'", d
-        di "    `sector': Mean = " %12.0f r(mean) ", Median = " %12.0f r(p50)
-    }
+    sum RD_real, d
+    di "     Mean:   " %12.0f r(mean)
+    di "     Median: " %12.0f r(p50)
+    di "     N:      " r(N)
 }
 else {
-    gen K_knowledge = .
-    di "  WARNING: RD_real not found - knowledge capital cannot be constructed"
+    gen RD_flow = 0
+    di "     WARNING: RD_real not found - setting to zero"
 }
 di ""
 
 /*==============================================================================
-   STEP 4: CONSTRUCT ORGANIZATION CAPITAL STOCK (FROM SG&A)
+   STEP 3: CONSTRUCT COMPONENT CAPITAL STOCKS
 ==============================================================================*/
 
-di "STEP 4: Constructing Organization Capital (from SG&A)..."
-di "  Formula: K_t = (1 - δ) × K_{t-1} + I_t"
-di "  where δ = 0.20, I_t = SG&A expenditures"
+di "STEP 3: Constructing component capital stocks..."
 di ""
+
+*------------------------------------------------------------------------------
+* A. Knowledge Capital Stock (from R&D, SECTOR-SPECIFIC δ)
+*------------------------------------------------------------------------------
+
+di "  → Knowledge Capital (R&D-based, sector-specific δ)..."
+di "     Ewens, Peters & Wang (2025) depreciation rates:"
+di "     Consumer: 43%, Manufacturing: 50%, High Tech: 42%"
+di "     Health: 33%, Other: 35%"
+
+* Generate Knowledge Capital stock
+gen K_knowledge = 0
+by firm_id: replace K_knowledge = 0 if _n == 1  // Initial stock = 0
+
+* Apply perpetual inventory method with SECTOR-SPECIFIC depreciation
+* Consumer: δ = 0.43 → (1-δ) = 0.57
+by firm_id: replace K_knowledge = 0.57 * K_knowledge[_n-1] + RD_flow ///
+    if _n > 1 & ff5_industry == "Consumer"
+
+* Manufacturing: δ = 0.50 → (1-δ) = 0.50
+by firm_id: replace K_knowledge = 0.50 * K_knowledge[_n-1] + RD_flow ///
+    if _n > 1 & ff5_industry == "Manufacturing"
+
+* High Tech: δ = 0.42 → (1-δ) = 0.58
+by firm_id: replace K_knowledge = 0.58 * K_knowledge[_n-1] + RD_flow ///
+    if _n > 1 & ff5_industry == "High Tech"
+
+* Health: δ = 0.33 → (1-δ) = 0.67
+by firm_id: replace K_knowledge = 0.67 * K_knowledge[_n-1] + RD_flow ///
+    if _n > 1 & ff5_industry == "Health"
+
+* Other: δ = 0.35 → (1-δ) = 0.65
+by firm_id: replace K_knowledge = 0.65 * K_knowledge[_n-1] + RD_flow ///
+    if _n > 1 & ff5_industry == "Other"
+
+label var K_knowledge "Knowledge capital (sector-specific δ, real 2020)"
+
+di ""
+di "     Knowledge capital by sector:"
+foreach sector in "Consumer" "Manufacturing" "High Tech" "Health" "Other" {
+    qui sum K_knowledge if ff5_industry == "`sector'", d
+    di "       `sector': Mean = " %12.0f r(mean) ", Median = " %12.0f r(p50)
+}
+di ""
+
+*------------------------------------------------------------------------------
+* B. Organization Capital Stock (from SG&A)
+*------------------------------------------------------------------------------
+
+di "  → Organization Capital (SG&A-based, δ=20%)..."
 
 * Generate Organization Capital stock
 gen K_org = 0
@@ -192,84 +267,136 @@ by firm_id: replace K_org = 0 if _n == 1  // Initial stock = 0
 * δ_SGA = 0.20 → (1-δ) = 0.80
 by firm_id: replace K_org = 0.80 * K_org[_n-1] + SGA_flow if _n > 1
 
-label var K_org "Organization capital stock (from SG&A, real 2020 prices)"
+label var K_org "Organization capital (SG&A, δ=20%, real 2020)"
 
 sum K_org, d
-di "  Organization capital constructed:"
-di "    Mean:   " %12.0f r(mean)
-di "    Median: " %12.0f r(p50)
-di "    Max:    " %12.0f r(max)
-di "    N:      " r(N)
-di ""
-
-/*==============================================================================
-   STEP 5: CREATE CAPITAL AGGREGATES
-==============================================================================*/
-
-di "STEP 5: Creating capital aggregates..."
+di "     Mean:   " %12.0f r(mean)
+di "     Median: " %12.0f r(p50)
+di "     Max:    " %12.0f r(max)
+di "     N:      " r(N)
 di ""
 
 *------------------------------------------------------------------------------
-* Physical capital (from cleaned balance sheet)
+* C. Balance Sheet Intangibles (direct stock measure)
 *------------------------------------------------------------------------------
 
-cap confirm variable SV510101_real
-if _rc == 0 {
-    gen K_physical = SV510101_real
-    label var K_physical "Physical capital stock (tangible fixed assets, real 2020 prices)"
-}
-else {
-    di "  ERROR: SV510101_real not found!"
-    exit 111
-}
-
-*------------------------------------------------------------------------------
-* Internally created intangible capital
-*------------------------------------------------------------------------------
-
-gen K_intangible_internal = K_knowledge + K_org
-label var K_intangible_internal "Internally created intangible capital (real 2020 prices)"
-
-*------------------------------------------------------------------------------
-* Externally acquired intangibles (from cleaned balance sheet)
-*------------------------------------------------------------------------------
+di "  → Balance Sheet Intangibles (from SCIE)..."
 
 cap confirm variable SV510401_real
 if _rc == 0 {
-    gen K_intangible_external = SV510401_real
-    label var K_intangible_external "Balance sheet intangibles (real 2020 prices)"
+    gen K_intangible_bs = SV510401_real
+    label var K_intangible_bs "Balance sheet intangibles (real 2020)"
+    
+    sum K_intangible_bs, d
+    di "     Mean:   " %12.0f r(mean)
+    di "     Median: " %12.0f r(p50)
+    di "     Max:    " %12.0f r(max)
+    di "     N:      " r(N)
 }
 else {
     di "  ERROR: SV510401_real not found!"
     exit 111
 }
-
-*------------------------------------------------------------------------------
-* Total intangible capital
-*------------------------------------------------------------------------------
-
-gen K_intangible_total = K_intangible_internal + K_intangible_external
-label var K_intangible_total "Total intangible capital (real 2020 prices)"
-
-sum K_intangible_total, d
-di "  Total intangible capital:"
-di "    Mean:   " %12.0f r(mean)
-di "    Median: " %12.0f r(p50)
-di "    Max:    " %12.0f r(max)
 di ""
 
 *------------------------------------------------------------------------------
-* Total capital
+* D. Physical Capital (from balance sheet)
 *------------------------------------------------------------------------------
 
-gen K_total = K_physical + K_intangible_total
-label var K_total "Total capital (Physical + Intangible, real 2020 prices)"
+di "  → Physical Capital (from SCIE)..."
 
-sum K_total, d
-di "  Total capital:"
-di "    Mean:   " %12.0f r(mean)
-di "    Median: " %12.0f r(p50)
-di "    Max:    " %12.0f r(max)
+cap confirm variable SV510101_real
+if _rc == 0 {
+    gen K_physical = SV510101_real
+    label var K_physical "Physical capital (tangible fixed assets, real 2020)"
+    
+    sum K_physical, d
+    di "     Mean:   " %12.0f r(mean)
+    di "     Median: " %12.0f r(p50)
+    di "     Max:    " %12.0f r(max)
+}
+else {
+    di "  ERROR: SV510101_real not found!"
+    exit 111
+}
+di ""
+
+/*==============================================================================
+   STEP 4: CONSTRUCT ALTERNATIVE INTANGIBLE CAPITAL MEASURES
+==============================================================================*/
+
+di "STEP 4: Constructing alternative intangible capital aggregates..."
+di ""
+
+*------------------------------------------------------------------------------
+* MEASURE 1: Peters & Taylor (2017) Full Specification
+*------------------------------------------------------------------------------
+
+di "  MEASURE 1: Peters & Taylor (2017) - Full"
+di "  ────────────────────────────────────────"
+
+* Internal intangibles (Knowledge + Organization)
+gen K_intangible_pt_int = K_knowledge + K_org
+label var K_intangible_pt_int "P&T internal intangibles (K + Org, real 2020)"
+
+* Full P&T measure (Internal + External)
+gen K_intangible_pt = K_intangible_pt_int + K_intangible_bs
+label var K_intangible_pt "P&T total intangibles (K + Org + BS, real 2020)"
+
+* Total capital under P&T definition
+gen K_total_pt = K_physical + K_intangible_pt
+label var K_total_pt "P&T total capital (Physical + Intangible, real 2020)"
+
+sum K_intangible_pt, d
+di "     Mean:   " %12.0f r(mean)
+di "     Median: " %12.0f r(p50)
+di "     Max:    " %12.0f r(max)
+di ""
+
+*------------------------------------------------------------------------------
+* MEASURE 2: Balance Sheet + R&D Only (NO Organization Capital)
+*------------------------------------------------------------------------------
+
+di "  MEASURE 2: Balance Sheet + R&D"
+di "  ───────────────────────────────"
+
+* BS + R&D measure (excludes Organization Capital)
+gen K_intangible_bs_rd = K_knowledge + K_intangible_bs
+label var K_intangible_bs_rd "BS+R&D intangibles (K + BS, NO Org, real 2020)"
+
+* Total capital under BS+R&D definition
+gen K_total_bs_rd = K_physical + K_intangible_bs_rd
+label var K_total_bs_rd "BS+R&D total capital (Physical + Intangible, real 2020)"
+
+sum K_intangible_bs_rd, d
+di "     Mean:   " %12.0f r(mean)
+di "     Median: " %12.0f r(p50)
+di "     Max:    " %12.0f r(max)
+di ""
+
+/*==============================================================================
+   STEP 5: CREATE LEGACY VARIABLE NAMES FOR BACKWARD COMPATIBILITY
+==============================================================================*/
+
+di "STEP 5: Creating legacy variable names (backward compatibility)..."
+di ""
+
+* Map new flexible system to old variable names for existing code
+* Default measure: Peters & Taylor Full
+gen K_intangible_total = K_intangible_pt
+label var K_intangible_total "Total intangible capital (DEFAULT: P&T Full, real 2020)"
+
+gen K_total = K_total_pt
+label var K_total "Total capital (DEFAULT: P&T, real 2020)"
+
+gen K_intangible_internal = K_intangible_pt_int
+label var K_intangible_internal "Internal intangibles (DEFAULT: P&T, real 2020)"
+
+gen K_intangible_external = K_intangible_bs
+label var K_intangible_external "External intangibles (DEFAULT: BS, real 2020)"
+
+di "  ✓ Legacy names mapped to P&T Full measure"
+di "    (For backward compatibility with existing analysis code)"
 di ""
 
 /*==============================================================================
@@ -279,15 +406,18 @@ di ""
 di "STEP 6: Verifying consistency..."
 di ""
 
-* Check that all capital stocks are non-negative and non-missing
+*------------------------------------------------------------------------------
+* Check component stocks
+*------------------------------------------------------------------------------
+
 count if K_physical < 0 | K_physical == .
 if r(N) > 0 {
     di as error "  ERROR: K_physical has " r(N) " negative/missing values!"
 }
 
-count if K_intangible_external < 0 | K_intangible_external == .
+count if K_intangible_bs < 0 | K_intangible_bs == .
 if r(N) > 0 {
-    di as error "  ERROR: K_intangible_external has " r(N) " negative/missing values!"
+    di as error "  ERROR: K_intangible_bs has " r(N) " negative/missing values!"
 }
 
 count if K_knowledge == .
@@ -300,29 +430,49 @@ if r(N) > 0 {
     di as error "  ERROR: K_org has " r(N) " negative/missing values!"
 }
 
-* Check aggregates consistency
-gen check1 = abs(K_intangible_internal - (K_knowledge + K_org))
-gen check2 = abs(K_intangible_total - (K_intangible_internal + K_intangible_external))
-gen check3 = abs(K_total - (K_physical + K_intangible_total))
+*------------------------------------------------------------------------------
+* Check aggregates consistency for each measure
+*------------------------------------------------------------------------------
 
-qui sum check1
+* Peters & Taylor consistency
+gen check_pt1 = abs(K_intangible_pt_int - (K_knowledge + K_org))
+gen check_pt2 = abs(K_intangible_pt - (K_intangible_pt_int + K_intangible_bs))
+gen check_pt3 = abs(K_total_pt - (K_physical + K_intangible_pt))
+
+qui sum check_pt1
 if r(max) > 0.01 {
-    di as error "  ERROR: K_intangible_internal inconsistent with components!"
+    di as error "  ERROR: K_intangible_pt_int inconsistent!"
 }
 
-qui sum check2
+qui sum check_pt2
 if r(max) > 0.01 {
-    di as error "  ERROR: K_intangible_total inconsistent with components!"
+    di as error "  ERROR: K_intangible_pt inconsistent!"
 }
 
-qui sum check3
+qui sum check_pt3
 if r(max) > 0.01 {
-    di as error "  ERROR: K_total inconsistent with components!"
+    di as error "  ERROR: K_total_pt inconsistent!"
 }
 
-drop check1 check2 check3
+drop check_pt*
 
-di "  → All consistency checks passed"
+* BS+R&D consistency
+gen check_bs1 = abs(K_intangible_bs_rd - (K_knowledge + K_intangible_bs))
+gen check_bs2 = abs(K_total_bs_rd - (K_physical + K_intangible_bs_rd))
+
+qui sum check_bs1
+if r(max) > 0.01 {
+    di as error "  ERROR: K_intangible_bs_rd inconsistent!"
+}
+
+qui sum check_bs2
+if r(max) > 0.01 {
+    di as error "  ERROR: K_total_bs_rd inconsistent!"
+}
+
+drop check_bs*
+
+di "  ✓ All consistency checks passed"
 di ""
 
 /*==============================================================================
@@ -336,7 +486,7 @@ compress
 save "final_data_2011_2022_intangibles.dta", replace
 
 local n_final = _N
-di "  → Saved: final_data_2011_2022_intangibles.dta"
+di "  ✓ Saved: final_data_2011_2022_intangibles.dta"
 di "     Observations: " %12.0fc `n_final'
 di ""
 
@@ -351,25 +501,67 @@ di ""
 di "Output file:"
 di "  → final_data_2011_2022_intangibles.dta"
 di ""
-di "Key variables created:"
-di "  • K_knowledge           - Knowledge capital (sector-specific δ)"
-di "  • K_org                 - Organization capital (δ = 20%)"
-di "  • K_intangible_internal - Internal intangibles (K_knowledge + K_org)"
-di "  • K_intangible_external - External intangibles (from balance sheet)"
-di "  • K_intangible_total    - Total intangible capital"
-di "  • K_physical            - Physical capital (from balance sheet)"
-di "  • K_total               - Total capital (Physical + Intangible)"
-di "  • ff5_industry          - Sector classification"
+di "══════════════════════════════════════════════════════════════════"
+di "COMPONENT VARIABLES"
+di "══════════════════════════════════════════════════════════════════"
 di ""
-di "Sector-specific R&D depreciation (Ewens, Peters & Wang 2025):"
-di "  Consumer: 43%, Manufacturing: 50%, High Tech: 42%"
-di "  Health: 33%, Other: 35%"
+di "Building Blocks:"
+di "  • K_knowledge           Knowledge capital (R&D, sector-specific δ)"
+di "  • K_org                 Organization capital (SG&A, δ=20%)"
+di "  • K_intangible_bs       Balance sheet intangibles"
+di "  • K_physical            Physical capital"
+di "  • ff5_industry          Sector classification (EPW 2025)"
+di ""
+di "══════════════════════════════════════════════════════════════════"
+di "ALTERNATIVE INTANGIBLE CAPITAL MEASURES"
+di "══════════════════════════════════════════════════════════════════"
+di ""
+di "MEASURE 1: Peters & Taylor (2017) Full"
+di "───────────────────────────────────────"
+di "  • K_intangible_pt_int   Internal (K + Org)"
+di "  • K_intangible_pt       Total (K + Org + BS)"
+di "  • K_total_pt            Physical + Intangible"
+di ""
+di "MEASURE 2: Balance Sheet + R&D Only"
+di "────────────────────────────────────"
+di "  • K_intangible_bs_rd    BS + R&D (NO Org)"
+di "  • K_total_bs_rd         Physical + Intangible"
+di ""
+di "══════════════════════════════════════════════════════════════════"
+di "LEGACY VARIABLES (Backward Compatibility)"
+di "══════════════════════════════════════════════════════════════════"
+di ""
+di "These map to P&T Full measure by default:"
+di "  • K_intangible_internal → K_intangible_pt_int"
+di "  • K_intangible_external → K_intangible_bs"
+di "  • K_intangible_total    → K_intangible_pt"
+di "  • K_total               → K_total_pt"
+di ""
+di "══════════════════════════════════════════════════════════════════"
+di "SECTOR-SPECIFIC DEPRECIATION RATES (EPW 2025)"
+di "══════════════════════════════════════════════════════════════════"
+di ""
+di "Knowledge Capital (R&D):"
+di "  • Consumer:      δ = 43%"
+di "  • Manufacturing: δ = 50%"
+di "  • High Tech:     δ = 42%"
+di "  • Health:        δ = 33%"
+di "  • Other:         δ = 35%"
+di ""
+di "Organization Capital (SG&A): δ = 20% (all sectors)"
+di ""
+di "══════════════════════════════════════════════════════════════════"
 di ""
 di "All capital stocks are:"
-di "  ✓ Non-negative (where appropriate)"
+di "  ✓ Non-negative"
+di "  ✓ Non-missing (where applicable)"
 di "  ✓ In real 2020 prices"
 di "  ✓ Internally consistent"
 di "  ✓ Sector-heterogeneous (knowledge capital)"
+di ""
+di "Next step:"
+di "  → Run analysis_prep.do to create analytical variables"
+di "    for each intangible capital definition"
 di ""
 di "=========================================="
 
