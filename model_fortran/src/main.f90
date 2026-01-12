@@ -21,7 +21,7 @@
 ! USAGE:
 !   ./main
 !
-! AUTHOR: Generated for Vicente (2026) - Skill-Biased Stagnation Model
+! AUTHOR: Alejandro Vicente
 ! DATE: 2026-01-09
 !===================================================================================
 program main
