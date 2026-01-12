@@ -331,25 +331,31 @@ eststo col3: reghdfe ln_GVA ///
 
 esttab col1 col2 col3 using "$rootdir/results/fact3_underexploitation.tex", replace ///
     b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) ///
-    label booktabs ///
+    booktabs ///
     keep(intang_intensity_bs_rd share_skilled ///
          c.intang_intensity_bs_rd#c.share_skilled ///
          ln_K_total_bs_rd ln_emp ln_age) ///
     order(intang_intensity_bs_rd share_skilled ///
           c.intang_intensity_bs_rd#c.share_skilled ///
           ln_K_total_bs_rd ln_emp ln_age) ///
+    coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
+               share_skilled "Share Skilled Workers" ///
+               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled" ///
+               ln_K_total_bs_rd "Log Total Capital" ///
+               ln_emp "Log Employment" ///
+               ln_age "Log Firm Age") ///
     stats(N r2, ///
           labels("Observations" "Adjusted R-squared") ///
           fmt(%12.0fc 3)) ///
-    title("Underexploitation of Intangibles–Skills Complementarity") ///
+    title("Underexploitation of Intangibles--Skills Complementarity\label{tab:underexploitation}") ///
     mtitles("All Firms" "Low Leverage" "High Leverage") ///
     refcat(intang_intensity_bs_rd "\textit{Main effects:}" ///
            c.intang_intensity_bs_rd#c.share_skilled "\textit{Complementarity:}" ///
            ln_K_total_bs_rd "\textit{Controls:}", nolabel) ///
     addnote("Dependent variable: Log gross value added (GVA)." ///
             "Low- and high-leverage defined relative to sector-year median leverage." ///
-            "All specifications include year and industry fixed effects." ///
-            "Standard errors clustered at firm level.")
+            "All specifications include firm and year $\times$ industry fixed effects." ///
+            "Robust standard errors in parentheses.")
 
 di ""
 di "  ✓ Table saved: fact3_underexploitation.tex"
