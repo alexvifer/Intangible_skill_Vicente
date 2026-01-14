@@ -41,7 +41,7 @@
 \maketitle
 
 \begin{abstract}
-I develop a dynamic general-equilibrium model of heterogeneous firms where intangible capital and skilled labor are complements in production, and intangibles are produced with skilled labor in R\&D. Firms face collateal frictions, where tangible capital is more pledgeable than intangibles, creating a pecking-order distortion: constrained firms over-invest in tangibles. When the skilled-labor supply increases, unconstrained firms are able to exploit the complementarity investing in intangibles, while constrained firms do it suboptimally. The result is a \emph{skill-biased stagnation} mechanism: higher human capital delivers muted TFP gains because of misallocation induced by financial frictions.
+This paper studies how financial frictions prevent economies from fully exploiting productivity gains from rising human capital. Using Portuguese matched employer-employee and firm balance sheet data for 2011-2022, I document three empirical facts: (1) intangible capital and skilled labor are complements in production, (2) financially constrained firms underinvest in intangibles and R\&D labor, and (3) constrained firms underexploit the complementarity: during Portugal's skill supply expansion, wage premia declined more sharply at constrained firms despite hiring skilled workers at similar rates. I develop a quantitative heterogeneous-firm model with nested CES production, endogenous intangible accumulation through R\&D, and collateral constraints with differential pledgeability (\(\alpha_K > \alpha_S\)). The model rationalizes the empirical patterns and reveals a \emph{skill-biased stagnation} mechanism: when skilled labor becomes more abundant, unconstrained firms exploit the complementarity by investing in both intangibles and skills, while constrained firms hire skilled workers but cannot finance complementary intangible investments, leading to underexploitation and muted aggregate productivity gains. Counterfactual experiments quantify the role of financial frictions in limiting returns to human capital accumulation.
 \end{abstract}
 
 \section{Introduction}
@@ -50,7 +50,7 @@ Over the past decades, advanced economies have experienced substantial increases
 
 The mechanism operates through three key channels. First, intangible capital and skilled labor are complements in production, implying that firms with high intangible intensity benefit more from skilled workers. Second, intangibles are harder to pledge as collateral than tangible assets, creating a pecking-order distortion where financially constrained firms underinvest in intangibles. Third, when skilled labor becomes more abundant, unconstrained firms exploit the complementarity by investing in both intangibles and skilled workers, while constrained firms cannot finance the necessary intangible investments and therefore underexploit their skilled labor.
 
-I develop this argument in two stages. Using Portuguese matched employer-employee and balance sheet data for 2011--2022, I establish three empirical facts: (1) intangible intensity and skilled labor share are complements in production, (2) financially constrained firms invest less in intangibles and R\&D labor, and (3) the complementarity between intangibles and skills is significantly weaker for constrained firms. I then build a quantitative heterogeneous-firm model with nested CES production technology, endogenous intangible capital accumulation through R\&D, and collateral constraints with differential pledgeability. The model rationalizes the empirical patterns and enables counterfactual analysis of skill supply shocks under different financial friction scenarios.
+I develop this argument in two stages. Using Portuguese matched employer-employee and balance sheet data for 2011-2022, I establish three empirical facts: (1) intangible intensity and skilled labor share are complements in production, (2) financially constrained firms invest less in intangibles and R\&D labor, and (3) the complementarity between intangibles and skills is significantly weaker for constrained firms, with dynamic evidence showing that wage premia declined more sharply at constrained firms during the skill supply expansion. I then build a quantitative heterogeneous-firm model with nested CES production technology, endogenous intangible capital accumulation through R\&D, and collateral constraints with differential pledgeability. The model rationalizes the empirical patterns and enables counterfactual analysis of skill supply shocks under different financial friction scenarios.
 
 The paper contributes to three literatures. First, it connects to work on intangible capital and firm dynamics \citep{peterstaylor2017,atkeson2010innovation}, emphasizing the role of complementarities with skilled labor. Second, it relates to the literature on financial frictions and capital misallocation \citep{buera2013finance,moll2014aggregate}, highlighting the specific distortions created by differential pledgeability of capital types. Third, it speaks to the productivity slowdown debate by proposing financial frictions as a mechanism limiting the returns to human capital accumulation.
 
@@ -61,15 +61,15 @@ The remainder of the paper is organized as follows. Section \ref{sec:data_eviden
 
 \subsection{Data Sources and Measurement}
 
-The empirical analysis uses Portuguese firm-level data from two administrative sources for 2011--2022. The \textbf{SCIE (Sistema de Contas Integradas das Empresas)} provides balance sheet and income statement data for all Portuguese firms required to file annual accounts, including assets, liabilities, revenue, costs, and R\&D expenditures. The \textbf{QP (Quadros de Pessoal)} is a matched employer-employee dataset containing worker-level information that I aggregate to construct firm-level skill composition measures.
+The empirical analysis uses Portuguese firm-level data from two administrative sources for 2011-2022. The \textbf{SCIE (Sistema de Contas Integradas das Empresas)} provides balance sheet and income statement data for all Portuguese firms required to file annual accounts, including assets, liabilities, revenue, costs, and R\&D expenditures. The \textbf{QP (Quadros de Pessoal)} is a matched employer-employee dataset containing worker-level information that I aggregate to construct firm-level skill composition measures.
 
-I define skilled workers as those with tertiary education (ISCED 5-8) and construct the share of skilled workers as the key skill measure. Intangible capital stocks are built using the perpetual inventory method following \citet{peterstaylor2017}, combining knowledge capital from R\&D expenditures, organization capital from SG\&A expenses (advertising and training), and balance sheet intangibles. All monetary variables are deflated to constant 2020 prices. After cleaning and sample restrictions (positive employment, non-negative balance sheet items, at least two consecutive observations per firm), the final analytical sample contains 1,759,093 firm-year observations. Details on data construction and cleaning are provided in Appendix \ref{app:data_cleaning}.
+I define skilled workers as those with tertiary education (ISCED 5-8) and construct the share of skilled workers as the key skill measure. Intangible capital stocks are built using the perpetual inventory method following a simplified version of the approach by \citet{peterstaylor2017}, combining knowledge capital from R\&D expenditures and balance sheet intangibles. All monetary variables are deflated to constant 2020 prices. After cleaning and sample restrictions (positive employment, non-negative balance sheet items, at least two consecutive observations per firm), the final analytical sample contains 1,759,093 firm-year observations. Details on data construction and cleaning are provided in Appendix \ref{app:data_cleaning}.
 
 Financial constraints are proxied by leverage (total debt relative to total assets). Following standard practice in the corporate finance literature, I classify firms as constrained if their leverage exceeds the sector-year median, allowing for industry heterogeneity in optimal capital structure.
 
 \subsection{Empirical Facts}
 
-\subsubsection{Fact 1: Complementarity Between Intangibles and Skilled Labor}
+\subsubsection*{Fact 1: Complementarity Between Intangibles and Skilled Labor}
 
 Table \ref{tab:complementarity} reports estimates from production function regressions where the dependent variable is log output (revenue, production value, or gross value added) and the key regressor is the interaction between intangible intensity (intangible capital divided by total capital) and the share of skilled workers. All specifications include firm, year, and industry fixed effects, controlling for log total capital, log employment, and log firm age.
 
@@ -86,7 +86,7 @@ Figure \ref{fig:fact1_correlation} shows the raw correlation between intangible 
 \label{fig:fact1_correlation}
 \end{figure}
 
-\subsubsection{Fact 2: Financial Constraints and the Pecking Order}
+\subsubsection*{Fact 2: Financial Constraints and the Pecking Order}
 
 The model predicts that financially constrained firms underinvest in intangibles relative to tangibles because intangibles have lower pledgeability. Figure \ref{fig:fact2_pecking_order} presents residualized binscatters showing the relationship between leverage (the constraint proxy) and various investment decisions, after partialling out firm, year, and industry fixed effects along with log capital, employment, and age.
 
@@ -119,29 +119,49 @@ The model predicts that financially constrained firms underinvest in intangibles
 \note{All variables residualized by regressing on firm, year, and industry fixed effects, log total capital, log employment, and log firm age. Binscatters use 20 quantiles. Panel (d) restricts to firms with positive R\&D employment.}
 \end{figure}
 
-The evidence reveals a clear pecking-order pattern. While physical investment shows little systematic relationship with leverage (Panel a), intangible investment, intangible intensity, and R\&D worker allocation all decline sharply with leverage (Panels b--d). Constrained firms shift their investment composition toward tangible assets and allocate fewer skilled workers to R\&D activities, precisely as the model predicts when intangibles have lower collateral value than tangibles.
+The evidence reveals a clear pecking-order pattern. While physical investment shows little systematic relationship with leverage (Panel a), intangible investment, intangible intensity, and R\&D worker allocation all decline sharply with leverage (Panels b-d). Constrained firms shift their investment composition toward tangible assets and allocate fewer skilled workers to R\&D activities, precisely as the model predicts when intangibles have lower collateral value than tangibles.
 
-\subsubsection{Fact 3: Underexploitation of Complementarity by Constrained Firms}
+\subsubsection*{Fact 3: Underexploitation of Complementarity by Constrained Firms}
 
 If financial constraints prevent firms from building intangible capital, they should also reduce the extent to which firms can exploit the technological complementarity between intangibles and skills. Table \ref{tab:underexploitation} tests this prediction by estimating the complementarity regression separately for low-leverage (unconstrained) and high-leverage (constrained) firms.
 
 \input{QP_SCIE/results/fact3_underexploitation.tex}
 
-The interaction coefficient is 0.055 and significant for low-leverage firms (column 2), but statistically indistinguishable from zero ($-0.006$, p $>$ 0.10) for high-leverage firms (column 3). This stark difference indicates that constrained firms cannot exploit the complementarity: even when they employ skilled workers, the lack of complementary intangible capital limits productivity gains. The pooled specification (column 1) masks this heterogeneity, showing an intermediate coefficient of 0.040.
+The interaction coefficient is 0.055 and significant for low-leverage firms (column 2), but statistically indistinguishable from zero ($-0.005$, p $>$ 0.10) for high-leverage firms (column 3). This stark difference indicates that constrained firms cannot exploit the complementarity: even when they employ skilled workers, the lack of complementary intangible capital limits productivity gains. The pooled specification (column 1) masks this heterogeneity, showing an intermediate coefficient of 0.040.
 
-Figure \ref{fig:fact3_wage_premium} provides additional evidence by examining wage premia (the ratio of skilled to unskilled wages). If constrained firms underexploit skilled labor due to insufficient intangible capital, skilled workers should command lower premia at constrained firms. The residualized binscatter confirms this prediction: wage premia decline with leverage, consistent with lower marginal products of skilled labor at constrained firms.
+\paragraph{Dynamic Evidence: Wage Premium Decline.} The cross-sectional evidence establishes underexploitation at a point in time. I now examine the dynamic implications over the 2011-2022 period, during which Portugal experienced a substantial skill supply expansion. Figure \ref{fig:fact3_aggregate_trends} plots the evolution of the skill share and wage premium. The skill share increased substantially, yet the wage premium declined, a puzzle for standard capital-skill complementarity models where skill supply increases induce capital deepening that sustains premia.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.65\textwidth]{QP_SCIE/results/fact3_wage_premium_leverage.png}
-\caption{Wage Premium and Financial Constraints}
-\label{fig:fact3_wage_premium}
-\note{Wage premium defined as the ratio of average skilled to unskilled wages within the firm. Variables residualized by regressing on firm, year, and industry fixed effects, log total capital, log employment, and log firm age.}
+\includegraphics[width=0.72\textwidth]{QP_SCIE/results/fact3_skill_premium_trends.png}
+\caption{Skill Supply Expansion and Declining Wage Premium}
+\label{fig:fact3_aggregate_trends}
+\note{Averages across all firms. Skill share is the fraction of workers with tertiary education. Wage premium is the ratio of average skilled to unskilled wages within firms.}
 \end{figure}
+
+Figure \ref{fig:fact3_leverage_trends} decomposes this pattern by financial constraints. Panel (a) shows that both low- and high-leverage firms increased their skilled labor shares over the period at remarkably similar rates. However, Panel (b) reveals that the wage premium decline was much sharper at high-leverage (constrained) firms. This differential trend reveals the mechanism: constrained firms hire skilled workers at similar rates to unconstrained firms, but cannot finance the complementary intangible investments needed to maintain skilled workers' productivity, causing the wage premium to compress more sharply.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+\includegraphics[width=\textwidth]{QP_SCIE/results/fact3_skills_by_leverage.png}
+\caption{Skill Share by Leverage}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+\includegraphics[width=\textwidth]{QP_SCIE/results/fact3_premium_by_leverage.png}
+\caption{Wage Premium by Leverage}
+\end{subfigure}
+\caption{Skill Adoption vs.\ Wage Premium by Financial Constraints}
+\label{fig:fact3_leverage_trends}
+\note{Averages by leverage group. Low/high leverage defined relative to sector-year median. Both panels show residualized values, controlling for firm size (log capital, log employment), age, and industry fixed effects. Constrained firms hire skilled workers at similar rates as unconstrained firms (Panel a), yet experience sharper wage premium declines (Panel b), consistent with underexploitation of the intangible-skill complementarity.}
+\end{figure}
+
+This dynamic evidence completes the empirical case for skill-biased stagnation. Constrained firms respond to the skill supply shock by hiring skilled workers, but their inability to build complementary intangible capital means these workers are underexploited. The wage premium falls more sharply at constrained firms, revealing that financial frictions prevent the economy from fully exploiting productivity gains from rising human capital.
 
 \subsection{Summary of Empirical Evidence}
 
-The three facts establish the key building blocks of the theoretical mechanism. First, technology features complementarity between intangibles and skills. Second, financial frictions distort investment composition toward tangibles and away from intangibles. Third, the combination of these forces prevents constrained firms from exploiting complementarity, reducing the aggregate returns to skill accumulation. The following sections develop a model that rationalizes these patterns and enables quantitative counterfactual analysis.
+The three facts establish the key building blocks of the theoretical mechanism. First, technology features complementarity between intangibles and skills. Second, financial frictions distort investment composition toward tangibles and away from intangibles. Third, the combination of these forces prevents constrained firms from exploiting complementarity in both the cross-section and over time: the interaction coefficient is weak for constrained firms, and wage premia declined more sharply at constrained firms during the skill supply expansion of 2011-2022. The following sections develop a model that rationalizes these patterns and enables quantitative counterfactual analysis.
 
 \section{Building Intuition: A Toy Model}
 \label{sec:toy_model}
@@ -279,6 +299,39 @@ H^R_u = \argmax_{H^R \in [0,\bar{H}]} \tilde{Q}(H^R; \bar{H}).
 The constrained firm chooses $H^R_c < H^R_u$ (as established below in Proposition \ref{prop:toy_pecking_order}). Since $\tilde{Q}$ is strictly concave in $H^R$ and $H^R_c \neq H^R_u$, we have $\tilde{Q}(H^R_c; \bar{H}) < \tilde{Q}(H^R_u; \bar{H})$, i.e., $Q_c < Q_u$.
 \end{proof}
 
+\begin{remark}[Parameter Dependence and Limiting Cases]
+\label{rem:limiting_cases}
+The result $Q_c < Q_u$ and its magnitude depend critically on the elasticity parameter $\rho$. The proof requires strict concavity of $\tilde{Q}(H^R) = [\omega(\Gamma H^R)^{\rho} + (1-\omega)(\bar{H} - H^R)^{\rho}]^{1/\rho}$, which holds for $\rho < 1$ with an interior optimum. We examine the limiting cases:
+
+\textbf{Case 1: $\rho \to -\infty$ (Leontief, $\sigma_Q \to 0$).} In this limit,
+\[
+Q \to \min\{S, H^P\}
+\]
+after appropriate normalization of $\omega$. The composite becomes $\tilde{Q}(H^R) = \min\{\Gamma H^R, \bar{H} - H^R\}$, which is maximized at the balanced allocation $H^R_u = \bar{H}/(1 + \Gamma)$, yielding $Q_u = \Gamma\bar{H}/(1+\Gamma)$. Any deviation creates complete bottlenecks: the constrained firm's underinvestment in $S$ implies $Q_c = S_c = \Gamma H^R_c < \Gamma H^R_u \leq Q_u$, with $H^P_c$ entirely wasted beyond the binding constraint. The distortion is maximally severe.
+
+\textbf{Case 2: $\rho \to 0$ (Cobb-Douglas, $\sigma_Q \to 1$).} Taking the limit via L'H\^opital's rule,
+\[
+Q \to S^{\omega}(H^P)^{1-\omega}.
+\]
+The composite $\tilde{Q}(H^R) = \Gamma^{\omega}(H^R)^{\omega}(\bar{H} - H^R)^{1-\omega}$ is strictly concave with interior maximum at $H^R_u = \omega\bar{H}$. The result $Q_c < Q_u$ holds, with the gap determined by the curvature $\tilde{Q}''(H^R_u) = -\omega(1-\omega)\Gamma^{\omega}\bar{H}^{-1}(H^R_u)^{\omega-2}(\bar{H}-H^R_u)^{-1-\omega} < 0$.
+
+\textbf{Case 3: $\rho \in (0,1)$ (Gross Substitutes, $\sigma_Q > 1$).} The CES function remains strictly concave for $\rho < 1$, so the analysis proceeds unchanged. The composite $\tilde{Q}$ has a unique interior maximum, and $Q_c < Q_u$ holds. However, because $S$ and $H^P$ are substitutes, the constrained firm can partially compensate for low $S$ by allocating more $H^P$, reducing the magnitude of $Q_u - Q_c$ relative to the complementary case.
+
+\textbf{Case 4: $\rho \to 1$ (Perfect Substitutes, $\sigma_Q \to \infty$).} In this limit,
+\[
+Q \to \omega S + (1-\omega)H^P,
+\]
+and the composite becomes $\tilde{Q}(H^R) = \omega\Gamma H^R + (1-\omega)(\bar{H} - H^R) = [\omega\Gamma - (1-\omega)]H^R + (1-\omega)\bar{H}$. This is \emph{linear} in $H^R$, so $\tilde{Q}$ is no longer strictly concave. Three subcases arise:
+\begin{itemize}
+\item If $\omega\Gamma > 1-\omega$: corner solution $H^R_u = \bar{H}$ (all labor to R\&D).
+\item If $\omega\Gamma < 1-\omega$: corner solution $H^R_u = 0$ (all labor to production).
+\item If $\omega\Gamma = 1-\omega$: the firm is indifferent over all allocations, and $Q = (1-\omega)\bar{H}$ regardless of $H^R$.
+\end{itemize}
+In the knife-edge case $\omega\Gamma = 1-\omega$, the financial constraint creates no distortion in $Q$ (though it still distorts $K$). Otherwise, the constraint may or may not bind depending on which corner is optimal.
+
+\textbf{Summary.} The baseline assumption $\rho < 0$ ensures: (i) strict concavity of $\tilde{Q}$ with interior optimum, (ii) the result $Q_c < Q_u$ for any constrained allocation, and (iii) economically significant complementarity that amplifies the distortion. As $\rho \to -\infty$, the distortion becomes arbitrarily severe; as $\rho \to 1$, the distortion vanishes in the knife-edge case or the problem degenerates to corner solutions.
+\end{remark}
+
 \begin{proposition}[Pecking Order]
 \label{prop:toy_pecking_order}
 Under the collateral constraint \eqref{eq:toy_collateral} with $\alpha_K \in (0,1)$ and $\alpha_S = 0$, constrained firms ($\mu > 0$) exhibit:
@@ -294,7 +347,7 @@ where subscripts $c$ and $u$ denote constrained and unconstrained firms respecti
 \end{proposition}
 
 \begin{proof}
-\textbf{Parts (i)--(iii):} From \eqref{eq:toy_foc_HR_con}, the constrained firm requires $\partial Y/\partial H^R = \mu w_H > 0$, while the unconstrained firm has $\partial Y/\partial H^R = 0$ at optimum. Since
+\textbf{Parts (i)-(iii):} From \eqref{eq:toy_foc_HR_con}, the constrained firm requires $\partial Y/\partial H^R = \mu w_H > 0$, while the unconstrained firm has $\partial Y/\partial H^R = 0$ at optimum. Since
 \[
 \frac{\partial Y}{\partial H^R} = (1-\alpha) z K^{\alpha} Q^{-\alpha} \left[\frac{\partial Q}{\partial S} \Gamma - \frac{\partial Q}{\partial H^P}\right],
 \]
@@ -428,7 +481,7 @@ When the skilled labor endowment increases ($\bar{H} \uparrow$):
 \end{proposition}
 
 \begin{proof}
-Parts (i)--(ii) follow from the derived responses.
+Parts (i)-(ii) follow from the derived responses.
 
 \textbf{Part (iii):} By the envelope theorem, since the unconstrained firm maximizes $Q$ over the allocation of $\bar{H}$:
 \[
@@ -594,7 +647,7 @@ Intangible assets are less pledgeable than tangible assets: \(0 \le \alpha_S < \
 
 \subsubsection{Within-Period Timing}
 
-To clarify the sequence of decisions within each period \(t\), I specify the following timing:
+To clarify the sequence of decisions within each period \(t\), I specify the following timing. The stages below describe the logical sequence of decisions and cash flows within a single period; all labor $(L, H^P, H^R)$ is hired at the beginning of the period at the prevailing wages $(w_L, w_H)$, but the timing structure clarifies how different expenditures are financed:
 
 \begin{enumerate}[leftmargin=*]
 \item \textbf{Beginning of period:} Firm enters with state \((z_{t-1}, K_t, S_t, D_{t-1})\), where \(z_{t-1}\) denotes the lagged productivity realization and \(D_{t-1}\) is the debt obligation carried forward from the previous period.
@@ -633,6 +686,7 @@ Given the timing above, the firm's per-period budget constraint is:
 I^K_{j,t} + w_L L_{j,t} + w_H H^P_{j,t} + w_H H^R_{j,t} + R D_{j,t-1} \le Y_{j,t} + D_{j,t}.
 \label{eq:budget_constraint}
 \end{equation}
+\textbf{Timing and Wage Equality.} Although the within-period timing describes $H^P$ as hired for production (Step 4) and $H^R$ as hired for R\&D investment (Step 7), both types of skilled labor are employed within the same period $t$ and paid the same wage $w_H$. The timing structure describes the sequence of decisions and cash flows within the period, not separate labor markets. Skilled workers are hired at the beginning of period $t$ with the understanding that some will work in production while others work in R\&D. The single wage $w_H$ clears the aggregate skilled labor market: $\int (H^P_j + H^R_j) d\Psi = \bar{H}$.
 
 We can rewrite this in terms of gross profits from production:
 \[
@@ -822,7 +876,7 @@ The quantitative model enables several counterfactual experiments to quantify th
 
 \subsection{Data Sources and Sample Construction}
 
-The empirical analysis uses Portuguese firm-level data from two administrative sources for the period 2011--2022:
+The empirical analysis uses Portuguese firm-level data from two administrative sources for the period 2011-2022:
 
 \begin{enumerate}[label=(\roman*)]
 \item \textbf{SCIE (Sistema de Contas Integradas das Empresas):} Balance sheet and income statement data covering all Portuguese firms required to file annual accounts. Variables include assets, liabilities, equity, revenue, costs, investment flows, and R\&D expenditures.
@@ -830,7 +884,7 @@ The empirical analysis uses Portuguese firm-level data from two administrative s
 \item \textbf{QP (Quadros de Pessoal):} Matched employer-employee data containing firm characteristics and worker-level information. I aggregate worker data to construct firm-level skill composition measures, defining skilled workers as those with tertiary education (ISCED 5-8).
 \end{enumerate}
 
-Before the cleaning procedure, I restrict the sample to private incorporated businesses (\textit{sociedades}), as balance sheet data is only available for incorporated firms and public firms face different objectives and constraints. The initial merged dataset (SCIE-matched, private incorporated firms) contains 2,329,807 firm-year observations spanning 2011--2022.
+Before the cleaning procedure, I restrict the sample to private incorporated businesses (\textit{sociedades}), as balance sheet data is only available for incorporated firms and public firms face different objectives and constraints. The initial merged dataset (SCIE-matched, private incorporated firms) contains 2,329,807 firm-year observations spanning 2011-2022.
 
 \subsection{Price Deflators}
 
@@ -844,7 +898,7 @@ All monetary variables are deflated to constant 2020 prices using three price in
 \item \textbf{Capital deflator} (2020=100): Applied to balance sheet stocks. Source: EU KLEMS-INTAN database, Portuguese data.
 \end{itemize}
 
-For 2022, GFCF and capital deflators are extrapolated using the 2021--2022 growth rate of the GDP deflator, as EU KLEMS-INTAN data availability ends in 2021.
+For 2022, GFCF and capital deflators are extrapolated using the 2021-2022 growth rate of the GDP deflator, as EU KLEMS-INTAN data availability ends in 2021.
 
 \subsection{Data Cleaning Procedure}
 
@@ -874,7 +928,7 @@ These thresholds eliminate shell companies and data errors while retaining small
 
 \paragraph{Step 4: Panel Structure.} Require at least two consecutive observations per firm to enable construction of intangible capital stocks via the perpetual inventory method (PIM). Firms with isolated observations cannot be used for dynamic capital stock accumulation.
 
-\paragraph{Final Sample.} The sequential cleaning procedure yields a final analytical sample of \textbf{1,759,093 firm-year observations} spanning 2011--2022. All observations have complete data for core balance sheet variables, positive economic activity, and sufficient panel length for capital stock construction. Missing values in R\&D, advertising, or training expenditures are treated as zero investment in these categories, following standard practice in the intangible capital literature. 
+\paragraph{Final Sample.} The sequential cleaning procedure yields a final analytical sample of \textbf{1,759,093 firm-year observations} spanning 2011-2022. All observations have complete data for core balance sheet variables, positive economic activity, and sufficient panel length for capital stock construction. Missing values in R\&D, advertising, or training expenditures are treated as zero investment in these categories, following standard practice in the intangible capital literature. 
 
 \subsection{Intangible Capital Construction}
 

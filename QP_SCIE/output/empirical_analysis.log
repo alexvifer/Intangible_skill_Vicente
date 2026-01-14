@@ -2,108 +2,57 @@
       name:  <unnamed>
        log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\output\empirical_analysis.log
   log type:  text
- opened on:   9 Jan 2026, 12:36:10
+ opened on:  14 Jan 2026, 14:10:59
 
-. 
-. di "=========================================="
-==========================================
-
-. di "EMPIRICAL ANALYSIS"
-EMPIRICAL ANALYSIS
-
-. di "Date: `c(current_date)'"
-Date:  9 Jan 2026
-
-. di "=========================================="
-==========================================
-
-. di ""
-
-
-. 
-. /*==============================================================================
->    SETUP
-> ==============================================================================*/
 . 
 . use "final_data_2011_2022_analysis.dta", clear
 
 . 
-. * Declare panel
 . xtset firm_id ano
        panel variable:  firm_id (unbalanced)
         time variable:  ano, 2011 to 2022, but with gaps
                 delta:  1 unit
 
 . 
-. * Create results directory
+. * Set white background for all graphs
+. set scheme s1color
+
+. 
 . cap mkdir "$rootdir/results"
 
 . 
-. di "Sample size: " _N
-Sample size: 1759093
-
-. di ""
-
-
 . 
 . /*==============================================================================
 >    FACT 1: COMPLEMENTARITY BETWEEN INTANGIBLES AND SKILLED LABOR
 > ==============================================================================*/
 . 
-. di "=========================================="
-==========================================
+. * Raw correlation
+. preserve
 
-. di "FACT 1: COMPLEMENTARITY"
-FACT 1: COMPLEMENTARITY
+. collapse (mean) intang_intensity_bs_rd share_skilled, by(firm_id)
 
-. di "=========================================="
-==========================================
-
-. di ""
-
-
-. 
-. *------------------------------------------------------------------------------
-. * Visual evidence: Raw correlation
-. *------------------------------------------------------------------------------
-. 
-. binscatter intang_intensity_bs_rd share_skilled if intang_intensity > 0 & share_skilled > 0, nquantiles(20) ///
->     xtitle("Share of skilled workers") ///
->     ytitle("Intangible intensity") ///
->     title("Intangibles and Skills: Raw Correlation") ///
->     note("Excludes firms with zero intangible capital or no skilled workers. 20 quantiles.")
-warning: nquantiles(20) was specified, but only 17 were generated. see help file under nquantiles() for explanation.
+. binscatter intang_intensity_bs_rd share_skilled, nquantiles(20) ///
+>     xtitle("Share of Skilled Workers") ///
+>     ytitle("Intangible Intensity (K_intangible / K_total)") ///
+>     title("Intangibles and Skills: Raw Correlation")
+warning: nquantiles(20) was specified, but only 10 were generated. see help file under nquantiles() for explanation.
 
 . graph export "$rootdir/results/fact1_raw_correlation.png", replace width(2000)
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact1_raw_correlation.png not
+>  found)
 (file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact1_raw_correlation.png written i
 > n PNG format)
 
-. 
-. di "  ✓ Figure saved: fact1_raw_correlation.png"
-  ✓ Figure saved: fact1_raw_correlation.png
-
-. di ""
-
+. restore
 
 . 
-. *------------------------------------------------------------------------------
-. * Main regression table: Complementarity across three outcomes
-. *------------------------------------------------------------------------------
-. 
-. di "  → Running complementarity regressions..."
-  → Running complementarity regressions...
-
-. di ""
-
-
-. 
+. * Production function regressions
 . eststo clear
 
 . 
-. * Column 1: Log Revenue
-. reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ln_K_total_bs_rd ln_emp ln_age, absorb(ano cae3 firm_id) vce(ro
-> bust)
-(MWFE estimator converged in 56 iterations)
+. eststo revenue: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+(MWFE estimator converged in 52 iterations)
 
 HDFE Linear regression                            Number of obs   =  1,759,084
 Absorbing 3 HDFE groups                           F(   6,1502834) =   39240.25
@@ -132,40 +81,16 @@ Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-         ano |        12           0          12     |
-        cae3 |        83           1          82     |
-     firm_id |    256152           2      256150    ?|
+     firm_id |    256152           0      256152     |
+         ano |        12           1          11     |
+        cae3 |        83           2          81    ?|
 -----------------------------------------------------+
 ? = number of redundant parameters may be higher
 
 . 
-. eststo revenue
-
-. estadd local year_fe "Yes"
-
-added macro:
-            e(year_fe) : "Yes"
-
-. estadd local industry_fe "Yes"
-
-added macro:
-        e(industry_fe) : "Yes"
-
-. estadd local firm_fe "Yes"
-
-added macro:
-            e(firm_fe) : "Yes"
-
-. estadd local controls "Yes"
-
-added macro:
-           e(controls) : "Yes"
-
-. 
-. * Column 2: Log Production
-. reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ln_K_total_bs_rd ln_emp ln_age, absorb(ano cae3 firm_id) vce
-> (robust)
-(MWFE estimator converged in 57 iterations)
+. eststo production: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+(MWFE estimator converged in 52 iterations)
 
 HDFE Linear regression                            Number of obs   =  1,759,084
 Absorbing 3 HDFE groups                           F(   6,1502834) =   46124.00
@@ -194,41 +119,17 @@ Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-         ano |        12           0          12     |
-        cae3 |        83           1          82     |
-     firm_id |    256152           2      256150    ?|
+     firm_id |    256152           0      256152     |
+         ano |        12           1          11     |
+        cae3 |        83           2          81    ?|
 -----------------------------------------------------+
 ? = number of redundant parameters may be higher
 
 . 
-. eststo production
-
-. estadd local year_fe "Yes"
-
-added macro:
-            e(year_fe) : "Yes"
-
-. estadd local industry_fe "Yes"
-
-added macro:
-        e(industry_fe) : "Yes"
-
-. estadd local firm_fe "Yes"
-
-added macro:
-            e(firm_fe) : "Yes"
-
-. estadd local controls "Yes"
-
-added macro:
-           e(controls) : "Yes"
-
-. 
-. * Column 3: Log GVA
-. reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ln_K_total_bs_rd ln_emp ln_age, absorb(ano cae3 firm_id) vce(robust
-> )
+. eststo gva: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
 (dropped 1 singleton observations)
-(MWFE estimator converged in 56 iterations)
+(MWFE estimator converged in 54 iterations)
 
 HDFE Linear regression                            Number of obs   =  1,759,076
 Absorbing 3 HDFE groups                           F(   6,1502827) =   36353.81
@@ -257,428 +158,149 @@ Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-         ano |        12           0          12     |
-        cae3 |        83           1          82     |
-     firm_id |    256151           2      256149    ?|
+     firm_id |    256151           0      256151     |
+         ano |        12           1          11     |
+        cae3 |        83           2          81    ?|
 -----------------------------------------------------+
 ? = number of redundant parameters may be higher
 
 . 
-. eststo gva
-
-. estadd local year_fe "Yes"
-
-added macro:
-            e(year_fe) : "Yes"
-
-. estadd local industry_fe "Yes"
-
-added macro:
-        e(industry_fe) : "Yes"
-
-. estadd local firm_fe "Yes"
-
-added macro:
-            e(firm_fe) : "Yes"
-
-. estadd local controls "Yes"
-
-added macro:
-           e(controls) : "Yes"
-
-. 
-. di ""
-
-
-. di "  ✓ All regressions completed"
-  ✓ All regressions completed
-
-. di ""
-
-
-. 
-. *------------------------------------------------------------------------------
-. * Export table to LaTeX
-. *------------------------------------------------------------------------------
-. 
-. esttab revenue production gva using "$rootdir/results/fact1_complementarity.tex", ///
->     replace booktabs ///
->     b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
->     mtitles("Log Revenue" "Log Production" "Log GVA") ///
+. esttab revenue production gva using "$rootdir/results/fact1_complementarity.tex", replace ///
+>     b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+>     drop(ln_K_total_bs_rd ln_emp ln_age _cons) ///
+>     coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
+>                share_skilled "Share Skilled Workers" ///
+>                c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled") ///
+>     stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
 >     title("Complementarity Between Intangibles and Skilled Labor\label{tab:complementarity}") ///
->     keep(c.intang_intensity_bs_rd#c.share_skilled intang_intensity_bs_rd share_skilled) ///
->     order(c.intang_intensity_bs_rd#c.share_skilled intang_intensity_bs_rd share_skilled) ///
->     coeflabels(c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled" ///
->                intang_intensity_bs_rd "Intangible Intensity" ///
->                share_skilled "Share Skilled Workers") ///
->     scalars("year_fe Year FE" "industry_fe Industry FE" "firm_fe Firm FE" "controls Controls") ///
->     sfmt(0 0 0 0) ///
+>     mtitles("Revenue" "Production" "GVA") ///
 >     nonotes ///
->     addnotes("Controls include log total capital, log employment, and log firm age." ///
->              "Industry FE based on 3-digit CAE codes. Robust standard errors in parentheses." ///
->              "* \$p < 0.10\$, ** \$p < 0.05\$, *** \$p < 0.01\$")
+>     addnote("All output measures in logs. Intangible intensity = K$_{intangible}$ / K$_{total}$." ///
+>             "All specifications include firm, year, and industry fixed effects." ///
+>             "Robust standard errors in parentheses.")
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact1_complementarity.tex not
+>  found)
 (output written to C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact1_complementarity.
 > tex)
 
 . 
-. di "  ✓ Table saved: fact1_complementarity.tex"
-  ✓ Table saved: fact1_complementarity.tex
-
-. di ""
-
-
-. 
-. *------------------------------------------------------------------------------
-. * Display results in console
-. *------------------------------------------------------------------------------
-. 
-. esttab revenue production gva, ///
->     b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
->     mtitles("Revenue" "Production" "GVA") ///
->     keep(c.intang_intensity_bs_rd#c.share_skilled intang_intensity_bs_rd share_skilled) ///
->     scalars("year_fe Year FE" "industry_fe Ind FE" "firm_fe Firm FE" "controls Controls") ///
->     title("FACT 1: Complementarity Between Intangibles and Skills")
-
-FACT 1: Complementarity Between Intangibles and Skills
-------------------------------------------------------------
-                      (1)             (2)             (3)   
-                  Revenue      Production             GVA   
-------------------------------------------------------------
-intang_int~d       -0.102***       -0.111***       -0.125***
-                  (0.006)         (0.006)         (0.009)   
-
-share_skil~d       -0.013***       -0.008**        -0.015***
-                  (0.004)         (0.003)         (0.005)   
-
-c.intang_i~s        0.026*          0.042***        0.040** 
-                  (0.014)         (0.013)         (0.017)   
-------------------------------------------------------------
-N                 1759084         1759084         1759076   
-Year FE               Yes             Yes             Yes   
-Ind FE                Yes             Yes             Yes   
-Firm FE               Yes             Yes             Yes   
-Controls              Yes             Yes             Yes   
-------------------------------------------------------------
-Standard errors in parentheses
-* p<0.10, ** p<0.05, *** p<0.01
-
-. 
-. di ""
-
-
-. di "=========================================="
-==========================================
-
-. di "FACT 1 ANALYSIS COMPLETE"
-FACT 1 ANALYSIS COMPLETE
-
-. di "=========================================="
-==========================================
-
-. di ""
-
-
-. di "Output: $rootdir/results/fact1_complementarity.tex"
-Output: C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact1_complementarity.tex
-
-. di ""
-
-
-. 
 . 
 . /*==============================================================================
->    FACT 2: PECKING ORDER DISTORTION
->    
->    Theory: Financial constraints create pecking order where constrained firms
->            under-invest in intangible capital (non-pledgeable) relative to 
->            physical capital (pledgeable), and underallocate workers to R&D
->    
+>    FACT 2: FINANCIAL CONSTRAINTS AND THE PECKING ORDER
 > ==============================================================================*/
 . 
-. di "=========================================="
-==========================================
+. * Winsorize variables for Fact 2
+. winsor2 inv_rate_physical_bs_rd, cuts(5 95) by(ano cae3) suffix(_w)
 
-. di "FACT 2: PECKING ORDER DISTORTION"
-FACT 2: PECKING ORDER DISTORTION
-
-. di "=========================================="
-==========================================
-
-. di ""
-
+. label var inv_rate_physical_bs_rd_w "Physical investment rate (winsorized 5-95)"
 
 . 
-. *------------------------------------------------------------------------------
-. * Winsorize constraint and investment variables
-. *------------------------------------------------------------------------------
-. 
-. di "  → Winsorizing variables (1-99 by year and sector)..."
-  → Winsorizing variables (1-99 by year and sector)...
+. winsor2 inv_rate_intang_bs_rd, cuts(5 95) by(ano cae3) suffix(_w)
 
-. di ""
-
+. label var inv_rate_intang_bs_rd_w "Intangible investment rate (winsorized 5-95)"
 
 . 
-. winsor2 leverage_assets, suffix(_win) cuts(1 99) by(ano cae3)
+. winsor2 leverage_assets, cuts(5 95) by(ano cae3) suffix(_w)
 
-. winsor2 inv_rate_physical inv_rate_intang_bs_rd, suffix(_win) cuts(1 99) by(ano cae3)
-
-. 
-. di "     ✓ Variables winsorized"
-     ✓ Variables winsorized
-
-. di ""
-
+. label var leverage_assets_w "Leverage (Debt/Assets, winsorized 5-95)"
 
 . 
-. *------------------------------------------------------------------------------
-. * Visual evidence: Residualized binscatters with leverage
-. *------------------------------------------------------------------------------
-. 
-. di "  → Creating residualized binscatters..."
-  → Creating residualized binscatters...
+. * Define leverage constraint (sector-year median)
+. bysort cae3 ano: egen leverage_median = median(leverage_assets_w)
 
-. di ""
+. gen high_leverage = (leverage_assets_w > leverage_median) if !missing(leverage_assets_w, leverage_median)
 
+. label var high_leverage "Above sector-year median leverage"
 
 . 
-. * Physical investment vs. leverage
-. qui reghdfe inv_rate_physical_win ln_K_total_bs_rd ln_emp ln_age, ///
->     absorb(ano cae3 firm_id) resid
-
-. predict resid_inv_phys, resid
+. * Residualized binscatters
+. foreach var in inv_rate_physical_bs_rd_w inv_rate_intang_bs_rd_w intang_intensity_bs_rd {
+  2.     qui reghdfe `var' ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) resid
+  3.     predict resid_`var', resid
+  4. }
 (383,466 missing values generated)
-
-. qui reghdfe leverage_assets_win, absorb(ano cae3 firm_id) resid
-
-. predict resid_leverage, resid
+(383,497 missing values generated)
+(9 missing values generated)
 
 . 
-. binscatter resid_inv_phys resid_leverage, ///
->     nquantiles(20) ///
->     xtitle("Leverage, residualized") ///
->     ytitle("Physical investment rate, residualized") ///
->     title("Physical Investment and Financial Constraints") ///
->     note("Residuals from regression on firm, year and sector FE, log capital, log employment, log age.")
+. * Physical investment vs leverage
+. binscatter resid_inv_rate_physical_bs_rd_w leverage_assets_w, nquantiles(20) ///
+>     xtitle("Leverage (Debt / Assets)") ytitle("Physical Investment Rate (residualized)") ///
+>     title("Physical Investment and Leverage")
+warning: nquantiles(20) was specified, but only 16 were generated. see help file under nquantiles() for explanation.
 
 . graph export "$rootdir/results/fact2_physical_inv_leverage.png", replace width(2000)
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact2_physical_inv_leverage.p
+> ng not found)
 (file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact2_physical_inv_leverage.png wri
 > tten in PNG format)
 
 . 
-. drop resid_inv_phys resid_leverage
-
-. 
-. * Intangible investment vs. leverage
-. qui reghdfe inv_rate_intang_bs_rd_win ln_K_total_bs_rd ln_emp ln_age, ///
->     absorb(firm_id ano cae3) resid
-
-. predict resid_inv_intang, resid
-(383,497 missing values generated)
-
-. qui reghdfe leverage_assets_win, absorb(firm_id ano cae3) resid
-
-. predict resid_leverage, resid
-
-. 
-. binscatter resid_inv_intang resid_leverage, ///
->     nquantiles(20) ///
->     xtitle("Leverage, residualized") ///
->     ytitle("Intangible investment rate, residualized") ///
->     title("Intangible Investment and Financial Constraints") ///
->     note("Residuals from regression on firm, year and sector FE, log capital, log employment, log age.")
+. * Intangible investment vs leverage
+. binscatter resid_inv_rate_intang_bs_rd_w leverage_assets_w, nquantiles(20) ///
+>     xtitle("Leverage (Debt / Assets)") ytitle("Intangible Investment Rate (residualized)") ///
+>     title("Intangible Investment and Leverage")
+warning: nquantiles(20) was specified, but only 16 were generated. see help file under nquantiles() for explanation.
 
 . graph export "$rootdir/results/fact2_intangible_inv_leverage.png", replace width(2000)
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact2_intangible_inv_leverage
+> .png not found)
 (file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact2_intangible_inv_leverage.png w
 > ritten in PNG format)
 
 . 
-. drop resid_inv_intang resid_leverage
-
-. 
-. * Intangible intensity vs. leverage
-. qui reghdfe intang_intensity ln_K_total_bs_rd ln_emp ln_age, ///
->     absorb(firm_id ano cae3) resid
-
-. predict resid_intang_int, resid
-(9 missing values generated)
-
-. qui reghdfe leverage_assets_win, absorb(firm_id ano cae3) resid
-
-. predict resid_leverage, resid
-
-. 
-. binscatter resid_intang_int resid_leverage, ///
->     nquantiles(20) ///
->     xtitle("Leverage, residualized") ///
->     ytitle("Intangible intensity, residualized") ///
->     title("Intangible Intensity and Financial Constraints") ///
->     note("Residuals from regression on firm, year and sector FE, log capital, log employment, log age.")
+. * Intangible intensity vs leverage
+. binscatter resid_intang_intensity_bs_rd leverage_assets_w, nquantiles(20) ///
+>     xtitle("Leverage (Debt / Assets)") ytitle("Intangible Intensity (residualized)") ///
+>     title("Intangible Intensity and Leverage")
+warning: nquantiles(20) was specified, but only 16 were generated. see help file under nquantiles() for explanation.
 
 . graph export "$rootdir/results/fact2_intang_intensity_leverage.png", replace width(2000)
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact2_intang_intensity_levera
+> ge.png not found)
 (file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact2_intang_intensity_leverage.png
 >  written in PNG format)
 
 . 
-. drop resid_intang_int resid_leverage
+. * R&D workers vs leverage
+. preserve
 
-. 
-. * R&D workers vs. leverage
-. qui reghdfe share_rd_workers ln_K_total_bs_rd ln_emp ln_age if share_rd_workers > 0, ///
->     absorb(firm_id ano cae3) resid
+. keep if share_rd_workers > 0
+(1,729,074 observations deleted)
 
-. predict resid_rd_share, resid
-(1,730,841 missing values generated)
+. qui reghdfe share_rd_workers ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) resid
 
-. qui reghdfe leverage_assets_win if share_rd_workers > 0, ///
->     absorb(firm_id ano cae3) resid
+. predict resid_rd_workers, resid
+(1,767 missing values generated)
 
-. predict resid_leverage, resid
-(1,730,841 missing values generated)
-
-. 
-. binscatter resid_rd_share resid_leverage if share_rd_workers > 0, ///
->     nquantiles(20) ///
->     xtitle("Leverage, residualized") ///
->     ytitle("Share of R&D workers, residualized") ///
->     title("R&D Labor Allocation and Financial Constraints") ///
->     note("Residuals from regression on firm, year and sector FE, log capital, log employment, log age." ///
->          "Sample: firms with positive R&D employment.")
+. binscatter resid_rd_workers leverage_assets_w, nquantiles(20) ///
+>     xtitle("Leverage (Debt / Assets)") ytitle("Share of R&D Workers (residualized)") ///
+>     title("R&D Employment and Leverage")
+warning: nquantiles(20) was specified, but only 19 were generated. see help file under nquantiles() for explanation.
 
 . graph export "$rootdir/results/fact2_rd_workers_leverage.png", replace width(2000)
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact2_rd_workers_leverage.png
+>  not found)
 (file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact2_rd_workers_leverage.png writt
 > en in PNG format)
 
-. 
-. drop resid_rd_share resid_leverage
+. restore
 
 . 
-. di "     ✓ Figures saved (4 binscatters)"
-     ✓ Figures saved (4 binscatters)
-
-. di ""
-
+. drop resid_* 
 
 . 
-. di "=========================================="
-==========================================
-
-. di "FACT 2 COMPLETE"
-FACT 2 COMPLETE
-
-. di "=========================================="
-==========================================
-
-. di ""
-
-
-. di "Output files:"
-Output files:
-
-. di "  • fact2_physical_inv_leverage.png      - Physical investment vs leverage"
-  • fact2_physical_inv_leverage.png      - Physical investment vs leverage
-
-. di "  • fact2_intangible_inv_leverage.png    - Intangible investment vs leverage"
-  • fact2_intangible_inv_leverage.png    - Intangible investment vs leverage
-
-. di "  • fact2_intang_intensity_leverage.png  - Intangible intensity vs leverage"
-  • fact2_intang_intensity_leverage.png  - Intangible intensity vs leverage
-
-. di "  • fact2_rd_workers_leverage.png        - R&D workers vs leverage"
-  • fact2_rd_workers_leverage.png        - R&D workers vs leverage
-
-. di ""
-
-
-. di "KEY RESULT:"
-KEY RESULT:
-
-. di "  Constrained firms (high leverage) have:"
-  Constrained firms (high leverage) have:
-
-. di "    → Lower intangible investment rate"
-    → Lower intangible investment rate
-
-. di "    → Lower intangible intensity"  
-    → Lower intangible intensity
-
-. di "    → Lower R&D worker allocation"
-    → Lower R&D worker allocation
-
-. di "  This is the pecking order distortion from low pledgeability of intangibles"
-  This is the pecking order distortion from low pledgeability of intangibles
-
-. di ""
-
-
 . 
 . /*==============================================================================
 >    FACT 3: UNDEREXPLOITATION OF COMPLEMENTARITY BY CONSTRAINED FIRMS
->    
->    Theory: Financial constraints distort input choices, pushing firms away
->            from the region where the technological complementarity between
->            intangibles and skilled labor is operative.
 > ==============================================================================*/
 . 
-. di "=========================================="
-==========================================
-
-. di "FACT 3: UNDEREXPLOITATION OF COMPLEMENTARITY"
-FACT 3: UNDEREXPLOITATION OF COMPLEMENTARITY
-
-. di "=========================================="
-==========================================
-
-. di ""
-
-
-. 
-. *------------------------------------------------------------------------------
-. * Construct leverage-based constraint indicator
-. *------------------------------------------------------------------------------
-. 
-. di "  → Constructing leverage-based constraint groups..."
-  → Constructing leverage-based constraint groups...
-
-. di ""
-
-
-. 
-. * Median leverage by year and sector
-. bys ano cae3: egen lev_median = median(leverage_assets_win)
-
-. 
-. gen high_leverage = leverage_assets_win >= lev_median if !missing(leverage_assets_win)
-
-. label var high_leverage "High leverage (above sector-year median)"
-
-. 
-. di "     ✓ Constraint indicator created"
-     ✓ Constraint indicator created
-
-. di ""
-
-
-. 
-. *------------------------------------------------------------------------------
-. * Regression evidence: Build-up specification
-. *------------------------------------------------------------------------------
-. 
-. di "  → Running complementarity regressions by constraint status..."
-  → Running complementarity regressions by constraint status...
-
-. di ""
-
-
-. 
+. * Cross-sectional evidence: Complementarity by leverage group
 . eststo clear
 
 . 
-. * Column 1: Baseline (pooled)
-. eststo col1: reghdfe ln_GVA ///
->     c.intang_intensity_bs_rd##c.share_skilled ///
->     ln_K_total_bs_rd ln_emp ln_age, ///
->     absorb(firm_id ano cae3) vce(robust)
+. eststo pooled: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
 (dropped 1 singleton observations)
 (MWFE estimator converged in 52 iterations)
 
@@ -716,20 +338,17 @@ Absorbed degrees of freedom:
 ? = number of redundant parameters may be higher
 
 . 
-. * Column 2: Low-leverage firms
-. eststo col2: reghdfe ln_GVA ///
->     c.intang_intensity_bs_rd##c.share_skilled ///
->     ln_K_total_bs_rd ln_emp ln_age ///
->     if high_leverage == 0, ///
+. eststo low_lev: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 0, ///
 >     absorb(firm_id ano cae3) vce(robust)
-(dropped 27319 singleton observations)
-(MWFE estimator converged in 54 iterations)
+(dropped 27288 singleton observations)
+(MWFE estimator converged in 53 iterations)
 
-HDFE Linear regression                            Number of obs   =    851,846
-Absorbing 3 HDFE groups                           F(   6, 688614) =   13680.83
+HDFE Linear regression                            Number of obs   =    852,524
+Absorbing 3 HDFE groups                           F(   6, 689189) =   13692.23
                                                   Prob > F        =     0.0000
-                                                  R-squared       =     0.9043
-                                                  Adj R-squared   =     0.8816
+                                                  R-squared       =     0.9044
+                                                  Adj R-squared   =     0.8817
                                                   Within R-sq.    =     0.1764
                                                   Root MSE        =     0.4941
 
@@ -737,164 +356,209 @@ Absorbing 3 HDFE groups                           F(   6, 688614) =   13680.83
                                          |               Robust
                                   ln_GVA |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
 -----------------------------------------+----------------------------------------------------------------
-                  intang_intensity_bs_rd |  -.1349588   .0137005    -9.85   0.000    -.1618114   -.1081063
-                           share_skilled |  -.0229444   .0068935    -3.33   0.001    -.0364553   -.0094334
+                  intang_intensity_bs_rd |  -.1342486   .0137132    -9.79   0.000    -.1611261   -.1073712
+                           share_skilled |  -.0229511   .0068925    -3.33   0.001    -.0364603   -.0094419
                                          |
-c.intang_intensity_bs_rd#c.share_skilled |   .0551379   .0269186     2.05   0.041     .0023783    .1078976
+c.intang_intensity_bs_rd#c.share_skilled |   .0556479   .0269266     2.07   0.039     .0028725    .1084232
                                          |
-                        ln_K_total_bs_rd |   .0856955   .0010076    85.05   0.000     .0837206    .0876704
-                                  ln_emp |   .5175192   .0023861   216.89   0.000     .5128425    .5221958
-                                  ln_age |   .3496222   .0034059   102.65   0.000     .3429467    .3562977
-                                   _cons |   8.974802   .0130836   685.96   0.000     8.949159    9.000446
+                        ln_K_total_bs_rd |   .0857632   .0010074    85.14   0.000     .0837888    .0877376
+                                  ln_emp |   .5173955   .0023849   216.95   0.000     .5127212    .5220699
+                                  ln_age |   .3495847   .0034047   102.68   0.000     .3429117    .3562578
+                                   _cons |   8.974522    .013081   686.07   0.000     8.948883     9.00016
 ----------------------------------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-     firm_id |    163137           0      163137     |
-         ano |        12           1          11     |
-        cae3 |        81           3          78    ?|
------------------------------------------------------+
-? = number of redundant parameters may be higher
-
-. 
-. * Column 3: High-leverage firms
-. eststo col3: reghdfe ln_GVA ///
->     c.intang_intensity_bs_rd##c.share_skilled ///
->     ln_K_total_bs_rd ln_emp ln_age ///
->     if high_leverage == 1, ///
->     absorb(firm_id ano cae3) vce(robust)
-(dropped 23039 singleton observations)
-(MWFE estimator converged in 52 iterations)
-
-HDFE Linear regression                            Number of obs   =    856,873
-Absorbing 3 HDFE groups                           F(   6, 699231) =   16215.68
-                                                  Prob > F        =     0.0000
-                                                  R-squared       =     0.9057
-                                                  Adj R-squared   =     0.8845
-                                                  Within R-sq.    =     0.1986
-                                                  Root MSE        =     0.5035
-
-----------------------------------------------------------------------------------------------------------
-                                         |               Robust
-                                  ln_GVA |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
------------------------------------------+----------------------------------------------------------------
-                  intang_intensity_bs_rd |  -.1176565     .01346    -8.74   0.000    -.1440377   -.0912753
-                           share_skilled |  -.0102911    .007022    -1.47   0.143    -.0240541    .0034719
-                                         |
-c.intang_intensity_bs_rd#c.share_skilled |  -.0061285   .0258633    -0.24   0.813    -.0568196    .0445626
-                                         |
-                        ln_K_total_bs_rd |   .1032672   .0011278    91.57   0.000     .1010568    .1054776
-                                  ln_emp |   .5342887   .0022884   233.48   0.000     .5298036    .5387739
-                                  ln_age |   .4044085   .0041461    97.54   0.000     .3962823    .4125347
-                                   _cons |   8.590481    .015591   550.99   0.000     8.559923    8.621038
-----------------------------------------------------------------------------------------------------------
-
-Absorbed degrees of freedom:
------------------------------------------------------+
- Absorbed FE | Categories  - Redundant  = Num. Coefs |
--------------+---------------------------------------|
-     firm_id |    157545           0      157545     |
+     firm_id |    163238           0      163238     |
          ano |        12           1          11     |
         cae3 |        83           3          80    ?|
 -----------------------------------------------------+
 ? = number of redundant parameters may be higher
 
 . 
-. *------------------------------------------------------------------------------
-. * Export table
-. *------------------------------------------------------------------------------
+. eststo high_lev: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 1, ///
+>     absorb(firm_id ano cae3) vce(robust)
+(dropped 23026 singleton observations)
+(MWFE estimator converged in 48 iterations)
+
+HDFE Linear regression                            Number of obs   =    856,239
+Absorbing 3 HDFE groups                           F(   6, 698685) =   16201.78
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9057
+                                                  Adj R-squared   =     0.8844
+                                                  Within R-sq.    =     0.1987
+                                                  Root MSE        =     0.5035
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                                  ln_GVA |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.1182742   .0134693    -8.78   0.000    -.1446737   -.0918748
+                           share_skilled |  -.0101643   .0070252    -1.45   0.148    -.0239335    .0036048
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |  -.0051152   .0258773    -0.20   0.843    -.0558339    .0456034
+                                         |
+                        ln_K_total_bs_rd |   .1032162   .0011278    91.52   0.000     .1010056    .1054267
+                                  ln_emp |   .5344132   .0022894   233.43   0.000     .5299261    .5389003
+                                  ln_age |   .4045296   .0041488    97.50   0.000      .396398    .4126612
+                                   _cons |   8.590374   .0155967   550.78   0.000     8.559805    8.620943
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    157458           0      157458     |
+         ano |        12           1          11     |
+        cae3 |        81           2          79    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
 . 
-. esttab col1 col2 col3 using "$rootdir/results/fact3_underexploitation.tex", replace ///
->     b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) ///
->     label booktabs ///
->     keep(intang_intensity_bs_rd share_skilled ///
->          c.intang_intensity_bs_rd#c.share_skilled ///
->          ln_K_total_bs_rd ln_emp ln_age) ///
->     order(intang_intensity_bs_rd share_skilled ///
->           c.intang_intensity_bs_rd#c.share_skilled ///
->           ln_K_total_bs_rd ln_emp ln_age) ///
->     stats(N r2, ///
->           labels("Observations" "Adjusted R-squared") ///
->           fmt(%12.0fc 3)) ///
->     title("Underexploitation of Intangibles–Skills Complementarity") ///
+. esttab pooled low_lev high_lev using "$rootdir/results/fact3_underexploitation.tex", replace ///
+>     b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+>     drop(ln_K_total_bs_rd ln_emp ln_age _cons) ///
+>     coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
+>                share_skilled "Share Skilled Workers" ///
+>                c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled") ///
+>     stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
+>     title("Underexploitation of Intangibles--Skills Complementarity\label{tab:underexploitation}") ///
 >     mtitles("All Firms" "Low Leverage" "High Leverage") ///
 >     refcat(intang_intensity_bs_rd "\textit{Main effects:}" ///
->            c.intang_intensity_bs_rd#c.share_skilled "\textit{Complementarity:}" ///
->            ln_K_total_bs_rd "\textit{Controls:}", nolabel) ///
+>            c.intang_intensity_bs_rd#c.share_skilled "\textit{Complementarity:}", nolabel) ///
+>     nonotes ///
 >     addnote("Dependent variable: Log gross value added (GVA)." ///
 >             "Low- and high-leverage defined relative to sector-year median leverage." ///
->             "All specifications include year and industry fixed effects." ///
->             "Standard errors clustered at firm level.")
+>             "All specifications include firm and year $\times$ industry fixed effects." ///
+>             "Robust standard errors in parentheses.")
 (note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_underexploitation.tex n
 > ot found)
 (output written to C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_underexploitatio
 > n.tex)
 
 . 
-. di ""
+. * Dynamic evidence: Wage premium and skill share evolution (2011-2022)
+. gen wage_premium = avg_wage_skilled / avg_wage_unskilled if avg_wage_skilled > 0 & avg_wage_unskilled > 0
+(1,226,100 missing values generated)
 
-
-. di "  ✓ Table saved: fact3_underexploitation.tex"
-  ✓ Table saved: fact3_underexploitation.tex
-
-. di ""
-
+. label var wage_premium "Wage premium (skilled/unskilled)"
 
 . 
-. *------------------------------------------------------------------------------
-. * Summary
-. *------------------------------------------------------------------------------
-. 
-. di "=========================================="
-==========================================
+. * Residualize to control for size/age/industry (not year FE, to preserve time trends)
+. * This abstracts from selection effects (e.g., larger firms having different skill composition)
+. qui reghdfe share_skilled ln_K_total_bs_rd ln_emp ln_age, absorb(cae3) resid
 
-. di "FACT 3 COMPLETE"
-FACT 3 COMPLETE
-
-. di "=========================================="
-==========================================
-
-. di ""
-
-
-. di "Output files:"
-Output files:
-
-. di "  • fact3_underexploitation.tex         - Regression evidence"
-  • fact3_underexploitation.tex         - Regression evidence
-
-. di ""
-
-
-. di "KEY RESULT:"
-KEY RESULT:
-
-. di "  Complementarity between intangibles and skilled labor is:"
-  Complementarity between intangibles and skilled labor is:
-
-. di "    → Strong and significant for low-leverage firms"
-    → Strong and significant for low-leverage firms
-
-. di "    → Weaker or absent for high-leverage firms"
-    → Weaker or absent for high-leverage firms
-
-. di ""
-
-
-. di "INTERPRETATION:"
-INTERPRETATION:
-
-. di "  Financial constraints distort input choices, pushing firms away"
-  Financial constraints distort input choices, pushing firms away
-
-. di "  from the region where technological complementarity is operative."
-  from the region where technological complementarity is operative.
-
-. di ""
-
+. predict resid_share_skilled, resid
+(9 missing values generated)
 
 . 
+. qui reghdfe wage_premium ln_K_total_bs_rd ln_emp ln_age, absorb(cae3) resid
+
+. predict resid_wage_premium, resid
+(1,226,100 missing values generated)
+
+. 
+. preserve
+
+. 
+. * Aggregate trends (raw, for reference)
+. collapse (mean) share_skilled wage_premium, by(ano)
+
+. 
+. twoway (connected share_skilled ano, yaxis(1) lcolor(navy) mcolor(navy) msymbol(O) ///
+>         ytitle("Share of Skilled Workers", axis(1))) ///
+>        (connected wage_premium ano, yaxis(2) lcolor(cranberry) mcolor(cranberry) msymbol(D) ///
+>         ytitle("Wage Premium (Skilled/Unskilled)", axis(2))), ///
+>     xlabel(2011(2)2022) xtitle("") ///
+>     legend(order(1 "Share Skilled (left)" 2 "Wage Premium (right)") pos(6) rows(1)) ///
+>     title("Skill Supply Shock and Declining Wage Premium")
+
+. graph export "$rootdir/results/fact3_skill_premium_trends.png", replace width(2000)
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_skill_premium_trends.pn
+> g not found)
+(file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_skill_premium_trends.png writ
+> ten in PNG format)
+
+. 
+. restore
+
+. 
+. * Share of skilled workers by leverage (residualized)
+. preserve
+
+. 
+. collapse (mean) resid_share_skilled, by(ano high_leverage)
+
+. reshape wide resid_share_skilled, i(ano) j(high_leverage)
+(note: j = 0 1)
+
+Data                               long   ->   wide
+-----------------------------------------------------------------------------
+Number of obs.                       24   ->      12
+Number of variables                   3   ->       3
+j variable (2 values)     high_leverage   ->   (dropped)
+xij variables:
+                    resid_share_skilled   ->   resid_share_skilled0 resid_share_skilled1
+-----------------------------------------------------------------------------
+
+. 
+. twoway (connected resid_share_skilled0 ano, lcolor(forest_green) mcolor(forest_green) msymbol(O) lwidth(medium)) ///
+>        (connected resid_share_skilled1 ano, lcolor(maroon) mcolor(maroon) msymbol(D) lwidth(medium)), ///
+>     xlabel(2011(2)2022) xtitle("") ylabel(, format(%4.3f)) ///
+>     ytitle("Share of Skilled Workers (residualized)") ///
+>     legend(order(1 "Low Leverage" 2 "High Leverage") pos(6) rows(1)) ///
+>     title("Skill Share by Leverage Status")
+
+. graph export "$rootdir/results/fact3_skills_by_leverage.png", replace width(2000)
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_skills_by_leverage.png 
+> not found)
+(file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_skills_by_leverage.png writte
+> n in PNG format)
+
+. 
+. restore
+
+. 
+. * Wage premium trends by leverage (residualized)
+. preserve
+
+. 
+. collapse (mean) resid_wage_premium, by(ano high_leverage)
+
+. reshape wide resid_wage_premium, i(ano) j(high_leverage)
+(note: j = 0 1)
+
+Data                               long   ->   wide
+-----------------------------------------------------------------------------
+Number of obs.                       24   ->      12
+Number of variables                   3   ->       3
+j variable (2 values)     high_leverage   ->   (dropped)
+xij variables:
+                     resid_wage_premium   ->   resid_wage_premium0 resid_wage_premium1
+-----------------------------------------------------------------------------
+
+. 
+. twoway (connected resid_wage_premium0 ano, lcolor(forest_green) mcolor(forest_green) msymbol(O) lwidth(medium)) ///
+>        (connected resid_wage_premium1 ano, lcolor(maroon) mcolor(maroon) msymbol(D) lwidth(medium)), ///
+>     xlabel(2011(2)2022) xtitle("") ylabel(, format(%4.2f)) ///
+>     ytitle("Wage Premium (residualized)") ///
+>     legend(order(1 "Low Leverage" 2 "High Leverage") pos(6) rows(1)) ///
+>     title("Wage Premium Decline: Driven by Constrained Firms")
+
+. graph export "$rootdir/results/fact3_premium_by_leverage.png", replace width(2000)
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_premium_by_leverage.png
+>  not found)
+(file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_premium_by_leverage.png writt
+> en in PNG format)
+
+. 
+. restore
+
+. 
+. drop resid_share_skilled resid_wage_premium
+
 . 
 . cap log close

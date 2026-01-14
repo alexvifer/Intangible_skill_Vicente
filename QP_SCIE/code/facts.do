@@ -1,447 +1,226 @@
 /*==============================================================================
    EMPIRICAL ANALYSIS: SKILL-BIASED STAGNATION
-   
-   Input:  final_data_2011_2022_analysis.dta (from analysis_prep.do)
+
+   Input:  final_data_2011_2022_analysis.dta
    Output: Tables and figures in $rootdir/results/
-   
+
+   Three main facts:
+   1. Complementarity between intangibles and skilled labor
+   2. Financially constrained firms underinvest in intangibles
+   3. Constrained firms underexploit complementarity (cross-section + dynamics)
+
 ==============================================================================*/
 
 clear all
 set more off
-
 cd "$rootdir/output"
 
 cap log close
 log using "empirical_analysis.log", replace
 
-di "=========================================="
-di "EMPIRICAL ANALYSIS"
-di "Date: `c(current_date)'"
-di "=========================================="
-di ""
-
-/*==============================================================================
-   SETUP
-==============================================================================*/
-
 use "final_data_2011_2022_analysis.dta", clear
 
-* Declare panel
 xtset firm_id ano
 
-* Create results directory
+* Set white background for all graphs
+set scheme s1color
+
 cap mkdir "$rootdir/results"
 
-di "Sample size: " _N
-di ""
 
 /*==============================================================================
    FACT 1: COMPLEMENTARITY BETWEEN INTANGIBLES AND SKILLED LABOR
 ==============================================================================*/
 
-di "=========================================="
-di "FACT 1: COMPLEMENTARITY"
-di "=========================================="
-di ""
-
-*------------------------------------------------------------------------------
-* Visual evidence: Raw correlation
-*------------------------------------------------------------------------------
-
-binscatter intang_intensity_bs_rd share_skilled if intang_intensity > 0 & share_skilled > 0, nquantiles(20) ///
-    xtitle("Share of skilled workers") ///
-    ytitle("Intangible intensity") ///
-    title("Intangibles and Skills: Raw Correlation") ///
-    note("Excludes firms with zero intangible capital or no skilled workers. 20 quantiles.")
+* Raw correlation
+preserve
+collapse (mean) intang_intensity_bs_rd share_skilled, by(firm_id)
+binscatter intang_intensity_bs_rd share_skilled, nquantiles(20) ///
+    xtitle("Share of Skilled Workers") ///
+    ytitle("Intangible Intensity (K_intangible / K_total)") ///
+    title("Intangibles and Skills: Raw Correlation")
 graph export "$rootdir/results/fact1_raw_correlation.png", replace width(2000)
+restore
 
-di "  ✓ Figure saved: fact1_raw_correlation.png"
-di ""
-
-*------------------------------------------------------------------------------
-* Main regression table: Complementarity across three outcomes
-*------------------------------------------------------------------------------
-
-di "  → Running complementarity regressions..."
-di ""
-
+* Production function regressions
 eststo clear
 
-* Column 1: Log Revenue
-reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ln_K_total_bs_rd ln_emp ln_age, absorb(ano cae3 firm_id) vce(robust)
+eststo revenue: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
 
-eststo revenue
-estadd local year_fe "Yes"
-estadd local industry_fe "Yes"
-estadd local firm_fe "Yes"
-estadd local controls "Yes"
+eststo production: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
 
-* Column 2: Log Production
-reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ln_K_total_bs_rd ln_emp ln_age, absorb(ano cae3 firm_id) vce(robust)
+eststo gva: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
 
-eststo production
-estadd local year_fe "Yes"
-estadd local industry_fe "Yes"
-estadd local firm_fe "Yes"
-estadd local controls "Yes"
-
-* Column 3: Log GVA
-reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ln_K_total_bs_rd ln_emp ln_age, absorb(ano cae3 firm_id) vce(robust)
-
-eststo gva
-estadd local year_fe "Yes"
-estadd local industry_fe "Yes"
-estadd local firm_fe "Yes"
-estadd local controls "Yes"
-
-di ""
-di "  ✓ All regressions completed"
-di ""
-
-*------------------------------------------------------------------------------
-* Export table to LaTeX
-*------------------------------------------------------------------------------
-
-esttab revenue production gva using "$rootdir/results/fact1_complementarity.tex", ///
-    replace booktabs ///
-    b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-    mtitles("Log Revenue" "Log Production" "Log GVA") ///
+esttab revenue production gva using "$rootdir/results/fact1_complementarity.tex", replace ///
+    b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+    drop(ln_K_total_bs_rd ln_emp ln_age _cons) ///
+    coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
+               share_skilled "Share Skilled Workers" ///
+               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled") ///
+    stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
     title("Complementarity Between Intangibles and Skilled Labor\label{tab:complementarity}") ///
-    keep(c.intang_intensity_bs_rd#c.share_skilled intang_intensity_bs_rd share_skilled) ///
-    order(c.intang_intensity_bs_rd#c.share_skilled intang_intensity_bs_rd share_skilled) ///
-    coeflabels(c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled" ///
-               intang_intensity_bs_rd "Intangible Intensity" ///
-               share_skilled "Share Skilled Workers") ///
-    scalars("year_fe Year FE" "industry_fe Industry FE" "firm_fe Firm FE" "controls Controls") ///
-    sfmt(0 0 0 0) ///
-    nonotes ///
-    addnotes("Controls include log total capital, log employment, and log firm age." ///
-             "Industry FE based on 3-digit CAE codes. Robust standard errors in parentheses." ///
-             "* \$p < 0.10\$, ** \$p < 0.05\$, *** \$p < 0.01\$")
-
-di "  ✓ Table saved: fact1_complementarity.tex"
-di ""
-
-*------------------------------------------------------------------------------
-* Display results in console
-*------------------------------------------------------------------------------
-
-esttab revenue production gva, ///
-    b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
     mtitles("Revenue" "Production" "GVA") ///
-    keep(c.intang_intensity_bs_rd#c.share_skilled intang_intensity_bs_rd share_skilled) ///
-    scalars("year_fe Year FE" "industry_fe Ind FE" "firm_fe Firm FE" "controls Controls") ///
-    title("FACT 1: Complementarity Between Intangibles and Skills")
-
-di ""
-di "=========================================="
-di "FACT 1 ANALYSIS COMPLETE"
-di "=========================================="
-di ""
-di "Output: $rootdir/results/fact1_complementarity.tex"
-di ""
+    nonotes ///
+    addnote("All output measures in logs. Intangible intensity = K$_{intangible}$ / K$_{total}$." ///
+            "All specifications include firm, year, and industry fixed effects." ///
+            "Robust standard errors in parentheses.")
 
 
 /*==============================================================================
-   FACT 2: PECKING ORDER DISTORTION
-   
-   Theory: Financial constraints create pecking order where constrained firms
-           under-invest in intangible capital (non-pledgeable) relative to 
-           physical capital (pledgeable), and underallocate workers to R&D
-   
+   FACT 2: FINANCIAL CONSTRAINTS AND THE PECKING ORDER
 ==============================================================================*/
 
-di "=========================================="
-di "FACT 2: PECKING ORDER DISTORTION"
-di "=========================================="
-di ""
+* Winsorize variables for Fact 2
+winsor2 inv_rate_physical_bs_rd, cuts(5 95) by(ano cae3) suffix(_w)
+label var inv_rate_physical_bs_rd_w "Physical investment rate (winsorized 5-95)"
 
-*------------------------------------------------------------------------------
-* Winsorize constraint and investment variables
-*------------------------------------------------------------------------------
+winsor2 inv_rate_intang_bs_rd, cuts(5 95) by(ano cae3) suffix(_w)
+label var inv_rate_intang_bs_rd_w "Intangible investment rate (winsorized 5-95)"
 
-di "  → Winsorizing variables (1-99 by year and sector)..."
-di ""
+winsor2 leverage_assets, cuts(5 95) by(ano cae3) suffix(_w)
+label var leverage_assets_w "Leverage (Debt/Assets, winsorized 5-95)"
 
-winsor2 leverage_assets, suffix(_win) cuts(5 95) by(ano cae3)
-winsor2 inv_rate_physical inv_rate_intang_bs_rd, suffix(_win) cuts(5 95) by(ano cae3)
+* Define leverage constraint (sector-year median)
+bysort cae3 ano: egen leverage_median = median(leverage_assets_w)
+gen high_leverage = (leverage_assets_w > leverage_median) if !missing(leverage_assets_w, leverage_median)
+label var high_leverage "Above sector-year median leverage"
 
-di "     ✓ Variables winsorized"
-di ""
+* Residualized binscatters
+foreach var in inv_rate_physical_bs_rd_w inv_rate_intang_bs_rd_w intang_intensity_bs_rd {
+    qui reghdfe `var' ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) resid
+    predict resid_`var', resid
+}
 
-*------------------------------------------------------------------------------
-* Visual evidence: Residualized binscatters with leverage
-*------------------------------------------------------------------------------
-
-di "  → Creating residualized binscatters..."
-di ""
-
-* Physical investment vs. leverage
-qui reghdfe inv_rate_physical_win ln_K_total_bs_rd ln_emp ln_age, ///
-    absorb(ano cae3 firm_id) resid
-predict resid_inv_phys, resid
-qui reghdfe leverage_assets_win, absorb(ano cae3 firm_id) resid
-predict resid_leverage, resid
-
-binscatter resid_inv_phys resid_leverage, ///
-    nquantiles(20) ///
-    xtitle("Leverage, residualized") ///
-    ytitle("Physical investment rate, residualized") ///
-    title("Physical Investment and Financial Constraints") ///
-    note("Residuals from regression on firm, year and sector FE, log capital, log employment, log age.")
+* Physical investment vs leverage
+binscatter resid_inv_rate_physical_bs_rd_w leverage_assets_w, nquantiles(20) ///
+    xtitle("Leverage (Debt / Assets)") ytitle("Physical Investment Rate (residualized)") ///
+    title("Physical Investment and Leverage")
 graph export "$rootdir/results/fact2_physical_inv_leverage.png", replace width(2000)
 
-drop resid_inv_phys resid_leverage
-
-* Intangible investment vs. leverage
-qui reghdfe inv_rate_intang_bs_rd_win ln_K_total_bs_rd ln_emp ln_age, ///
-    absorb(firm_id ano cae3) resid
-predict resid_inv_intang, resid
-qui reghdfe leverage_assets_win, absorb(firm_id ano cae3) resid
-predict resid_leverage, resid
-
-binscatter resid_inv_intang resid_leverage, ///
-    nquantiles(20) ///
-    xtitle("Leverage, residualized") ///
-    ytitle("Intangible investment rate, residualized") ///
-    title("Intangible Investment and Financial Constraints") ///
-    note("Residuals from regression on firm, year and sector FE, log capital, log employment, log age.")
+* Intangible investment vs leverage
+binscatter resid_inv_rate_intang_bs_rd_w leverage_assets_w, nquantiles(20) ///
+    xtitle("Leverage (Debt / Assets)") ytitle("Intangible Investment Rate (residualized)") ///
+    title("Intangible Investment and Leverage")
 graph export "$rootdir/results/fact2_intangible_inv_leverage.png", replace width(2000)
 
-drop resid_inv_intang resid_leverage
-
-* Intangible intensity vs. leverage
-qui reghdfe intang_intensity ln_K_total_bs_rd ln_emp ln_age, ///
-    absorb(firm_id ano cae3) resid
-predict resid_intang_int, resid
-qui reghdfe leverage_assets_win, absorb(firm_id ano cae3) resid
-predict resid_leverage, resid
-
-binscatter resid_intang_int resid_leverage, ///
-    nquantiles(20) ///
-    xtitle("Leverage, residualized") ///
-    ytitle("Intangible intensity, residualized") ///
-    title("Intangible Intensity and Financial Constraints") ///
-    note("Residuals from regression on firm, year and sector FE, log capital, log employment, log age.")
+* Intangible intensity vs leverage
+binscatter resid_intang_intensity_bs_rd leverage_assets_w, nquantiles(20) ///
+    xtitle("Leverage (Debt / Assets)") ytitle("Intangible Intensity (residualized)") ///
+    title("Intangible Intensity and Leverage")
 graph export "$rootdir/results/fact2_intang_intensity_leverage.png", replace width(2000)
 
-drop resid_intang_int resid_leverage
-
-* R&D workers vs. leverage
-qui reghdfe share_rd_workers ln_K_total_bs_rd ln_emp ln_age if share_rd_workers > 0, ///
-    absorb(firm_id ano cae3) resid
-predict resid_rd_share, resid
-qui reghdfe leverage_assets_win if share_rd_workers > 0, ///
-    absorb(firm_id ano cae3) resid
-predict resid_leverage, resid
-
-binscatter resid_rd_share resid_leverage if share_rd_workers > 0, ///
-    nquantiles(20) ///
-    xtitle("Leverage, residualized") ///
-    ytitle("Share of R&D workers, residualized") ///
-    title("R&D Labor Allocation and Financial Constraints") ///
-    note("Residuals from regression on firm, year and sector FE, log capital, log employment, log age." ///
-         "Sample: firms with positive R&D employment.")
+* R&D workers vs leverage
+preserve
+keep if share_rd_workers > 0
+qui reghdfe share_rd_workers ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) resid
+predict resid_rd_workers, resid
+binscatter resid_rd_workers leverage_assets_w, nquantiles(20) ///
+    xtitle("Leverage (Debt / Assets)") ytitle("Share of R&D Workers (residualized)") ///
+    title("R&D Employment and Leverage")
 graph export "$rootdir/results/fact2_rd_workers_leverage.png", replace width(2000)
+restore
 
-drop resid_rd_share resid_leverage
+drop resid_* 
 
-di "     ✓ Figures saved (4 binscatters)"
-di ""
-
-di "=========================================="
-di "FACT 2 COMPLETE"
-di "=========================================="
-di ""
-di "Output files:"
-di "  • fact2_physical_inv_leverage.png      - Physical investment vs leverage"
-di "  • fact2_intangible_inv_leverage.png    - Intangible investment vs leverage"
-di "  • fact2_intang_intensity_leverage.png  - Intangible intensity vs leverage"
-di "  • fact2_rd_workers_leverage.png        - R&D workers vs leverage"
-di ""
-di "KEY RESULT:"
-di "  Constrained firms (high leverage) have:"
-di "    → Lower intangible investment rate"
-di "    → Lower intangible intensity"  
-di "    → Lower R&D worker allocation"
-di "  This is the pecking order distortion from low pledgeability of intangibles"
-di ""
 
 /*==============================================================================
    FACT 3: UNDEREXPLOITATION OF COMPLEMENTARITY BY CONSTRAINED FIRMS
-   
-   Theory: Financial constraints distort input choices, pushing firms away
-           from the region where the technological complementarity between
-           intangibles and skilled labor is operative.
 ==============================================================================*/
 
-di "=========================================="
-di "FACT 3: UNDEREXPLOITATION OF COMPLEMENTARITY"
-di "=========================================="
-di ""
-
-*------------------------------------------------------------------------------
-* Construct leverage-based constraint indicator
-*------------------------------------------------------------------------------
-
-di "  → Constructing leverage-based constraint groups..."
-di ""
-
-* Median leverage by year and sector
-bys ano cae3: egen lev_median = median(leverage_assets_win)
-
-gen high_leverage = leverage_assets_win >= lev_median if !missing(leverage_assets_win)
-label var high_leverage "High leverage (above sector-year median)"
-
-di "     ✓ Constraint indicator created"
-di ""
-
-*------------------------------------------------------------------------------
-* Regression evidence: Build-up specification
-*------------------------------------------------------------------------------
-
-di "  → Running complementarity regressions by constraint status..."
-di ""
-
+* Cross-sectional evidence: Complementarity by leverage group
 eststo clear
 
-* Column 1: Baseline (pooled)
-eststo col1: reghdfe ln_GVA ///
-    c.intang_intensity_bs_rd##c.share_skilled ///
-    ln_K_total_bs_rd ln_emp ln_age, ///
+eststo pooled: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+
+eststo low_lev: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age if high_leverage == 0, ///
     absorb(firm_id ano cae3) vce(robust)
 
-* Column 2: Low-leverage firms
-eststo col2: reghdfe ln_GVA ///
-    c.intang_intensity_bs_rd##c.share_skilled ///
-    ln_K_total_bs_rd ln_emp ln_age ///
-    if high_leverage == 0, ///
+eststo high_lev: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age if high_leverage == 1, ///
     absorb(firm_id ano cae3) vce(robust)
 
-* Column 3: High-leverage firms
-eststo col3: reghdfe ln_GVA ///
-    c.intang_intensity_bs_rd##c.share_skilled ///
-    ln_K_total_bs_rd ln_emp ln_age ///
-    if high_leverage == 1, ///
-    absorb(firm_id ano cae3) vce(robust)
-
-*------------------------------------------------------------------------------
-* Export table
-*------------------------------------------------------------------------------
-
-esttab col1 col2 col3 using "$rootdir/results/fact3_underexploitation.tex", replace ///
-    b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) ///
-    booktabs ///
-    keep(intang_intensity_bs_rd share_skilled ///
-         c.intang_intensity_bs_rd#c.share_skilled ///
-         ln_K_total_bs_rd ln_emp ln_age) ///
-    order(intang_intensity_bs_rd share_skilled ///
-          c.intang_intensity_bs_rd#c.share_skilled ///
-          ln_K_total_bs_rd ln_emp ln_age) ///
+esttab pooled low_lev high_lev using "$rootdir/results/fact3_underexploitation.tex", replace ///
+    b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+    drop(ln_K_total_bs_rd ln_emp ln_age _cons) ///
     coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
                share_skilled "Share Skilled Workers" ///
-               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled" ///
-               ln_K_total_bs_rd "Log Total Capital" ///
-               ln_emp "Log Employment" ///
-               ln_age "Log Firm Age") ///
-    stats(N r2, ///
-          labels("Observations" "Adjusted R-squared") ///
-          fmt(%12.0fc 3)) ///
+               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled") ///
+    stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
     title("Underexploitation of Intangibles--Skills Complementarity\label{tab:underexploitation}") ///
     mtitles("All Firms" "Low Leverage" "High Leverage") ///
     refcat(intang_intensity_bs_rd "\textit{Main effects:}" ///
-           c.intang_intensity_bs_rd#c.share_skilled "\textit{Complementarity:}" ///
-           ln_K_total_bs_rd "\textit{Controls:}", nolabel) ///
+           c.intang_intensity_bs_rd#c.share_skilled "\textit{Complementarity:}", nolabel) ///
+    nonotes ///
     addnote("Dependent variable: Log gross value added (GVA)." ///
             "Low- and high-leverage defined relative to sector-year median leverage." ///
             "All specifications include firm and year $\times$ industry fixed effects." ///
             "Robust standard errors in parentheses.")
 
-di ""
-di "  ✓ Table saved: fact3_underexploitation.tex"
-di ""
+* Dynamic evidence: Wage premium and skill share evolution (2011-2022)
+gen wage_premium = avg_wage_skilled / avg_wage_unskilled if avg_wage_skilled > 0 & avg_wage_unskilled > 0
+label var wage_premium "Wage premium (skilled/unskilled)"
 
-*------------------------------------------------------------------------------
-* Wage premium evidence
-*------------------------------------------------------------------------------
+* Residualize to control for size/age/industry (not year FE, to preserve time trends)
+* This abstracts from selection effects (e.g., larger firms having different skill composition)
+qui reghdfe share_skilled ln_K_total_bs_rd ln_emp ln_age, absorb(cae3) resid
+predict resid_share_skilled, resid
 
-di ""
-di "Theory: Constrained firms cannot exploit complementarity between"
-di "        intangibles and skilled workers, reducing skilled workers'"
-di "        marginal product and hence their wage premium."
-di ""
+qui reghdfe wage_premium ln_K_total_bs_rd ln_emp ln_age, absorb(cae3) resid
+predict resid_wage_premium, resid
 
-*------------------------------------------------------------------------------
-* Construct wage premium measure
-*------------------------------------------------------------------------------
+preserve
 
-di "  → Constructing wage premium (skilled/unskilled ratio)..."
-di ""
+* Aggregate trends (raw, for reference)
+collapse (mean) share_skilled wage_premium, by(ano)
 
-* Check if wage variables exist and construct premium
-gen wage_premium = avg_wage_skilled / avg_wage_unskilled ///
-	if avg_wage_skilled > 0 & avg_wage_unskilled > 0
-label var wage_premium "Wage premium (skilled/unskilled ratio)"
+twoway (connected share_skilled ano, yaxis(1) lcolor(navy) mcolor(navy) msymbol(O) ///
+        ytitle("Share of Skilled Workers", axis(1))) ///
+       (connected wage_premium ano, yaxis(2) lcolor(cranberry) mcolor(cranberry) msymbol(D) ///
+        ytitle("Wage Premium (Skilled/Unskilled)", axis(2))), ///
+    xlabel(2011(2)2022) xtitle("") ///
+    legend(order(1 "Share Skilled (left)" 2 "Wage Premium (right)") pos(6) rows(1)) ///
+    title("Skill Supply Shock and Declining Wage Premium")
+graph export "$rootdir/results/fact3_skill_premium_trends.png", replace width(2000)
 
-* Summary statistics
-qui sum wage_premium, d
-di "     Mean wage premium: " %5.3f r(mean)
-di "     Median:            " %5.3f r(p50)
-di "     N:                 " %12.0fc r(N)
-di ""
-di "     ✓ Wage premium constructed"
-di ""
+restore
 
-*----------------------------------------------------------------------
-* Visual evidence: Wage premium vs leverage
-*----------------------------------------------------------------------
+* Share of skilled workers by leverage (residualized)
+preserve
 
-di "  → Creating wage premium binscatter..."
-di ""
+collapse (mean) resid_share_skilled, by(ano high_leverage)
+reshape wide resid_share_skilled, i(ano) j(high_leverage)
 
-* Residualized binscatter
-qui reghdfe wage_premium ln_K_total_bs_rd ln_emp ln_age, ///
-	absorb(firm_id ano cae3) resid
-predict resid_wage_prem, resid
+twoway (connected resid_share_skilled0 ano, lcolor(forest_green) mcolor(forest_green) msymbol(O) lwidth(medium)) ///
+       (connected resid_share_skilled1 ano, lcolor(maroon) mcolor(maroon) msymbol(D) lwidth(medium)), ///
+    xlabel(2011(2)2022) xtitle("") ylabel(, format(%4.3f)) ///
+    ytitle("Share of Skilled Workers (residualized)") ///
+    legend(order(1 "Low Leverage" 2 "High Leverage") pos(6) rows(1)) ///
+    title("Skill Share by Leverage Status")
+graph export "$rootdir/results/fact3_skills_by_leverage.png", replace width(2000)
 
-qui reghdfe leverage_assets_win, absorb(firm_id ano cae3) resid
-predict resid_leverage_wage, resid
+restore
 
-binscatter resid_wage_prem resid_leverage_wage, ///
-	nquantiles(20) ///
-	xtitle("Leverage, residualized") ///
-	ytitle("Wage premium (skilled/unskilled), residualized") ///
-	title("Wage Premium and Financial Constraints") ///
-	note("Wage premium = ratio of average skilled to unskilled wages." ///
-		 "Residuals from regression on firm, year and sector FE, log capital, log employment, log age.")
-graph export "$rootdir/results/fact3_wage_premium_leverage.png", replace width(2000)
+* Wage premium trends by leverage (residualized)
+preserve
 
-drop resid_wage_prem resid_leverage_wage
+collapse (mean) resid_wage_premium, by(ano high_leverage)
+reshape wide resid_wage_premium, i(ano) j(high_leverage)
 
-di "     ✓ Figure saved: fact3_wage_premium_leverage.png"
-di ""
+twoway (connected resid_wage_premium0 ano, lcolor(forest_green) mcolor(forest_green) msymbol(O) lwidth(medium)) ///
+       (connected resid_wage_premium1 ano, lcolor(maroon) mcolor(maroon) msymbol(D) lwidth(medium)), ///
+    xlabel(2011(2)2022) xtitle("") ylabel(, format(%4.2f)) ///
+    ytitle("Wage Premium (residualized)") ///
+    legend(order(1 "Low Leverage" 2 "High Leverage") pos(6) rows(1)) ///
+    title("Wage Premium Decline: Driven by Constrained Firms")
+graph export "$rootdir/results/fact3_premium_by_leverage.png", replace width(2000)
 
+restore
 
-*------------------------------------------------------------------------------
-* Summary
-*------------------------------------------------------------------------------
-
-di "=========================================="
-di "FACT 3 COMPLETE"
-di "=========================================="
-di ""
-di "Output files:"
-di "  • fact3_underexploitation.tex         - Regression evidence"
-di ""
-di "KEY RESULT:"
-di "  Complementarity between intangibles and skilled labor is:"
-di "    → Strong and significant for low-leverage firms"
-di "    → Weaker or absent for high-leverage firms"
-di ""
-di "INTERPRETATION:"
-di "  Financial constraints distort input choices, pushing firms away"
-di "  from the region where technological complementarity is operative."
-di ""
-
+drop resid_share_skilled resid_wage_premium
 
 cap log close

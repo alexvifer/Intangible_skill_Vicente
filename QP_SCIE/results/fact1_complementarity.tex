@@ -4,25 +4,22 @@
 \begin{tabular}{l*{3}{c}}
 \toprule
             &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}\\
-            &\multicolumn{1}{c}{Log Revenue}&\multicolumn{1}{c}{Log Production}&\multicolumn{1}{c}{Log GVA}\\
+            &\multicolumn{1}{c}{Revenue}&\multicolumn{1}{c}{Production}&\multicolumn{1}{c}{GVA}\\
 \midrule
-Intangible Intensity $\times$ Share Skilled&       0.026\sym{*}  &       0.042\sym{***}&       0.040\sym{**} \\
-            &     (0.014)         &     (0.013)         &     (0.017)         \\
+Intangible Intensity&     -0.1018\sym{***}&     -0.1111\sym{***}&     -0.1254\sym{***}\\
+            &    (0.0065)         &    (0.0061)         &    (0.0089)         \\
 \addlinespace
-Intangible Intensity&      -0.102\sym{***}&      -0.111\sym{***}&      -0.125\sym{***}\\
-            &     (0.006)         &     (0.006)         &     (0.009)         \\
+Share Skilled Workers&     -0.0128\sym{***}&     -0.0084\sym{**} &     -0.0154\sym{***}\\
+            &    (0.0036)         &    (0.0033)         &    (0.0046)         \\
 \addlinespace
-Share Skilled Workers&      -0.013\sym{***}&      -0.008\sym{**} &      -0.015\sym{***}\\
-            &     (0.004)         &     (0.003)         &     (0.005)         \\
+Intangible Intensity $\times$ Share Skilled&      0.0262\sym{*}  &      0.0417\sym{***}&      0.0398\sym{**} \\
+            &    (0.0137)         &    (0.0125)         &    (0.0175)         \\
 \midrule
-\(N\)       &     1759084         &     1759084         &     1759076         \\
-Year FE     &         Yes         &         Yes         &         Yes         \\
-Industry FE &         Yes         &         Yes         &         Yes         \\
-Firm FE     &         Yes         &         Yes         &         Yes         \\
-Controls    &         Yes         &         Yes         &         Yes         \\
+Observations&   1,759,084         &   1,759,084         &   1,759,076         \\
+Adjusted R-squared&       0.952         &       0.951         &       0.895         \\
 \bottomrule
-\multicolumn{4}{l}{\footnotesize Controls include log total capital, log employment, and log firm age.}\\
-\multicolumn{4}{l}{\footnotesize Industry FE based on 3-digit CAE codes. Robust standard errors in parentheses.}\\
-\multicolumn{4}{l}{\footnotesize * $p < 0.10$, ** $p < 0.05$, *** $p < 0.01$}\\
+\multicolumn{4}{l}{\footnotesize All output measures in logs. Intangible intensity = K{intangible}$ / K{total}$.}\\
+\multicolumn{4}{l}{\footnotesize All specifications include firm, year, and industry fixed effects.}\\
+\multicolumn{4}{l}{\footnotesize Robust standard errors in parentheses.}\\
 \end{tabular}
 \end{table}
