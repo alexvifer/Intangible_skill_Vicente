@@ -17,8 +17,8 @@
 # ====================================================================================
 
 # Compiler selection (uncomment one)
-FC = gfortran
-# FC = ifort
+# FC = gfortran
+FC = ifort
 
 # Compiler flags
 # For gfortran:

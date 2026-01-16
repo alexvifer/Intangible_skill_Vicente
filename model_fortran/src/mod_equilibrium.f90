@@ -192,8 +192,8 @@ contains
         print *, "======================================"
 
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.10_dp
-        wH = 0.60_dp
+        wL = 0.075_dp
+        wH = 0.52_dp
 
         do iter_outer = 1, maxiter_eq
 

@@ -3,14 +3,16 @@
 !
 ! DESCRIPTION:
 !   Solves the firm's optimization problem via value function iteration
-!   with Howard's Policy Improvement Algorithm for acceleration.
+!   with Howard's Policy Improvement Algorithm and computational optimizations.
 !
 !   Firm state: (z, K, S, D_{-1})
 !   Firm choices: (I^K, H^R, D) subject to collateral constraint
 !
-!   Howard's improvement: Alternates between
-!     1. Policy Improvement (expensive): Full optimization over choice space
-!     2. Policy Evaluation (cheap): Update V with fixed policy (no search)
+!   COMPUTATIONAL OPTIMIZATIONS:
+!     1. OpenMP parallelization of state space loops
+!     2. Local search around previous optimal policy (±local_search_radius)
+!     3. Precomputed static labor solutions (depend only on z,K,S, not D)
+!     4. Howard's policy iteration (policy evaluation between improvements)
 !
 ! AUTHOR: Generated for Vicente (2026) - Skill-Biased Stagnation Model
 !===================================================================================
@@ -19,7 +21,11 @@ module mod_firm_problem
     use mod_globals
     use mod_utility
     use mod_interpolation
+    !$ use omp_lib
     implicit none
+
+    ! Local search radius (search ± this many grid points around previous optimum)
+    integer, parameter :: local_search_radius = 3
 
 contains
 
@@ -92,83 +98,151 @@ contains
     end subroutine solve_static_labor
 
     !===================================================================================
+    ! SUBROUTINE: precompute_static_labor
+    !
+    ! DESCRIPTION:
+    !   Precomputes optimal static labor choices for all (z,K,S) combinations.
+    !   Since static labor only depends on (z,K,S) and wages (not debt D),
+    !   we can compute these once and reuse for all D values.
+    !   This reduces redundant computation by a factor of nD.
+    !===================================================================================
+    subroutine precompute_static_labor()
+        implicit none
+        integer :: iz, iK, iS
+        real(dp) :: z_val, K_val, S_val
+        real(dp) :: L_opt, HP_opt, Y_opt
+
+        !$OMP PARALLEL DO PRIVATE(iz, iK, iS, z_val, K_val, S_val, L_opt, HP_opt, Y_opt) &
+        !$OMP& SCHEDULE(dynamic)
+        do iz = 1, nz
+            z_val = grid_z(iz)
+            do iK = 1, nK
+                K_val = grid_K(iK)
+                do iS = 1, nS
+                    S_val = grid_S(iS)
+
+                    call solve_static_labor(z_val, K_val, S_val, wL, wH, &
+                                           L_opt, HP_opt, Y_opt)
+
+                    static_L(iz, iK, iS) = L_opt
+                    static_HP(iz, iK, iS) = HP_opt
+                    static_Y(iz, iK, iS) = Y_opt
+                    static_Pi(iz, iK, iS) = Y_opt - wL * L_opt - wH * HP_opt
+
+                end do
+            end do
+        end do
+        !$OMP END PARALLEL DO
+
+    end subroutine precompute_static_labor
+
+    !===================================================================================
     ! SUBROUTINE: policy_improvement_step
     !
     ! DESCRIPTION:
-    !   Full policy optimization step (expensive).
-    !   For each state, searches over all choice combinations to find optimal policy.
-    !   Updates both V_new and policy functions.
+    !   Full policy optimization step with local search optimization.
+    !   For each state, searches over choice combinations near previous optimum.
+    !   Uses OpenMP for parallelization over the state space.
+    !
+    !   LOCAL SEARCH: Instead of searching all nIK*nHR*nDprime combinations,
+    !   searches only ±local_search_radius around previous optimal indices.
+    !   On first iteration (no previous policy), searches full grid.
     !===================================================================================
-    subroutine policy_improvement_step(show_progress)
+    subroutine policy_improvement_step(first_iteration)
         implicit none
-        logical, intent(in) :: show_progress
+        logical, intent(in) :: first_iteration
         integer :: iz, iK, iS, iD
         real(dp) :: z_val, K_val, S_val, D_old_val
         real(dp) :: L_opt, HP_opt, Y_val, Pi_gross
         real(dp) :: V_best, V_try
         integer :: iIK, iHR, iDp
+        integer :: iIK_lo, iIK_hi, iHR_lo, iHR_hi, iDp_lo, iDp_hi
+        integer :: best_iIK, best_iHR, best_iDp
         real(dp) :: IK_choice, HR_choice, Dp_choice
         real(dp) :: Kprime, Sprime, inv_S
         real(dp) :: resources, expenses, dividends
         real(dp) :: D_max_coll, EV
-        integer :: total_states, state_count
 
-        total_states = nz * nK * nS * nD
-        state_count = 0
+        ! First, precompute static labor solutions
+        call precompute_static_labor()
 
-        ! Loop over state space
+        ! Loop over state space with OpenMP parallelization
+        !$OMP PARALLEL DO COLLAPSE(2) &
+        !$OMP& PRIVATE(iz, iK, iS, iD, z_val, K_val, S_val, D_old_val, &
+        !$OMP&         L_opt, HP_opt, Y_val, Pi_gross, V_best, V_try, &
+        !$OMP&         iIK, iHR, iDp, iIK_lo, iIK_hi, iHR_lo, iHR_hi, iDp_lo, iDp_hi, &
+        !$OMP&         best_iIK, best_iHR, best_iDp, IK_choice, HR_choice, Dp_choice, &
+        !$OMP&         Kprime, Sprime, inv_S, resources, expenses, dividends, &
+        !$OMP&         D_max_coll, EV) &
+        !$OMP& SCHEDULE(dynamic)
         do iz = 1, nz
-            z_val = grid_z(iz)
-
             do iK = 1, nK
+                z_val = grid_z(iz)
                 K_val = grid_K(iK)
 
                 do iS = 1, nS
                     S_val = grid_S(iS)
 
+                    ! Use precomputed static labor solutions
+                    L_opt = static_L(iz, iK, iS)
+                    HP_opt = static_HP(iz, iK, iS)
+                    Y_val = static_Y(iz, iK, iS)
+                    Pi_gross = static_Pi(iz, iK, iS)
+
+                    ! Collateral constraint (same for all D values)
+                    D_max_coll = collateral_constraint(K_val, S_val)
+
                     do iD = 1, nD
                         D_old_val = grid_D(iD)
-                        state_count = state_count + 1
 
-                        ! Solve static labor problem
-                        call solve_static_labor(z_val, K_val, S_val, wL, wH, &
-                                               L_opt, HP_opt, Y_val)
+                        ! Determine search bounds (local search or full grid)
+                        if (first_iteration) then
+                            ! Full grid search on first iteration
+                            iDp_lo = 1
+                            iDp_hi = nDprime
+                            iIK_lo = 1
+                            iIK_hi = nIK
+                            iHR_lo = 1
+                            iHR_hi = nHR
+                        else
+                            ! Local search around previous optimum
+                            iDp_lo = max(1, pol_iDp(iz, iK, iS, iD) - local_search_radius)
+                            iDp_hi = min(nDprime, pol_iDp(iz, iK, iS, iD) + local_search_radius)
+                            iIK_lo = max(1, pol_iIK(iz, iK, iS, iD) - local_search_radius)
+                            iIK_hi = min(nIK, pol_iIK(iz, iK, iS, iD) + local_search_radius)
+                            iHR_lo = max(1, pol_iHR(iz, iK, iS, iD) - local_search_radius)
+                            iHR_hi = min(nHR, pol_iHR(iz, iK, iS, iD) + local_search_radius)
+                        end if
 
-                        ! Gross profits
-                        Pi_gross = Y_val - wL * L_opt - wH * HP_opt
-
-                        ! Note: We don't check solvency here because firm can borrow D' to cover
-                        ! temporary liquidity shortfalls. The dividend constraint inside the
-                        ! choice loop will handle true insolvency.
-
-                        ! Collateral constraint
-                        D_max_coll = collateral_constraint(K_val, S_val)
-
-                        ! Optimize over choices
+                        ! Initialize best value and indices
                         V_best = -1.0e10_dp
+                        best_iIK = iIK_lo
+                        best_iHR = iHR_lo
+                        best_iDp = iDp_lo
 
-                        ! Grid search over (D', I^K, H^R)
-                        do iDp = 1, nDprime
+                        ! Grid search over (D', I^K, H^R) within local bounds
+                        do iDp = iDp_lo, iDp_hi
                             Dp_choice = grid_Dprime(iDp)
 
                             if (Dp_choice > D_max_coll + epsilon) cycle
 
                             resources = Pi_gross - R * D_old_val + Dp_choice
 
-                            do iIK = 1, nIK
+                            do iIK = iIK_lo, iIK_hi
                                 IK_choice = grid_IK(iIK)
 
                                 ! Check that K' stays within grid bounds
                                 Kprime = (1.0_dp - delta_K) * K_val + IK_choice
                                 if (Kprime < K_min .or. Kprime > K_max) cycle
 
-                                do iHR = 1, nHR
+                                do iHR = iHR_lo, iHR_hi
                                     HR_choice = grid_HR(iHR)
 
                                     expenses = IK_choice + wH * HR_choice
                                     dividends = resources - expenses
 
                                     if (dividends < -epsilon) cycle
+
                                     inv_S = RD_production(HR_choice)
                                     Sprime = (1.0_dp - delta_S) * S_val + inv_S
 
@@ -177,6 +251,9 @@ contains
 
                                     if (V_try > V_best) then
                                         V_best = V_try
+                                        best_iIK = iIK
+                                        best_iHR = iHR
+                                        best_iDp = iDp
                                         pol_IK(iz, iK, iS, iD) = IK_choice
                                         pol_HR(iz, iK, iS, iD) = HR_choice
                                         pol_Dprime(iz, iK, iS, iD) = Dp_choice
@@ -186,7 +263,6 @@ contains
                                         pol_HP(iz, iK, iS, iD) = HP_opt
                                         pol_Y(iz, iK, iS, iD) = Y_val
                                         ! Constrained if borrowing at or near collateral limit
-                                        ! Use relative tolerance for robustness across scales
                                         pol_constr(iz, iK, iS, iD) = &
                                             (Dp_choice >= D_max_coll - 0.01_dp * max(1.0_dp, D_max_coll))
                                     end if
@@ -194,12 +270,18 @@ contains
                             end do  ! IK
                         end do  ! Dp
 
+                        ! Store optimal indices for next iteration's local search
+                        pol_iIK(iz, iK, iS, iD) = best_iIK
+                        pol_iHR(iz, iK, iS, iD) = best_iHR
+                        pol_iDp(iz, iK, iS, iD) = best_iDp
+
                         V_new(iz, iK, iS, iD) = V_best
 
                     end do  ! iD
                 end do  ! iS
             end do  ! iK
         end do  ! iz
+        !$OMP END PARALLEL DO
 
     end subroutine policy_improvement_step
 
@@ -210,26 +292,28 @@ contains
     !   Policy evaluation step (cheap).
     !   Updates V using FIXED policy functions - no optimization search.
     !   This is O(state_space) vs O(state_space * choice_space).
+    !   Uses OpenMP for parallelization.
     !===================================================================================
     subroutine policy_evaluation_step()
         implicit none
         integer :: iz, iK, iS, iD
-        real(dp) :: z_val, K_val, S_val, D_old_val
+        real(dp) :: D_old_val
         real(dp) :: L_opt, HP_opt, Y_val, Pi_gross
         real(dp) :: IK_choice, HR_choice, Dp_choice
         real(dp) :: Kprime, Sprime
         real(dp) :: resources, expenses, dividends
         real(dp) :: EV, V_eval
 
-        ! Loop over state space - using FIXED policies
+        ! Loop over state space with OpenMP - using FIXED policies
+        !$OMP PARALLEL DO COLLAPSE(2) &
+        !$OMP& PRIVATE(iz, iK, iS, iD, D_old_val, L_opt, HP_opt, Y_val, Pi_gross, &
+        !$OMP&         IK_choice, HR_choice, Dp_choice, Kprime, Sprime, &
+        !$OMP&         resources, expenses, dividends, EV, V_eval) &
+        !$OMP& SCHEDULE(dynamic)
         do iz = 1, nz
-            z_val = grid_z(iz)
-
             do iK = 1, nK
-                K_val = grid_K(iK)
 
                 do iS = 1, nS
-                    S_val = grid_S(iS)
 
                     do iD = 1, nD
                         D_old_val = grid_D(iD)
@@ -268,6 +352,7 @@ contains
                 end do  ! iS
             end do  ! iK
         end do  ! iz
+        !$OMP END PARALLEL DO
 
     end subroutine policy_evaluation_step
 
@@ -284,8 +369,9 @@ contains
         implicit none
         integer :: iter, eval_iter
         real(dp) :: metric, metric_eval
-        integer :: total_states
-        logical :: do_improvement
+        integer :: total_states, total_choices
+        logical :: do_improvement, first_improvement
+        integer :: num_threads
 
         print *, ""
         print *, "======================================"
@@ -293,10 +379,17 @@ contains
         print *, "======================================"
 
         total_states = nz * nK * nS * nD
+        total_choices = nIK * nHR * nDprime
         print '(A,I8)', "  Total state space points: ", total_states
-        print '(A,I8)', "  Choice combinations per state: ", nIK * nHR * nDprime
+        print '(A,I8)', "  Choice combinations (full): ", total_choices
+        print '(A,I8)', "  Choice combinations (local): ", (2*local_search_radius+1)**3
         print '(A,I4)', "  Howard improvement frequency: ", howard_freq
         print '(A,I4)', "  Howard evaluation steps: ", howard_eval_steps
+
+        ! Report OpenMP thread count
+        num_threads = 1
+        !$ num_threads = omp_get_max_threads()
+        print '(A,I4)', "  OpenMP threads: ", num_threads
         print *, ""
 
         ! Initialize value function and policies
@@ -311,6 +404,13 @@ contains
         pol_HP = 0.1_dp
         pol_Y = 0.0_dp
 
+        ! Initialize policy indices to middle of grids
+        pol_iIK = nIK / 2
+        pol_iHR = nHR / 2
+        pol_iDp = nDprime / 2
+
+        first_improvement = .true.
+
         ! Main iteration loop
         do iter = 1, maxiter_VFI
 
@@ -323,7 +423,8 @@ contains
                 !---------------------------------------------------------------
                 print '(A,I5,A)', "  Iter ", iter, ": Policy IMPROVEMENT (full optimization)..."
 
-                call policy_improvement_step(iter == 1)
+                call policy_improvement_step(first_improvement)
+                first_improvement = .false.
 
                 ! Compute metric
                 metric = maxval(abs(V_new - V))

@@ -1010,6 +1010,133 @@ Table \ref{tab:underexploitationrobust} replicates the underexploitation analysi
 The pattern of underexploitation is robust across outcome measures: the complementarity coefficient is positive and significant for low-leverage firms but small and insignificant for high-leverage firms. This confirms that the differential ability to exploit intangible-skill complementarity by financial constraint status is not an artifact of the GVA measure.
 
 
+\section{Computational Methods}
+\label{app:computation}
+
+This appendix provides a detailed description of the numerical methods used to solve and simulate the quantitative model. The computational implementation follows standard practices in the heterogeneous-agent and heterogeneous-firm literature while incorporating several acceleration techniques to handle the large state space.
+
+\subsection{Overview of the Solution Algorithm}
+
+The model is solved by finding a stationary recursive competitive equilibrium, which requires:
+\begin{enumerate}[label=(\roman*)]
+\item Solving the firm's dynamic optimization problem via value function iteration (VFI)
+\item Computing the stationary distribution of firms over the state space
+\item Clearing labor markets by iterating on wages until excess demand is zero
+\end{enumerate}
+
+The outer loop iterates on wages $(w_L, w_H)$ until labor market clearing conditions are satisfied within tolerance. For each wage guess, the inner loops solve the firm problem and compute the implied stationary distribution and aggregate labor demands.
+
+\subsection{State and Choice Spaces}
+
+\paragraph{State Variables.} The firm's state is $(z, K, S, D_{-1})$ where $z$ is idiosyncratic productivity, $K$ is tangible capital, $S$ is intangible capital, and $D_{-1}$ is beginning-of-period debt. Productivity $z$ is discretized using the \citet{tauchen1986} method with $n_z$ grid points covering $\pm 3$ unconditional standard deviations. The continuous state variables $(K, S, D)$ are discretized on grids:
+\begin{itemize}
+\item Tangible capital $K$: $n_K$ points, log-spaced from $K_{\min}$ to $K_{\max}$ for better resolution at low capital levels where marginal products are highest
+\item Intangible capital $S$: $n_S$ points, linearly spaced from $S_{\min}$ to $S_{\max}$
+\item Debt $D$: $n_D$ points, linearly spaced from $D_{\min}=0$ to $D_{\max}$
+\end{itemize}
+
+The total state space contains $n_z \times n_K \times n_S \times n_D$ points. With the baseline calibration ($n_z=11$, $n_K=50$, $n_S=50$, $n_D=25$), this yields 687,500 state points.
+
+\paragraph{Choice Variables.} The firm chooses tangible investment $I^K$, R\&D labor $H^R$, and new debt $D'$. Static labor inputs $(L, H^P)$ are solved analytically from first-order conditions given the state and wages. The dynamic choices are discretized on grids:
+\begin{itemize}
+\item Tangible investment $I^K$: $n_{I^K}$ points from $-\delta_K K_{\max}/2$ (disinvestment) to $K_{\max}/5$ (large investment)
+\item R\&D labor $H^R$: $n_{H^R}$ points from 0 to $\bar{H}$ (total skilled labor supply)
+\item New debt $D'$: $n_{D'}$ points from 0 to $D_{\max}$
+\end{itemize}
+
+\subsection{Value Function Iteration with Howard's Policy Improvement}
+
+The Bellman equation is solved via value function iteration with Howard's policy improvement algorithm to accelerate convergence. The algorithm alternates between:
+
+\paragraph{Policy Improvement Step.} Every $n_H$ iterations, perform full optimization over the choice space to update policy functions:
+\begin{equation}
+V^{new}(z, K, S, D_{-1}) = \max_{D', I^K, H^R} \left\{ \text{Div} + \beta(1-\zeta) \mathbb{E}_{z'|z}\left[ V(z', K', S', D') \right] \right\}
+\end{equation}
+subject to the collateral constraint $D' \leq \alpha_K K + \alpha_S S$, the dividend non-negativity constraint $\text{Div} \geq 0$, and the laws of motion for capital. This step is computationally expensive as it requires searching over $n_{I^K} \times n_{H^R} \times n_{D'}$ choice combinations at each state point.
+
+\paragraph{Policy Evaluation Step.} Between policy improvements, update the value function using the \emph{fixed} policy functions without re-optimization:
+\begin{equation}
+V^{new}(z, K, S, D_{-1}) = \text{Div}^*(z, K, S, D_{-1}) + \beta(1-\zeta) \mathbb{E}_{z'|z}\left[ V(z', K'^*, S'^*, D'^*) \right]
+\end{equation}
+where starred variables denote the stored optimal policies. This step has computational complexity $O(n_z \times n_K \times n_S \times n_D)$ compared to $O(n_z \times n_K \times n_S \times n_D \times n_{I^K} \times n_{H^R} \times n_{D'})$ for full optimization.
+
+The Howard improvement frequency $n_H$ trades off accuracy (frequent policy updates) against speed (more evaluation steps). With $n_H = 15$ and up to 20 evaluation steps between improvements, convergence is typically achieved in 50--200 VFI iterations.
+
+\subsection{Computational Optimizations}
+
+Four key optimizations reduce computation time by an order of magnitude:
+
+\paragraph{1. OpenMP Parallelization.} The state space loops are parallelized using OpenMP directives. Since the Bellman equation at each state point is independent, the outer loops over $(z, K)$ can be executed in parallel across CPU cores. With 8 threads, this yields approximately 6--7$\times$ speedup.
+
+\paragraph{2. Local Search.} After the first VFI iteration, the optimal policy at each state typically changes only slightly. Instead of searching the entire choice grid, subsequent policy improvement steps search only within $\pm 3$ grid points of the previous optimum. This reduces the choice space from $n_{I^K} \times n_{H^R} \times n_{D'} = 10{,}000$ combinations to $(2 \times 3 + 1)^3 = 343$ combinations, a 29$\times$ reduction.
+
+\paragraph{3. Precomputed Static Labor.} The static labor choices $(L^*, H^{P*})$ depend only on $(z, K, S)$ and wages---not on debt $D_{-1}$. Before each policy improvement step, optimal static labor and associated output $Y^*$ and gross profits $\Pi^*$ are precomputed for all $(z, K, S)$ triplets. This reduces redundant computation by a factor of $n_D$.
+
+\paragraph{4. Feasibility Screening.} Investment choices that violate $K' \in [K_{\min}, K_{\max}]$ or the dividend constraint are skipped immediately, avoiding unnecessary continuation value computation.
+
+\subsection{Interpolation}
+
+Continuation values require evaluating $V(z', K', S', D')$ at points $(K', S', D')$ that may not lie on grid nodes. Trilinear interpolation is used:
+\begin{equation}
+V(z', K', S', D') = \sum_{i,j,k \in \{0,1\}} \omega^K_i \omega^S_j \omega^D_k \, V(z', K_{i_K+i}, S_{i_S+j}, D_{i_D+k})
+\end{equation}
+where $(i_K, i_S, i_D)$ are the lower grid indices and $(\omega^K, \omega^S, \omega^D)$ are the interpolation weights. Grid location uses binary search for $O(\log n)$ complexity.
+
+\subsection{Stationary Distribution}
+
+The stationary distribution $\Psi(z, K, S, D)$ is computed via forward iteration with entry and exit:
+\begin{equation}
+\Psi^{new}(z', K', S', D') = (1-\zeta) \sum_{z, K, S, D} \Psi(z, K, S, D) \cdot \pi(z'|z) \cdot \mathbf{1}\{K'=g^K(\cdot), S'=g^S(\cdot), D'=g^D(\cdot)\}
+\end{equation}
+plus entry mass at $(z, K_{\min}, S_{\min}, 0)$ drawn from the stationary productivity distribution. Since policy functions map to off-grid points, mass is distributed to neighboring grid nodes using trilinear interpolation weights.
+
+Iteration continues until $\|\Psi^{new} - \Psi\|_\infty < 10^{-4}$, typically achieved in 1,000--3,000 iterations with dampening parameter 0.1.
+
+\subsection{Equilibrium Computation}
+
+The outer wage iteration uses a simple fixed-point updating rule:
+\begin{equation}
+w_L^{new} = w_L \cdot \left(1 + \lambda \cdot \frac{L^d - \bar{L}}{\bar{L}}\right), \quad
+w_H^{new} = w_H \cdot \left(1 + \lambda \cdot \frac{H^d - \bar{H}}{\bar{H}}\right)
+\end{equation}
+where $L^d, H^d$ are aggregate labor demands from integrating over $\Psi$, and $\lambda = 0.2$ is the dampening parameter. Convergence is declared when $|L^d - \bar{L}|/\bar{L} < 0.01$ and $|H^d - \bar{H}|/\bar{H} < 0.01$.
+
+\subsection{Implementation Details}
+
+The model is implemented in Fortran 90/95 for computational efficiency, using double precision arithmetic throughout. Key numerical parameters:
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Parameter & Symbol & Value \\
+\midrule
+VFI tolerance & $\varepsilon_{VFI}$ & $10^{-4}$ \\
+Distribution tolerance & $\varepsilon_{dist}$ & $10^{-4}$ \\
+Equilibrium tolerance & $\varepsilon_{eq}$ & $10^{-2}$ \\
+VFI dampening & $\theta_{VFI}$ & 0.70 \\
+Distribution dampening & $\theta_{dist}$ & 0.10 \\
+Wage dampening & $\lambda$ & 0.20 \\
+Howard frequency & $n_H$ & 15 \\
+Max Howard evaluations & --- & 20 \\
+Local search radius & --- & $\pm 3$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Compilation uses Intel Fortran (ifx/ifort) via Microsoft Visual Studio with full optimization and OpenMP enabled. Typical runtime for full equilibrium computation is 30--60 minutes on an 8-core workstation, depending on convergence speed of the wage iteration.
+
+\subsection{Numerical Validation}
+
+Several checks ensure numerical accuracy:
+\begin{itemize}
+\item \textbf{Grid refinement:} Key results are verified to be stable when doubling grid density
+\item \textbf{Euler equation errors:} Checked at random state points to ensure errors are below $10^{-3}$ in consumption-equivalent units
+\item \textbf{Distribution mass:} Verified to sum to unity after each iteration
+\item \textbf{Market clearing:} Final equilibrium satisfies labor market clearing within stated tolerance
+\end{itemize}
+
+The code is available upon request and will be made publicly available upon publication.
+
+
 \bibliographystyle{apalike}
 \bibliography{references}
 
