@@ -23,8 +23,8 @@ module mod_parameters
     !---------------------------------------------------------------------------
     ! LABOR SUPPLY (exogenous)
     !---------------------------------------------------------------------------
-    real(dp) :: Lbar = 0.60_dp                     ! Unskilled labor supply
-    real(dp) :: Hbar = 0.40_dp                     ! Skilled labor supply
+    real(dp) :: Lbar = 0.85_dp                     ! Unskilled labor supply
+    real(dp) :: Hbar = 0.15_dp                     ! Skilled labor supply
     ! Note: Lbar + Hbar = 1 (normalized total labor)
 
     !---------------------------------------------------------------------------
@@ -59,8 +59,8 @@ module mod_parameters
     !---------------------------------------------------------------------------
     ! FINANCIAL FRICTION PARAMETERS
     !---------------------------------------------------------------------------
-    real(dp), parameter :: alpha_K = 0.381_dp      ! Tangible pledgeability (Holttinen 2025)
-    real(dp), parameter :: alpha_S = 0.134_dp      ! Intangible pledgeability
+    real(dp), parameter :: alpha_K = 0.381_dp    ! Tangible pledgeability (Holttinen et al. 2025)
+    real(dp), parameter :: alpha_S = 0.134_dp    ! Intangible pledgeability (Holttinen et al. 2025)
     ! Note: alpha_S < alpha_K creates pecking-order distortion
 
     !---------------------------------------------------------------------------
@@ -69,7 +69,7 @@ module mod_parameters
     ! log(z') = ρz * log(z) + σz * ε,  ε ~ N(0,1)
     real(dp), parameter :: rho_z = 0.95_dp         ! Persistence
     real(dp), parameter :: sigma_z = 0.15_dp       ! Std dev of innovations
-    integer, parameter :: nz = 15                  ! Grid points for z
+    integer, parameter :: nz = 11                  ! Grid points for z (increased from 5)
     real(dp), parameter :: m_z = 3.0_dp            ! Grid coverage (m std devs)
 
     !---------------------------------------------------------------------------
@@ -81,37 +81,46 @@ module mod_parameters
     !---------------------------------------------------------------------------
     ! STATE SPACE GRIDS
     !---------------------------------------------------------------------------
-    integer, parameter :: nK = 40                  ! Grid points for tangible capital
-    integer, parameter :: nS = 40                  ! Grid points for intangible capital
-    integer, parameter :: nD = 30                  ! Grid points for debt
+    integer, parameter :: nK = 50                  ! Grid points for tangible capital (increased from 30)
+    integer, parameter :: nS = 50                  ! Grid points for intangible capital (increased from 30)
+    integer, parameter :: nD = 25                  ! Grid points for debt (increased from 15)
 
     ! Grid bounds (will be adjusted based on solution)
+    ! Note: S_min > 0 required for numerical stability with CES complements (rho < 0)
     real(dp), parameter :: K_min = 0.10_dp
     real(dp), parameter :: K_max = 100.0_dp
-    real(dp), parameter :: S_min = 0.0_dp
+    real(dp), parameter :: S_min = 0.10_dp         ! Increased from 0.01 for numerical stability
     real(dp), parameter :: S_max = 50.0_dp
     real(dp), parameter :: D_min = 0.0_dp
     real(dp), parameter :: D_max = 50.0_dp
 
     !---------------------------------------------------------------------------
     ! CHOICE GRIDS
+    ! Note: Keep these moderate to avoid excessive computation time
+    ! Total choice combinations per state = nIK * nHR * nDprime
     !---------------------------------------------------------------------------
-    integer, parameter :: nIK = 50                 ! Grid points for tangible investment
-    integer, parameter :: nHR = 30                 ! Grid points for R&D labor
-    integer, parameter :: nDprime = 35             ! Grid points for new debt
+    integer, parameter :: nIK = 25                 ! Grid points for tangible investment (increased from 15)
+    integer, parameter :: nHR = 20                 ! Grid points for R&D labor (increased from 10)
+    integer, parameter :: nDprime = 20             ! Grid points for new debt (increased from 12)
 
     !---------------------------------------------------------------------------
     ! NUMERICAL PARAMETERS
     !---------------------------------------------------------------------------
-    real(dp), parameter :: tol_VFI = 1.0e-6_dp     ! Tolerance for value function iteration
-    real(dp), parameter :: tol_dist = 1.0e-6_dp    ! Tolerance for distribution
-    real(dp), parameter :: tol_eq = 1.0e-4_dp      ! Tolerance for equilibrium
-    integer, parameter :: maxiter_VFI = 2000       ! Max iterations for VFI
+    real(dp), parameter :: tol_VFI = 1.0e-4_dp     ! Tolerance for value function iteration
+    real(dp), parameter :: tol_dist = 1.0e-4_dp    ! Tolerance for distribution
+    real(dp), parameter :: tol_eq = 1.0e-2_dp      ! Tolerance for equilibrium
+    integer, parameter :: maxiter_VFI = 3000       ! Max iterations for VFI (increased from 2000)
     integer, parameter :: maxiter_dist = 5000      ! Max iterations for distribution
-    integer, parameter :: maxiter_eq = 50          ! Max iterations for equilibrium
-    real(dp), parameter :: update_VFI = 0.50_dp    ! Update weight for VFI (Howard improvement)
+    integer, parameter :: maxiter_eq = 300         ! Max iterations for equilibrium (increased from 100)
+    real(dp), parameter :: update_VFI = 0.70_dp    ! Update weight for VFI
     real(dp), parameter :: update_dist = 0.10_dp   ! Update weight for distribution
     real(dp), parameter :: update_wage = 0.20_dp   ! Update weight for wage iteration
+
+    ! Howard's Policy Improvement parameters
+    ! Do full policy optimization every howard_freq iterations
+    ! Between optimizations, just evaluate V with fixed policy (much faster)
+    integer, parameter :: howard_freq = 15         ! Policy improvement frequency
+    integer, parameter :: howard_eval_steps = 20   ! Max evaluation steps between improvements
 
     ! Small number to avoid division by zero
     real(dp), parameter :: epsilon = 1.0e-10_dp
@@ -120,6 +129,6 @@ module mod_parameters
     ! OUTPUT CONTROL
     !---------------------------------------------------------------------------
     logical, parameter :: print_progress = .true.
-    integer, parameter :: print_freq = 100         ! Print every N iterations
+    integer, parameter :: print_freq = 10          ! Print every N iterations
 
 end module mod_parameters

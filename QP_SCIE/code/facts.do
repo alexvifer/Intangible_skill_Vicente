@@ -42,30 +42,121 @@ binscatter intang_intensity_bs_rd share_skilled, nquantiles(20) ///
 graph export "$rootdir/results/fact1_raw_correlation.png", replace width(2000)
 restore
 
-* Production function regressions
+*-------------------------------------------------------------------------------
+* Main table: GVA with nested controls (no controls, FE only, FE + controls)
+*-------------------------------------------------------------------------------
 eststo clear
 
-eststo revenue: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
-    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+* Column 1: No controls, no fixed effects
+eststo gva_noctrls: reg ln_GVA c.intang_intensity_bs_rd##c.share_skilled, vce(robust)
+estadd local firmfe "No"
+estadd local yearfe "No"
+estadd local indfe "No"
+estadd local controls "No"
 
-eststo production: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
-    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+* Column 2: Fixed effects only (no additional controls)
+eststo gva_fe: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled, ///
+    absorb(firm_id ano cae3) vce(robust)
+estadd local firmfe "Yes"
+estadd local yearfe "Yes"
+estadd local indfe "Yes"
+estadd local controls "No"
 
-eststo gva: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+* Column 3: Fixed effects + controls
+eststo gva_full: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+estadd local firmfe "Yes"
+estadd local yearfe "Yes"
+estadd local indfe "Yes"
+estadd local controls "Yes"
 
-esttab revenue production gva using "$rootdir/results/fact1_complementarity.tex", replace ///
-    b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
-    drop(ln_K_total_bs_rd ln_emp ln_age _cons) ///
+esttab gva_noctrls gva_fe gva_full using "$rootdir/results/fact1_complementarity.tex", replace ///
+    b(2) se(2) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+    keep(intang_intensity_bs_rd share_skilled c.intang_intensity_bs_rd#c.share_skilled) ///
     coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
                share_skilled "Share Skilled Workers" ///
-               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled") ///
-    stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
+               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity x Share Skilled") ///
+    stats(N r2 firmfe yearfe indfe controls, ///
+        labels("Observations" "Adjusted R-squared" "Firm FE" "Year FE" "Industry FE" "Controls") ///
+        fmt(%12.0fc 3 0 0 0 0)) ///
     title("Complementarity Between Intangibles and Skilled Labor\label{tab:complementarity}") ///
-    mtitles("Revenue" "Production" "GVA") ///
+    mtitles("(1)" "(2)" "(3)") ///
+    mgroups("Log Gross Value Added", pattern(1 0 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
     nonotes ///
-    addnote("All output measures in logs. Intangible intensity = K$_{intangible}$ / K$_{total}$." ///
-            "All specifications include firm, year, and industry fixed effects." ///
+    addnote("Dependent variable: Log gross value added (GVA)." ///
+            "Intangible intensity defined as intangible capital divided by total capital." ///
+            "Controls include log total capital, log employment, and log firm age." ///
+            "Robust standard errors in parentheses.")
+
+*-------------------------------------------------------------------------------
+* Robustness table: Revenue and Production with nested controls (Appendix)
+*-------------------------------------------------------------------------------
+eststo clear
+
+* Revenue: No controls
+eststo rev_noctrls: reg ln_revenue c.intang_intensity_bs_rd##c.share_skilled, vce(robust)
+estadd local firmfe "No"
+estadd local yearfe "No"
+estadd local indfe "No"
+estadd local controls "No"
+
+* Revenue: Fixed effects only
+eststo rev_fe: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled, ///
+    absorb(firm_id ano cae3) vce(robust)
+estadd local firmfe "Yes"
+estadd local yearfe "Yes"
+estadd local indfe "Yes"
+estadd local controls "No"
+
+* Revenue: Fixed effects + controls
+eststo rev_full: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+estadd local firmfe "Yes"
+estadd local yearfe "Yes"
+estadd local indfe "Yes"
+estadd local controls "Yes"
+
+* Production: No controls
+eststo prod_noctrls: reg ln_production c.intang_intensity_bs_rd##c.share_skilled, vce(robust)
+estadd local firmfe "No"
+estadd local yearfe "No"
+estadd local indfe "No"
+estadd local controls "No"
+
+* Production: Fixed effects only
+eststo prod_fe: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled, ///
+    absorb(firm_id ano cae3) vce(robust)
+estadd local firmfe "Yes"
+estadd local yearfe "Yes"
+estadd local indfe "Yes"
+estadd local controls "No"
+
+* Production: Fixed effects + controls
+eststo prod_full: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+estadd local firmfe "Yes"
+estadd local yearfe "Yes"
+estadd local indfe "Yes"
+estadd local controls "Yes"
+
+esttab rev_noctrls rev_fe rev_full prod_noctrls prod_fe prod_full ///
+    using "$rootdir/results/fact1_complementarity_robustness.tex", replace ///
+    b(2) se(2) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+    keep(intang_intensity_bs_rd share_skilled c.intang_intensity_bs_rd#c.share_skilled) ///
+    coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
+               share_skilled "Share Skilled Workers" ///
+               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity x Share Skilled") ///
+    stats(N r2 firmfe yearfe indfe controls, ///
+        labels("Observations" "Adjusted R-squared" "Firm FE" "Year FE" "Industry FE" "Controls") ///
+        fmt(%12.0fc 3 0 0 0 0)) ///
+    title("Complementarity Between Intangibles and Skilled Labor: Alternative Outcomes\label{tab:complementarityrobust}") ///
+    mtitles("(1)" "(2)" "(3)" "(4)" "(5)" "(6)") ///
+    mgroups("Log Revenue" "Log Production", pattern(1 0 0 1 0 0) ///
+        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
+    substitute(\centering \centering\small) ///
+    nonotes ///
+    addnote("Intangible intensity defined as intangible capital divided by total capital." ///
+            "Controls include log total capital, log employment, and log firm age." ///
             "Robust standard errors in parentheses.")
 
 
@@ -130,35 +221,90 @@ drop resid_*
    FACT 3: UNDEREXPLOITATION OF COMPLEMENTARITY BY CONSTRAINED FIRMS
 ==============================================================================*/
 
-* Cross-sectional evidence: Complementarity by leverage group
+*-------------------------------------------------------------------------------
+* Main table: GVA by leverage group
+*-------------------------------------------------------------------------------
 eststo clear
 
-eststo pooled: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+eststo gva_pooled: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
 
-eststo low_lev: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+eststo gva_low: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 0, ///
     absorb(firm_id ano cae3) vce(robust)
 
-eststo high_lev: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+eststo gva_high: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 1, ///
     absorb(firm_id ano cae3) vce(robust)
 
-esttab pooled low_lev high_lev using "$rootdir/results/fact3_underexploitation.tex", replace ///
-    b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
-    drop(ln_K_total_bs_rd ln_emp ln_age _cons) ///
+esttab gva_pooled gva_low gva_high using "$rootdir/results/fact3_underexploitation.tex", replace ///
+    b(2) se(2) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+    keep(intang_intensity_bs_rd share_skilled c.intang_intensity_bs_rd#c.share_skilled) ///
     coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
                share_skilled "Share Skilled Workers" ///
-               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled") ///
+               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity x Share Skilled") ///
     stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
-    title("Underexploitation of Intangibles--Skills Complementarity\label{tab:underexploitation}") ///
+    title("Underexploitation of Intangibles-Skills Complementarity\label{tab:underexploitation}") ///
     mtitles("All Firms" "Low Leverage" "High Leverage") ///
+    mgroups("Log Gross Value Added", pattern(1 0 0) ///
+        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
     refcat(intang_intensity_bs_rd "\textit{Main effects:}" ///
            c.intang_intensity_bs_rd#c.share_skilled "\textit{Complementarity:}", nolabel) ///
     nonotes ///
     addnote("Dependent variable: Log gross value added (GVA)." ///
             "Low- and high-leverage defined relative to sector-year median leverage." ///
-            "All specifications include firm and year $\times$ industry fixed effects." ///
+            "All specifications include firm, year, and industry fixed effects." ///
+            "Controls include log total capital, log employment, and log firm age." ///
+            "Robust standard errors in parentheses.")
+
+*-------------------------------------------------------------------------------
+* Robustness table: Revenue and Production by leverage group (Appendix)
+*-------------------------------------------------------------------------------
+eststo clear
+
+* Revenue regressions
+eststo rev_pooled: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+
+eststo rev_low: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age if high_leverage == 0, ///
+    absorb(firm_id ano cae3) vce(robust)
+
+eststo rev_high: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age if high_leverage == 1, ///
+    absorb(firm_id ano cae3) vce(robust)
+
+* Production regressions
+eststo prod_pooled: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+
+eststo prod_low: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age if high_leverage == 0, ///
+    absorb(firm_id ano cae3) vce(robust)
+
+eststo prod_high: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+    ln_K_total_bs_rd ln_emp ln_age if high_leverage == 1, ///
+    absorb(firm_id ano cae3) vce(robust)
+
+esttab rev_pooled rev_low rev_high prod_pooled prod_low prod_high ///
+    using "$rootdir/results/fact3_underexploitation_robustness.tex", replace ///
+    b(2) se(2) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+    keep(intang_intensity_bs_rd share_skilled c.intang_intensity_bs_rd#c.share_skilled) ///
+    coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
+               share_skilled "Share Skilled Workers" ///
+               c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity x Share Skilled") ///
+    stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
+    title("Underexploitation of Complementarity: Alternative Outcomes\label{tab:underexploitationrobust}") ///
+    mtitles("All" "Low Lev." "High Lev." "All" "Low Lev." "High Lev.") ///
+    mgroups("Log Revenue" "Log Production", pattern(1 0 0 1 0 0) ///
+        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
+    refcat(intang_intensity_bs_rd "\textit{Main effects:}" ///
+           c.intang_intensity_bs_rd#c.share_skilled "\textit{Complementarity:}", nolabel) ///
+    substitute(\centering \centering\small) ///
+    nonotes ///
+    addnote("Low- and high-leverage defined relative to sector-year median leverage." ///
+            "All specifications include firm, year, and industry fixed effects." ///
+            "Controls include log total capital, log employment, and log firm age." ///
             "Robust standard errors in parentheses.")
 
 * Dynamic evidence: Wage premium and skill share evolution (2011-2022)

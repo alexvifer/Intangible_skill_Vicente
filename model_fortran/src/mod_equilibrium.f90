@@ -191,9 +191,9 @@ contains
         print *, "SOLVING FOR EQUILIBRIUM"
         print *, "======================================"
 
-        ! Initial wage guess
-        wL = 1.00_dp
-        wH = 1.50_dp
+        ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
+        wL = 0.10_dp
+        wH = 0.60_dp
 
         do iter_outer = 1, maxiter_eq
 
@@ -241,9 +241,9 @@ contains
             update_wL = wL * (1.0_dp + update_wage * excess_L / Lbar)
             update_wH = wH * (1.0_dp + update_wage * excess_H / Hbar)
 
-            ! Bounds on wages
-            wL = max(0.10_dp, min(10.0_dp, update_wL))
-            wH = max(0.10_dp, min(10.0_dp, update_wH))
+            ! Bounds on wages (wide bounds to allow equilibrium to be found)
+            wL = max(0.01_dp, min(100.0_dp, update_wL))
+            wH = max(0.01_dp, min(100.0_dp, update_wH))
 
             if (iter_outer == maxiter_eq) then
                 print *, ""

@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE\output\empirical_analysis.log
   log type:  text
- opened on:  14 Jan 2026, 14:10:59
+ opened on:  15 Jan 2026, 09:31:10
 
 . 
 . use "final_data_2011_2022_analysis.dta", clear
@@ -46,87 +46,113 @@ warning: nquantiles(20) was specified, but only 10 were generated. see help file
 . restore
 
 . 
-. * Production function regressions
+. *-------------------------------------------------------------------------------
+. * Main table: GVA with nested controls (no controls, FE only, FE + controls)
+. *-------------------------------------------------------------------------------
 . eststo clear
 
 . 
-. eststo revenue: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
->     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
-(MWFE estimator converged in 52 iterations)
+. * Column 1: No controls, no fixed effects
+. eststo gva_noctrls: reg ln_GVA c.intang_intensity_bs_rd##c.share_skilled, vce(robust)
 
-HDFE Linear regression                            Number of obs   =  1,759,084
-Absorbing 3 HDFE groups                           F(   6,1502834) =   39240.25
-                                                  Prob > F        =     0.0000
-                                                  R-squared       =     0.9518
-                                                  Adj R-squared   =     0.9436
-                                                  Within R-sq.    =     0.2767
-                                                  Root MSE        =     0.3554
+Linear regression                               Number of obs     =  1,759,086
+                                                F(3, 1759082)     =    8159.29
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.0197
+                                                Root MSE          =     1.4482
 
 ----------------------------------------------------------------------------------------------------------
                                          |               Robust
-                              ln_revenue |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+                                  ln_GVA |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
 -----------------------------------------+----------------------------------------------------------------
-                  intang_intensity_bs_rd |  -.1018422   .0064696   -15.74   0.000    -.1145223   -.0891621
-                           share_skilled |  -.0127821   .0036421    -3.51   0.000    -.0199205   -.0056437
+                  intang_intensity_bs_rd |   .3958568    .012313    32.15   0.000     .3717237    .4199898
+                           share_skilled |   .4562829   .0045719    99.80   0.000     .4473222    .4652437
                                          |
-c.intang_intensity_bs_rd#c.share_skilled |   .0261977   .0136834     1.91   0.056    -.0006213    .0530166
+c.intang_intensity_bs_rd#c.share_skilled |   1.331381   .0275876    48.26   0.000      1.27731    1.385452
                                          |
-                        ln_K_total_bs_rd |    .087171   .0005329   163.59   0.000     .0861266    .0882154
-                                  ln_emp |   .4485111   .0012561   357.06   0.000     .4460492    .4509731
-                                  ln_age |   .3135366   .0017529   178.86   0.000     .3101009    .3169723
-                                   _cons |   10.29652   .0070657  1457.25   0.000     10.28267    10.31037
+                                   _cons |   11.42788   .0011998  9524.65   0.000     11.42553    11.43023
+----------------------------------------------------------------------------------------------------------
+
+. estadd local firmfe "No"
+
+added macro:
+             e(firmfe) : "No"
+
+. estadd local yearfe "No"
+
+added macro:
+             e(yearfe) : "No"
+
+. estadd local indfe "No"
+
+added macro:
+              e(indfe) : "No"
+
+. estadd local controls "No"
+
+added macro:
+           e(controls) : "No"
+
+. 
+. * Column 2: Fixed effects only (no additional controls)
+. eststo gva_fe: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled, ///
+>     absorb(firm_id ano cae3) vce(robust)
+(dropped 1 singleton observations)
+(MWFE estimator converged in 51 iterations)
+
+HDFE Linear regression                            Number of obs   =  1,759,085
+Absorbing 3 HDFE groups                           F(   3,1502836) =      86.54
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.8682
+                                                  Adj R-squared   =     0.8458
+                                                  Within R-sq.    =     0.0003
+                                                  Root MSE        =     0.5744
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                                  ln_GVA |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.0698369   .0105814    -6.60   0.000    -.0905761   -.0490977
+                           share_skilled |  -.0605358   .0054103   -11.19   0.000    -.0711398   -.0499318
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .2717645   .0213746    12.71   0.000     .2298709     .313658
+                                         |
+                                   _cons |   11.52583   .0008993  1.3e+04   0.000     11.52407    11.52759
 ----------------------------------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-     firm_id |    256152           0      256152     |
+     firm_id |    256154           0      256154     |
          ano |        12           1          11     |
         cae3 |        83           2          81    ?|
 -----------------------------------------------------+
 ? = number of redundant parameters may be higher
 
-. 
-. eststo production: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
->     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
-(MWFE estimator converged in 52 iterations)
+. estadd local firmfe "Yes"
 
-HDFE Linear regression                            Number of obs   =  1,759,084
-Absorbing 3 HDFE groups                           F(   6,1502834) =   46124.00
-                                                  Prob > F        =     0.0000
-                                                  R-squared       =     0.9513
-                                                  Adj R-squared   =     0.9430
-                                                  Within R-sq.    =     0.2993
-                                                  Root MSE        =     0.3409
+added macro:
+             e(firmfe) : "Yes"
 
-----------------------------------------------------------------------------------------------------------
-                                         |               Robust
-                           ln_production |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
------------------------------------------+----------------------------------------------------------------
-                  intang_intensity_bs_rd |  -.1111231   .0061259   -18.14   0.000    -.1231296   -.0991165
-                           share_skilled |  -.0083815   .0033361    -2.51   0.012    -.0149202   -.0018427
-                                         |
-c.intang_intensity_bs_rd#c.share_skilled |   .0416667   .0125308     3.33   0.001     .0171067    .0662266
-                                         |
-                        ln_K_total_bs_rd |   .0911289   .0005005   182.09   0.000      .090148    .0921098
-                                  ln_emp |   .4547085   .0011632   390.92   0.000     .4524287    .4569883
-                                  ln_age |    .307833   .0016997   181.11   0.000     .3045017    .3111643
-                                   _cons |   9.911814   .0067262  1473.60   0.000     9.898631    9.924997
-----------------------------------------------------------------------------------------------------------
+. estadd local yearfe "Yes"
 
-Absorbed degrees of freedom:
------------------------------------------------------+
- Absorbed FE | Categories  - Redundant  = Num. Coefs |
--------------+---------------------------------------|
-     firm_id |    256152           0      256152     |
-         ano |        12           1          11     |
-        cae3 |        83           2          81    ?|
------------------------------------------------------+
-? = number of redundant parameters may be higher
+added macro:
+             e(yearfe) : "Yes"
+
+. estadd local indfe "Yes"
+
+added macro:
+              e(indfe) : "Yes"
+
+. estadd local controls "No"
+
+added macro:
+           e(controls) : "No"
 
 . 
-. eststo gva: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+. * Column 3: Fixed effects + controls
+. eststo gva_full: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
 >     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
 (dropped 1 singleton observations)
 (MWFE estimator converged in 54 iterations)
@@ -164,24 +190,394 @@ Absorbed degrees of freedom:
 -----------------------------------------------------+
 ? = number of redundant parameters may be higher
 
+. estadd local firmfe "Yes"
+
+added macro:
+             e(firmfe) : "Yes"
+
+. estadd local yearfe "Yes"
+
+added macro:
+             e(yearfe) : "Yes"
+
+. estadd local indfe "Yes"
+
+added macro:
+              e(indfe) : "Yes"
+
+. estadd local controls "Yes"
+
+added macro:
+           e(controls) : "Yes"
+
 . 
-. esttab revenue production gva using "$rootdir/results/fact1_complementarity.tex", replace ///
+. esttab gva_noctrls gva_fe gva_full using "$rootdir/results/fact1_complementarity.tex", replace ///
 >     b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
->     drop(ln_K_total_bs_rd ln_emp ln_age _cons) ///
+>     keep(intang_intensity_bs_rd share_skilled c.intang_intensity_bs_rd#c.share_skilled) ///
 >     coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
 >                share_skilled "Share Skilled Workers" ///
->                c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled") ///
->     stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
+>                c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity \$\\times\$ Share Skilled") ///
+>     stats(N r2 firmfe yearfe indfe controls, ///
+>         labels("Observations" "Adjusted R-squared" "Firm FE" "Year FE" "Industry FE" "Controls") ///
+>         fmt(%12.0fc 3 0 0 0 0)) ///
 >     title("Complementarity Between Intangibles and Skilled Labor\label{tab:complementarity}") ///
->     mtitles("Revenue" "Production" "GVA") ///
+>     mtitles("(1)" "(2)" "(3)") ///
+>     mgroups("Log Gross Value Added", pattern(1 0 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@sp
+> an})) ///
 >     nonotes ///
->     addnote("All output measures in logs. Intangible intensity = K$_{intangible}$ / K$_{total}$." ///
->             "All specifications include firm, year, and industry fixed effects." ///
+>     addnote("Dependent variable: Log gross value added (GVA)." ///
+>             "Intangible intensity = \$K_{intangible}\$ / \$K_{total}\$." ///
+>             "Controls include log total capital, log employment, and log firm age." ///
 >             "Robust standard errors in parentheses.")
 (note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact1_complementarity.tex not
 >  found)
 (output written to C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact1_complementarity.
 > tex)
+
+. 
+. *-------------------------------------------------------------------------------
+. * Robustness table: Revenue and Production with nested controls (Appendix)
+. *-------------------------------------------------------------------------------
+. eststo clear
+
+. 
+. * Revenue: No controls
+. eststo rev_noctrls: reg ln_revenue c.intang_intensity_bs_rd##c.share_skilled, vce(robust)
+
+Linear regression                               Number of obs     =  1,759,093
+                                                F(3, 1759089)     =    4711.23
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.0117
+                                                Root MSE          =     1.4879
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                              ln_revenue |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |   .6380052   .0120615    52.90   0.000     .6143651    .6616453
+                           share_skilled |   .1819162   .0046261    39.32   0.000     .1728491    .1909832
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .9769033   .0273707    35.69   0.000     .9232576    1.030549
+                                         |
+                                   _cons |   12.62128   .0012176  1.0e+04   0.000     12.61889    12.62367
+----------------------------------------------------------------------------------------------------------
+
+. estadd local firmfe "No"
+
+added macro:
+             e(firmfe) : "No"
+
+. estadd local yearfe "No"
+
+added macro:
+             e(yearfe) : "No"
+
+. estadd local indfe "No"
+
+added macro:
+              e(indfe) : "No"
+
+. estadd local controls "No"
+
+added macro:
+           e(controls) : "No"
+
+. 
+. * Revenue: Fixed effects only
+. eststo rev_fe: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled, ///
+>     absorb(firm_id ano cae3) vce(robust)
+(MWFE estimator converged in 52 iterations)
+
+HDFE Linear regression                            Number of obs   =  1,759,093
+Absorbing 3 HDFE groups                           F(   3,1502843) =      97.99
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9335
+                                                  Adj R-squared   =     0.9221
+                                                  Within R-sq.    =     0.0004
+                                                  Root MSE        =     0.4177
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                              ln_revenue |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.0471156   .0079922    -5.90   0.000    -.0627799   -.0314512
+                           share_skilled |  -.0516462   .0043371   -11.91   0.000    -.0601469   -.0431456
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |     .23225   .0172506    13.46   0.000     .1984395    .2660605
+                                         |
+                                   _cons |   12.68465   .0007023  1.8e+04   0.000     12.68328    12.68603
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    256155           0      256155     |
+         ano |        12           1          11     |
+        cae3 |        83           2          81    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. estadd local firmfe "Yes"
+
+added macro:
+             e(firmfe) : "Yes"
+
+. estadd local yearfe "Yes"
+
+added macro:
+             e(yearfe) : "Yes"
+
+. estadd local indfe "Yes"
+
+added macro:
+              e(indfe) : "Yes"
+
+. estadd local controls "No"
+
+added macro:
+           e(controls) : "No"
+
+. 
+. * Revenue: Fixed effects + controls
+. eststo rev_full: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+(MWFE estimator converged in 52 iterations)
+
+HDFE Linear regression                            Number of obs   =  1,759,084
+Absorbing 3 HDFE groups                           F(   6,1502834) =   39240.25
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9518
+                                                  Adj R-squared   =     0.9436
+                                                  Within R-sq.    =     0.2767
+                                                  Root MSE        =     0.3554
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                              ln_revenue |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.1018422   .0064696   -15.74   0.000    -.1145223   -.0891621
+                           share_skilled |  -.0127821   .0036421    -3.51   0.000    -.0199205   -.0056437
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .0261977   .0136834     1.91   0.056    -.0006213    .0530166
+                                         |
+                        ln_K_total_bs_rd |    .087171   .0005329   163.59   0.000     .0861266    .0882154
+                                  ln_emp |   .4485111   .0012561   357.06   0.000     .4460492    .4509731
+                                  ln_age |   .3135366   .0017529   178.86   0.000     .3101009    .3169723
+                                   _cons |   10.29652   .0070657  1457.25   0.000     10.28267    10.31037
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    256152           0      256152     |
+         ano |        12           1          11     |
+        cae3 |        83           2          81    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. estadd local firmfe "Yes"
+
+added macro:
+             e(firmfe) : "Yes"
+
+. estadd local yearfe "Yes"
+
+added macro:
+             e(yearfe) : "Yes"
+
+. estadd local indfe "Yes"
+
+added macro:
+              e(indfe) : "Yes"
+
+. estadd local controls "Yes"
+
+added macro:
+           e(controls) : "Yes"
+
+. 
+. * Production: No controls
+. eststo prod_noctrls: reg ln_production c.intang_intensity_bs_rd##c.share_skilled, vce(robust)
+
+Linear regression                               Number of obs     =  1,759,093
+                                                F(3, 1759089)     =    6990.66
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.0169
+                                                Root MSE          =     1.4156
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                           ln_production |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |    .483318   .0116675    41.42   0.000       .46045    .5061859
+                           share_skilled |   .3581941   .0043579    82.19   0.000     .3496528    .3667355
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |    1.17576   .0260901    45.07   0.000     1.124625    1.226896
+                                         |
+                                   _cons |   12.25418   .0011561  1.1e+04   0.000     12.25191    12.25645
+----------------------------------------------------------------------------------------------------------
+
+. estadd local firmfe "No"
+
+added macro:
+             e(firmfe) : "No"
+
+. estadd local yearfe "No"
+
+added macro:
+             e(yearfe) : "No"
+
+. estadd local indfe "No"
+
+added macro:
+              e(indfe) : "No"
+
+. estadd local controls "No"
+
+added macro:
+           e(controls) : "No"
+
+. 
+. * Production: Fixed effects only
+. eststo prod_fe: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled, ///
+>     absorb(firm_id ano cae3) vce(robust)
+(MWFE estimator converged in 51 iterations)
+
+HDFE Linear regression                            Number of obs   =  1,759,093
+Absorbing 3 HDFE groups                           F(   3,1502843) =     112.83
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9305
+                                                  Adj R-squared   =     0.9187
+                                                  Within R-sq.    =     0.0005
+                                                  Root MSE        =     0.4071
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                           ln_production |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.0530395   .0077403    -6.85   0.000    -.0682101   -.0378688
+                           share_skilled |  -.0473858   .0040812   -11.61   0.000    -.0553848   -.0393867
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .2523735   .0163669    15.42   0.000     .2202949    .2844521
+                                         |
+                                   _cons |   12.33789   .0006673  1.8e+04   0.000     12.33658    12.33919
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    256155           0      256155     |
+         ano |        12           1          11     |
+        cae3 |        83           2          81    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. estadd local firmfe "Yes"
+
+added macro:
+             e(firmfe) : "Yes"
+
+. estadd local yearfe "Yes"
+
+added macro:
+             e(yearfe) : "Yes"
+
+. estadd local indfe "Yes"
+
+added macro:
+              e(indfe) : "Yes"
+
+. estadd local controls "No"
+
+added macro:
+           e(controls) : "No"
+
+. 
+. * Production: Fixed effects + controls
+. eststo prod_full: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+(MWFE estimator converged in 52 iterations)
+
+HDFE Linear regression                            Number of obs   =  1,759,084
+Absorbing 3 HDFE groups                           F(   6,1502834) =   46124.00
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9513
+                                                  Adj R-squared   =     0.9430
+                                                  Within R-sq.    =     0.2993
+                                                  Root MSE        =     0.3409
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                           ln_production |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.1111231   .0061259   -18.14   0.000    -.1231296   -.0991165
+                           share_skilled |  -.0083815   .0033361    -2.51   0.012    -.0149202   -.0018427
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .0416667   .0125308     3.33   0.001     .0171067    .0662266
+                                         |
+                        ln_K_total_bs_rd |   .0911289   .0005005   182.09   0.000      .090148    .0921098
+                                  ln_emp |   .4547085   .0011632   390.92   0.000     .4524287    .4569883
+                                  ln_age |    .307833   .0016997   181.11   0.000     .3045017    .3111643
+                                   _cons |   9.911814   .0067262  1473.60   0.000     9.898631    9.924997
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    256152           0      256152     |
+         ano |        12           1          11     |
+        cae3 |        83           2          81    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. estadd local firmfe "Yes"
+
+added macro:
+             e(firmfe) : "Yes"
+
+. estadd local yearfe "Yes"
+
+added macro:
+             e(yearfe) : "Yes"
+
+. estadd local indfe "Yes"
+
+added macro:
+              e(indfe) : "Yes"
+
+. estadd local controls "Yes"
+
+added macro:
+           e(controls) : "Yes"
+
+. 
+. esttab rev_noctrls rev_fe rev_full prod_noctrls prod_fe prod_full ///
+>     using "$rootdir/results/fact1_complementarity_robustness.tex", replace ///
+>     b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+>     keep(intang_intensity_bs_rd share_skilled c.intang_intensity_bs_rd#c.share_skilled) ///
+>     coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
+>                share_skilled "Share Skilled Workers" ///
+>                c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity \$\\times\$ Share Skilled") ///
+>     stats(N r2 firmfe yearfe indfe controls, ///
+>         labels("Observations" "Adjusted R-squared" "Firm FE" "Year FE" "Industry FE" "Controls") ///
+>         fmt(%12.0fc 3 0 0 0 0)) ///
+>     title("Complementarity Between Intangibles and Skilled Labor: Alternative Outcomes\label{tab:complementarityrobust}") //
+> /
+>     mtitles("(1)" "(2)" "(3)" "(4)" "(5)" "(6)") ///
+>     mgroups("Log Revenue" "Log Production", pattern(1 0 0 1 0 0) ///
+>         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
+>     nonotes ///
+>     addnote("Intangible intensity = \$K_{intangible}\$ / \$K_{total}\$." ///
+>             "Controls include log total capital, log employment, and log firm age." ///
+>             "Robust standard errors in parentheses.")
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact1_complementarity_robustn
+> ess.tex not found)
+(output written to C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact1_complementarity_
+> robustness.tex)
 
 . 
 . 
@@ -295,11 +691,13 @@ warning: nquantiles(20) was specified, but only 19 were generated. see help file
 >    FACT 3: UNDEREXPLOITATION OF COMPLEMENTARITY BY CONSTRAINED FIRMS
 > ==============================================================================*/
 . 
-. * Cross-sectional evidence: Complementarity by leverage group
+. *-------------------------------------------------------------------------------
+. * Main table: GVA by leverage group
+. *-------------------------------------------------------------------------------
 . eststo clear
 
 . 
-. eststo pooled: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+. eststo gva_pooled: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
 >     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
 (dropped 1 singleton observations)
 (MWFE estimator converged in 52 iterations)
@@ -338,11 +736,11 @@ Absorbed degrees of freedom:
 ? = number of redundant parameters may be higher
 
 . 
-. eststo low_lev: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+. eststo gva_low: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
 >     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 0, ///
 >     absorb(firm_id ano cae3) vce(robust)
 (dropped 27288 singleton observations)
-(MWFE estimator converged in 53 iterations)
+(MWFE estimator converged in 55 iterations)
 
 HDFE Linear regression                            Number of obs   =    852,524
 Absorbing 3 HDFE groups                           F(   6, 689189) =   13692.23
@@ -378,11 +776,11 @@ Absorbed degrees of freedom:
 ? = number of redundant parameters may be higher
 
 . 
-. eststo high_lev: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
+. eststo gva_high: reghdfe ln_GVA c.intang_intensity_bs_rd##c.share_skilled ///
 >     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 1, ///
 >     absorb(firm_id ano cae3) vce(robust)
 (dropped 23026 singleton observations)
-(MWFE estimator converged in 48 iterations)
+(MWFE estimator converged in 50 iterations)
 
 HDFE Linear regression                            Number of obs   =    856,239
 Absorbing 3 HDFE groups                           F(   6, 698685) =   16201.78
@@ -418,26 +816,298 @@ Absorbed degrees of freedom:
 ? = number of redundant parameters may be higher
 
 . 
-. esttab pooled low_lev high_lev using "$rootdir/results/fact3_underexploitation.tex", replace ///
+. esttab gva_pooled gva_low gva_high using "$rootdir/results/fact3_underexploitation.tex", replace ///
 >     b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
->     drop(ln_K_total_bs_rd ln_emp ln_age _cons) ///
+>     keep(intang_intensity_bs_rd share_skilled c.intang_intensity_bs_rd#c.share_skilled) ///
 >     coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
 >                share_skilled "Share Skilled Workers" ///
->                c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity $\times$ Share Skilled") ///
+>                c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity \$\\times\$ Share Skilled") ///
 >     stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
->     title("Underexploitation of Intangibles--Skills Complementarity\label{tab:underexploitation}") ///
+>     title("Underexploitation of Intangibles-Skills Complementarity\label{tab:underexploitation}") ///
 >     mtitles("All Firms" "Low Leverage" "High Leverage") ///
+>     mgroups("Log Gross Value Added", pattern(1 0 0) ///
+>         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
 >     refcat(intang_intensity_bs_rd "\textit{Main effects:}" ///
 >            c.intang_intensity_bs_rd#c.share_skilled "\textit{Complementarity:}", nolabel) ///
 >     nonotes ///
 >     addnote("Dependent variable: Log gross value added (GVA)." ///
 >             "Low- and high-leverage defined relative to sector-year median leverage." ///
->             "All specifications include firm and year $\times$ industry fixed effects." ///
+>             "All specifications include firm, year, and industry fixed effects." ///
+>             "Controls include log total capital, log employment, and log firm age." ///
 >             "Robust standard errors in parentheses.")
 (note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_underexploitation.tex n
 > ot found)
 (output written to C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_underexploitatio
 > n.tex)
+
+. 
+. *-------------------------------------------------------------------------------
+. * Robustness table: Revenue and Production by leverage group (Appendix)
+. *-------------------------------------------------------------------------------
+. eststo clear
+
+. 
+. * Revenue regressions
+. eststo rev_pooled: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+(MWFE estimator converged in 52 iterations)
+
+HDFE Linear regression                            Number of obs   =  1,759,084
+Absorbing 3 HDFE groups                           F(   6,1502834) =   39240.25
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9518
+                                                  Adj R-squared   =     0.9436
+                                                  Within R-sq.    =     0.2767
+                                                  Root MSE        =     0.3554
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                              ln_revenue |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.1018422   .0064696   -15.74   0.000    -.1145223   -.0891621
+                           share_skilled |  -.0127821   .0036421    -3.51   0.000    -.0199205   -.0056437
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .0261977   .0136834     1.91   0.056    -.0006213    .0530166
+                                         |
+                        ln_K_total_bs_rd |    .087171   .0005329   163.59   0.000     .0861266    .0882154
+                                  ln_emp |   .4485111   .0012561   357.06   0.000     .4460492    .4509731
+                                  ln_age |   .3135366   .0017529   178.86   0.000     .3101009    .3169723
+                                   _cons |   10.29652   .0070657  1457.25   0.000     10.28267    10.31037
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    256152           0      256152     |
+         ano |        12           1          11     |
+        cae3 |        83           2          81    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. 
+. eststo rev_low: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 0, ///
+>     absorb(firm_id ano cae3) vce(robust)
+(dropped 27288 singleton observations)
+(MWFE estimator converged in 55 iterations)
+
+HDFE Linear regression                            Number of obs   =    852,528
+Absorbing 3 HDFE groups                           F(   6, 689193) =   14941.00
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9574
+                                                  Adj R-squared   =     0.9473
+                                                  Within R-sq.    =     0.2442
+                                                  Root MSE        =     0.3396
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                              ln_revenue |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.1086522   .0097783   -11.11   0.000    -.1278173    -.089487
+                           share_skilled |  -.0215008   .0053546    -4.02   0.000    -.0319956    -.011006
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .0429965   .0203588     2.11   0.035      .003094     .082899
+                                         |
+                        ln_K_total_bs_rd |   .0839735   .0007982   105.21   0.000     .0824091    .0855379
+                                  ln_emp |   .4155485   .0019178   216.68   0.000     .4117897    .4193073
+                                  ln_age |   .3222641   .0025431   126.72   0.000     .3172797    .3272485
+                                   _cons |   10.33196   .0103645   996.86   0.000     10.31165    10.35228
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    163238           0      163238     |
+         ano |        12           1          11     |
+        cae3 |        83           3          80    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. 
+. eststo rev_high: reghdfe ln_revenue c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 1, ///
+>     absorb(firm_id ano cae3) vce(robust)
+(dropped 23025 singleton observations)
+(MWFE estimator converged in 50 iterations)
+
+HDFE Linear regression                            Number of obs   =    856,243
+Absorbing 3 HDFE groups                           F(   6, 698688) =   17635.43
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9579
+                                                  Adj R-squared   =     0.9484
+                                                  Within R-sq.    =     0.2770
+                                                  Root MSE        =     0.3423
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                              ln_revenue |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.1031656   .0095762   -10.77   0.000    -.1219346   -.0843966
+                           share_skilled |    -.00713   .0053878    -1.32   0.186      -.01769      .00343
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |  -.0045005   .0200477    -0.22   0.822    -.0437934    .0347925
+                                         |
+                        ln_K_total_bs_rd |     .09757   .0008937   109.18   0.000     .0958185    .0993216
+                                  ln_emp |   .4457653   .0018491   241.07   0.000      .442141    .4493895
+                                  ln_age |   .3256385   .0028665   113.60   0.000     .3200202    .3312568
+                                   _cons |    10.1788   .0121097   840.55   0.000     10.15507    10.20254
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    157459           0      157459     |
+         ano |        12           1          11     |
+        cae3 |        81           2          79    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. 
+. * Production regressions
+. eststo prod_pooled: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age, absorb(firm_id ano cae3) vce(robust)
+(MWFE estimator converged in 52 iterations)
+
+HDFE Linear regression                            Number of obs   =  1,759,084
+Absorbing 3 HDFE groups                           F(   6,1502834) =   46124.00
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9513
+                                                  Adj R-squared   =     0.9430
+                                                  Within R-sq.    =     0.2993
+                                                  Root MSE        =     0.3409
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                           ln_production |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.1111231   .0061259   -18.14   0.000    -.1231296   -.0991165
+                           share_skilled |  -.0083815   .0033361    -2.51   0.012    -.0149202   -.0018427
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .0416667   .0125308     3.33   0.001     .0171067    .0662266
+                                         |
+                        ln_K_total_bs_rd |   .0911289   .0005005   182.09   0.000      .090148    .0921098
+                                  ln_emp |   .4547085   .0011632   390.92   0.000     .4524287    .4569883
+                                  ln_age |    .307833   .0016997   181.11   0.000     .3045017    .3111643
+                                   _cons |   9.911814   .0067262  1473.60   0.000     9.898631    9.924997
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    256152           0      256152     |
+         ano |        12           1          11     |
+        cae3 |        83           2          81    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. 
+. eststo prod_low: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 0, ///
+>     absorb(firm_id ano cae3) vce(robust)
+(dropped 27288 singleton observations)
+(MWFE estimator converged in 53 iterations)
+
+HDFE Linear regression                            Number of obs   =    852,528
+Absorbing 3 HDFE groups                           F(   6, 689193) =   16807.44
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9548
+                                                  Adj R-squared   =     0.9441
+                                                  Within R-sq.    =     0.2584
+                                                  Root MSE        =     0.3310
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                           ln_production |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.1183617   .0093624   -12.64   0.000    -.1367117   -.1000117
+                           share_skilled |  -.0170706   .0050045    -3.41   0.001    -.0268792   -.0072619
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .0670908    .018988     3.53   0.000      .029875    .1043065
+                                         |
+                        ln_K_total_bs_rd |   .0853706   .0007519   113.54   0.000      .083897    .0868443
+                                  ln_emp |     .42328   .0018112   233.71   0.000     .4197302    .4268298
+                                  ln_age |   .3178714   .0024918   127.57   0.000     .3129875    .3227552
+                                   _cons |    9.96903   .0099508  1001.83   0.000     9.949526    9.988533
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    163238           0      163238     |
+         ano |        12           1          11     |
+        cae3 |        83           3          80    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. 
+. eststo prod_high: reghdfe ln_production c.intang_intensity_bs_rd##c.share_skilled ///
+>     ln_K_total_bs_rd ln_emp ln_age if high_leverage == 1, ///
+>     absorb(firm_id ano cae3) vce(robust)
+(dropped 23025 singleton observations)
+(MWFE estimator converged in 50 iterations)
+
+HDFE Linear regression                            Number of obs   =    856,243
+Absorbing 3 HDFE groups                           F(   6, 698688) =   21659.25
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.9594
+                                                  Adj R-squared   =     0.9502
+                                                  Within R-sq.    =     0.3065
+                                                  Root MSE        =     0.3231
+
+----------------------------------------------------------------------------------------------------------
+                                         |               Robust
+                           ln_production |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-----------------------------------------+----------------------------------------------------------------
+                  intang_intensity_bs_rd |  -.1101124   .0089449   -12.31   0.000    -.1276441   -.0925807
+                           share_skilled |   -.001026   .0048511    -0.21   0.833    -.0105339     .008482
+                                         |
+c.intang_intensity_bs_rd#c.share_skilled |   .0019558   .0181275     0.11   0.914    -.0335735    .0374852
+                                         |
+                        ln_K_total_bs_rd |   .1036064   .0008258   125.46   0.000     .1019878     .105225
+                                  ln_emp |   .4502258    .001679   268.15   0.000      .446935    .4535166
+                                  ln_age |   .3174887   .0027422   115.78   0.000     .3121141    .3228633
+                                   _cons |     9.7773   .0113336   862.68   0.000     9.755086    9.799513
+----------------------------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     firm_id |    157459           0      157459     |
+         ano |        12           1          11     |
+        cae3 |        81           2          79    ?|
+-----------------------------------------------------+
+? = number of redundant parameters may be higher
+
+. 
+. esttab rev_pooled rev_low rev_high prod_pooled prod_low prod_high ///
+>     using "$rootdir/results/fact3_underexploitation_robustness.tex", replace ///
+>     b(4) se(4) r2 star(* 0.10 ** 0.05 *** 0.01) booktabs ///
+>     keep(intang_intensity_bs_rd share_skilled c.intang_intensity_bs_rd#c.share_skilled) ///
+>     coeflabels(intang_intensity_bs_rd "Intangible Intensity" ///
+>                share_skilled "Share Skilled Workers" ///
+>                c.intang_intensity_bs_rd#c.share_skilled "Intangible Intensity \$\\times\$ Share Skilled") ///
+>     stats(N r2, labels("Observations" "Adjusted R-squared") fmt(%12.0fc 3)) ///
+>     title("Underexploitation of Complementarity: Alternative Outcomes\label{tab:underexploitationrobust}") ///
+>     mtitles("All" "Low Lev." "High Lev." "All" "Low Lev." "High Lev.") ///
+>     mgroups("Log Revenue" "Log Production", pattern(1 0 0 1 0 0) ///
+>         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
+>     refcat(intang_intensity_bs_rd "\textit{Main effects:}" ///
+>            c.intang_intensity_bs_rd#c.share_skilled "\textit{Complementarity:}", nolabel) ///
+>     nonotes ///
+>     addnote("Low- and high-leverage defined relative to sector-year median leverage." ///
+>             "All specifications include firm, year, and industry fixed effects." ///
+>             "Controls include log total capital, log employment, and log firm age." ///
+>             "Robust standard errors in parentheses.")
+(note: file C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_underexploitation_robus
+> tness.tex not found)
+(output written to C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE/results/fact3_underexploitatio
+> n_robustness.tex)
 
 . 
 . * Dynamic evidence: Wage premium and skill share evolution (2011-2022)

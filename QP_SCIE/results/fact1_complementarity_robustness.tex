@@ -1,0 +1,29 @@
+\begin{table}[htbp]\centering\small
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Complementarity Between Intangibles and Skilled Labor: Alternative Outcomes\label{tab:complementarityrobust}}
+\begin{tabular}{l*{6}{c}}
+\toprule
+            &\multicolumn{3}{c}{Log Revenue}                                  &\multicolumn{3}{c}{Log Production}                               \\\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+            &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}&\multicolumn{1}{c}{(5)}&\multicolumn{1}{c}{(6)}\\
+\midrule
+Intangible Intensity&       0.64\sym{***}&      -0.05\sym{***}&      -0.10\sym{***}&       0.48\sym{***}&      -0.05\sym{***}&      -0.11\sym{***}\\
+            &     (0.01)         &     (0.01)         &     (0.01)         &     (0.01)         &     (0.01)         &     (0.01)         \\
+\addlinespace
+Share Skilled Workers&       0.18\sym{***}&      -0.05\sym{***}&      -0.01\sym{***}&       0.36\sym{***}&      -0.05\sym{***}&      -0.01\sym{**} \\
+            &     (0.00)         &     (0.00)         &     (0.00)         &     (0.00)         &     (0.00)         &     (0.00)         \\
+\addlinespace
+Intangible Intensity $\times$ Share Skilled&       0.98\sym{***}&       0.23\sym{***}&       0.03\sym{*}  &       1.18\sym{***}&       0.25\sym{***}&       0.04\sym{***}\\
+            &     (0.03)         &     (0.02)         &     (0.01)         &     (0.03)         &     (0.02)         &     (0.01)         \\
+\midrule
+Observations&   1,759,093         &   1,759,093         &   1,759,084         &   1,759,093         &   1,759,093         &   1,759,084         \\
+Adjusted R-squared&       0.012         &       0.933         &       0.952         &       0.017         &       0.931         &       0.951         \\
+Firm FE     &          No         &         Yes         &         Yes         &          No         &         Yes         &         Yes         \\
+Year FE     &          No         &         Yes         &         Yes         &          No         &         Yes         &         Yes         \\
+Industry FE &          No         &         Yes         &         Yes         &          No         &         Yes         &         Yes         \\
+Controls    &          No         &          No         &         Yes         &          No         &          No         &         Yes         \\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize Intangible intensity = $K_{intangible}$ / $K_{total}$.}\\
+\multicolumn{7}{l}{\footnotesize Controls include log total capital, log employment, and log firm age.}\\
+\multicolumn{7}{l}{\footnotesize Robust standard errors in parentheses.}\\
+\end{tabular}
+\end{table}

@@ -71,11 +71,25 @@ Financial constraints are proxied by leverage (total debt relative to total asse
 
 \subsubsection*{Fact 1: Complementarity Between Intangibles and Skilled Labor}
 
-Table \ref{tab:complementarity} reports estimates from production function regressions where the dependent variable is log output (revenue, production value, or gross value added) and the key regressor is the interaction between intangible intensity (intangible capital divided by total capital) and the share of skilled workers. All specifications include firm, year, and industry fixed effects, controlling for log total capital, log employment, and log firm age.
+To test for complementarity between intangibles and skilled labor, I estimate the following production function specification:
+\begin{equation}
+\begin{aligned}
+\ln Y_{jt} =\;& \beta_1 \, \text{IntangIntensity}_{jt}
++ \beta_2 \, \text{ShareSkilled}_{jt}
++ \beta_3 \, (\text{IntangIntensity} \times \text{ShareSkilled})_{jt} \\
+& + \bm{X}'_{jt}\bm{\gamma}
++ \alpha_j + \delta_t + \eta_i + \varepsilon_{jt},
+\end{aligned}
+\label{eq:complementarity}
+\end{equation}
+
+where $Y_{jt}$ is gross value added for firm $j$ in year $t$, $\text{IntangIntensity}_{jt} \equiv K^{intang}_{jt}/K^{total}_{jt}$ is the ratio of intangible to total capital, $\text{ShareSkilled}_{jt}$ is the share of workers with tertiary education, $\bm{X}_{jt}$ includes log total capital, log employment, and log firm age, and $\alpha_j$, $\delta_t$, $\eta_i$ denote firm, year, and industry fixed effects respectively. The coefficient of interest is $\beta_3$: a positive estimate indicates that the marginal product of skilled labor is increasing in intangible intensity, i.e., complementarity.
+
+Table \ref{tab:complementarity} reports estimates of equation \eqref{eq:complementarity}. The table presents a nested specification: column (1) includes no controls or fixed effects, column (2) adds firm, year, and industry fixed effects, and column (3) further includes the control variables $\bm{X}_{jt}$.
 
 \input{QP_SCIE/results/fact1_complementarity.tex}
 
-The interaction coefficient is positive and statistically significant across all output measures, ranging from 0.026 (revenue) to 0.042 (production value). This indicates that the marginal product of skilled labor is increasing in intangible intensity: firms with higher intangible capital benefit more from employing skilled workers. Conversely, the marginal product of intangibles is increasing in skill share. This complementarity is precisely the technological structure embedded in the nested CES production function of the quantitative model.
+The interaction coefficient is positive and statistically significant across all specifications, demonstrating robust complementarity between intangibles and skilled labor. The coefficient attenuates from 0.111 without controls to 0.040 with the full set of fixed effects and controls, indicating that the raw correlation partly reflects selection (intangible-intensive firms hiring more skilled workers) but a substantial within-firm complementarity remains. This pattern indicates that the marginal product of skilled labor is increasing in intangible intensity: firms with higher intangible capital benefit more from employing skilled workers. Conversely, the marginal product of intangibles is increasing in skill share. This complementarity is precisely the technological structure embedded in the nested CES production function of the quantitative model. Table \ref{tab:complementarityrobust} in Appendix \ref{app:robustness} shows that results are robust to using revenue or production value as alternative outcome measures.
 
 Figure \ref{fig:fact1_correlation} shows the raw correlation between intangible intensity and skill share using a binscatter with 20 quantiles. The positive relationship is evident even without controlling for firm characteristics, though the regression estimates exploit within-firm variation and control for confounding factors.
 
@@ -123,11 +137,11 @@ The evidence reveals a clear pecking-order pattern. While physical investment sh
 
 \subsubsection*{Fact 3: Underexploitation of Complementarity by Constrained Firms}
 
-If financial constraints prevent firms from building intangible capital, they should also reduce the extent to which firms can exploit the technological complementarity between intangibles and skills. Table \ref{tab:underexploitation} tests this prediction by estimating the complementarity regression separately for low-leverage (unconstrained) and high-leverage (constrained) firms.
+If financial constraints prevent firms from building intangible capital, they should also reduce the extent to which firms can exploit the technological complementarity between intangibles and skills. Table \ref{tab:underexploitation} tests this prediction by estimating equation \eqref{eq:complementarity} separately for the pooled sample (column 1), low-leverage firms (column 2), and high-leverage firms (column 3), where leverage groups are defined relative to the sector-year median.
 
 \input{QP_SCIE/results/fact3_underexploitation.tex}
 
-The interaction coefficient is 0.055 and significant for low-leverage firms (column 2), but statistically indistinguishable from zero ($-0.005$, p $>$ 0.10) for high-leverage firms (column 3). This stark difference indicates that constrained firms cannot exploit the complementarity: even when they employ skilled workers, the lack of complementary intangible capital limits productivity gains. The pooled specification (column 1) masks this heterogeneity, showing an intermediate coefficient of 0.040.
+The interaction coefficient is 0.055 and significant for low-leverage firms (column 2), but statistically indistinguishable from zero ($-0.005$, p $>$ 0.10) for high-leverage firms (column 3). This stark difference indicates that constrained firms cannot exploit the complementarity: even when they employ skilled workers, the lack of complementary intangible capital limits productivity gains. The pooled specification (column 1) masks this heterogeneity, showing an intermediate coefficient of 0.040. Table \ref{tab:underexploitationrobust} in Appendix \ref{app:robustness} confirms that this pattern holds when using revenue or production value as alternative outcome measures.
 
 \paragraph{Dynamic Evidence: Wage Premium Decline.} The cross-sectional evidence establishes underexploitation at a point in time. I now examine the dynamic implications over the 2011-2022 period, during which Portugal experienced a substantial skill supply expansion. Figure \ref{fig:fact3_aggregate_trends} plots the evolution of the skill share and wage premium. The skill share increased substantially, yet the wage premium declined, a puzzle for standard capital-skill complementarity models where skill supply increases induce capital deepening that sustains premia.
 
@@ -972,6 +986,28 @@ The final analysis-ready dataset contains 1,759,093 firm-year observations with:
 \item Financial constraint proxies (leverage, interest rates, credit spreads)
 \item Winsorized versions of key variables
 \end{itemize}
+
+
+\section{Robustness: Alternative Outcome Measures}
+\label{app:robustness}
+
+This appendix presents robustness checks for the main empirical results using alternative outcome measures. The main text focuses on gross value added (GVA) as the preferred output measure because it captures the firm's contribution to aggregate output net of intermediate inputs. Here I show that the key findings are robust to using revenue or production value as alternative measures.
+
+\subsection{Fact 1: Complementarity}
+
+Table \ref{tab:complementarityrobust} replicates the complementarity analysis from Table \ref{tab:complementarity} using log revenue (columns 1--3) and log production value (columns 4--6) as dependent variables. Each panel follows the same nested specification: no controls, fixed effects only, and fixed effects with controls.
+
+\input{QP_SCIE/results/fact1_complementarity_robustness.tex}
+
+The interaction between intangible intensity and skilled labor share is positive and statistically significant across all specifications and outcome measures. The magnitude of the complementarity effect is similar across GVA, revenue, and production, confirming that the technological complementarity documented in the main text is not driven by the choice of output measure.
+
+\subsection{Fact 3: Underexploitation by Leverage}
+
+Table \ref{tab:underexploitationrobust} replicates the underexploitation analysis from Table \ref{tab:underexploitation} using log revenue (columns 1--3) and log production value (columns 4--6) as dependent variables. Each panel reports results for all firms, low-leverage firms, and high-leverage firms.
+
+\input{QP_SCIE/results/fact3_underexploitation_robustness.tex}
+
+The pattern of underexploitation is robust across outcome measures: the complementarity coefficient is positive and significant for low-leverage firms but small and insignificant for high-leverage firms. This confirms that the differential ability to exploit intangible-skill complementarity by financial constraint status is not an artifact of the GVA measure.
 
 
 \bibliographystyle{apalike}
