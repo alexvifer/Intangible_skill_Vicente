@@ -151,5 +151,7 @@ program main
     print *, ""
     print *, "Program completed successfully."
     print *, ""
+    print *, "Press Enter to exit..."
+    read(*,*)
 
 end program main

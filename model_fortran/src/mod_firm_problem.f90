@@ -30,6 +30,71 @@ module mod_firm_problem
 contains
 
     !===================================================================================
+    ! SUBROUTINE: initialize_value_function
+    !
+    ! DESCRIPTION:
+    !   Initializes the value function with approximate stationary values.
+    !   This breaks the "cold start" trap where V=0 makes all future investments
+    !   appear worthless, leading to zero R&D from the first iteration.
+    !
+    !   For each state (z, K, S, D), we compute the approximate perpetuity value
+    !   of staying at that state forever with no investment:
+    !     V ≈ profit / (1 - β(1-ζ))
+    !   where profit = Y - wL*L - wH*HP - R*D
+    !===================================================================================
+    subroutine initialize_value_function()
+        implicit none
+        integer :: iz, iK, iS, iD
+        real(dp) :: z_val, K_val, S_val, D_val
+        real(dp) :: L_init, HP_init, Y_init, profit_init
+        real(dp) :: discount_factor, V_init
+
+        print *, "  Initializing value function with stationary approximation..."
+
+        ! Discount factor for perpetuity (accounts for exit)
+        discount_factor = 1.0_dp / (1.0_dp - beta * (1.0_dp - zeta))
+
+        !$OMP PARALLEL DO COLLAPSE(2) &
+        !$OMP& PRIVATE(iz, iK, iS, iD, z_val, K_val, S_val, D_val, &
+        !$OMP&         L_init, HP_init, Y_init, profit_init, V_init) &
+        !$OMP& SCHEDULE(dynamic)
+        do iz = 1, nz
+            do iK = 1, nK
+                z_val = grid_z(iz)
+                K_val = grid_K(iK)
+
+                do iS = 1, nS
+                    S_val = grid_S(iS)
+
+                    ! Compute optimal static labor and output at this state
+                    call solve_static_labor(z_val, K_val, S_val, wL, wH, &
+                                           L_init, HP_init, Y_init)
+
+                    do iD = 1, nD
+                        D_val = grid_D(iD)
+
+                        ! Compute profit net of debt service
+                        profit_init = Y_init - wL * L_init - wH * HP_init - R * D_val
+
+                        ! Approximate value as perpetuity of profits
+                        ! Bound below to avoid very negative values for high debt states
+                        V_init = max(profit_init * discount_factor, 0.0_dp)
+
+                        V(iz, iK, iS, iD) = V_init
+                        V_new(iz, iK, iS, iD) = V_init
+
+                    end do
+                end do
+            end do
+        end do
+        !$OMP END PARALLEL DO
+
+        print *, "  Value function initialized."
+        print '(A,F12.4,A,F12.4)', "    V range: [", minval(V), ", ", maxval(V), "]"
+
+    end subroutine initialize_value_function
+
+    !===================================================================================
     ! SUBROUTINE: solve_static_labor
     !
     ! DESCRIPTION:
@@ -189,8 +254,9 @@ contains
                     Y_val = static_Y(iz, iK, iS)
                     Pi_gross = static_Pi(iz, iK, iS)
 
-                    ! Collateral constraint (same for all D values)
-                    D_max_coll = collateral_constraint(K_val, S_val)
+                    ! Note: Collateral constraint now based on NEXT period capital (K', S')
+                    ! This is computed inside the loop after K' and S' are determined
+                    ! Lenders care about collateral value at repayment time
 
                     do iD = 1, nD
                         D_old_val = grid_D(iD)
@@ -220,31 +286,37 @@ contains
                         best_iHR = iHR_lo
                         best_iDp = iDp_lo
 
-                        ! Grid search over (D', I^K, H^R) within local bounds
-                        do iDp = iDp_lo, iDp_hi
-                            Dp_choice = grid_Dprime(iDp)
+                        ! Grid search over (I^K, H^R, D') - reordered so collateral
+                        ! constraint can use next-period capital (K', S')
+                        do iIK = iIK_lo, iIK_hi
+                            IK_choice = grid_IK(iIK)
 
-                            if (Dp_choice > D_max_coll + epsilon) cycle
+                            ! Check that K' stays within grid bounds
+                            Kprime = (1.0_dp - delta_K) * K_val + IK_choice
+                            if (Kprime < K_min .or. Kprime > K_max) cycle
 
-                            resources = Pi_gross - R * D_old_val + Dp_choice
+                            do iHR = iHR_lo, iHR_hi
+                                HR_choice = grid_HR(iHR)
 
-                            do iIK = iIK_lo, iIK_hi
-                                IK_choice = grid_IK(iIK)
+                                inv_S = RD_production(HR_choice)
+                                Sprime = (1.0_dp - delta_S) * S_val + inv_S
+                                ! Allow S to go below S_min but impose a small floor
+                                Sprime = max(Sprime, 1.0e-6_dp)
 
-                                ! Check that K' stays within grid bounds
-                                Kprime = (1.0_dp - delta_K) * K_val + IK_choice
-                                if (Kprime < K_min .or. Kprime > K_max) cycle
+                                ! Collateral constraint based on NEXT period capital
+                                D_max_coll = collateral_constraint(Kprime, Sprime)
 
-                                do iHR = iHR_lo, iHR_hi
-                                    HR_choice = grid_HR(iHR)
+                                do iDp = iDp_lo, iDp_hi
+                                    Dp_choice = grid_Dprime(iDp)
 
+                                    ! Check collateral constraint (now based on K', S')
+                                    if (Dp_choice > D_max_coll + epsilon) cycle
+
+                                    resources = Pi_gross - R * D_old_val + Dp_choice
                                     expenses = IK_choice + wH * HR_choice
                                     dividends = resources - expenses
 
                                     if (dividends < -epsilon) cycle
-
-                                    inv_S = RD_production(HR_choice)
-                                    Sprime = (1.0_dp - delta_S) * S_val + inv_S
 
                                     EV = expect_V(iz, Kprime, Sprime, Dp_choice)
                                     V_try = dividends + beta * (1.0_dp - zeta) * EV
@@ -266,9 +338,9 @@ contains
                                         pol_constr(iz, iK, iS, iD) = &
                                             (Dp_choice >= D_max_coll - 0.01_dp * max(1.0_dp, D_max_coll))
                                     end if
-                                end do  ! HR
-                            end do  ! IK
-                        end do  ! Dp
+                                end do  ! Dp
+                            end do  ! HR
+                        end do  ! IK
 
                         ! Store optimal indices for next iteration's local search
                         pol_iIK(iz, iK, iS, iD) = best_iIK
@@ -332,7 +404,7 @@ contains
                         HR_choice = pol_HR(iz, iK, iS, iD)
                         Dp_choice = pol_Dprime(iz, iK, iS, iD)
                         Kprime = pol_Kprime(iz, iK, iS, iD)
-                        Sprime = pol_Sprime(iz, iK, iS, iD)
+                        Sprime = max(pol_Sprime(iz, iK, iS, iD), 1.0e-6_dp)  ! Safety floor
 
                         ! Compute value with fixed policy
                         Pi_gross = Y_val - wL * L_opt - wH * HP_opt
@@ -392,9 +464,11 @@ contains
         print '(A,I4)', "  OpenMP threads: ", num_threads
         print *, ""
 
-        ! Initialize value function and policies
-        V = 0.0_dp
-        V_new = 0.0_dp
+        ! Initialize value function with approximate stationary values
+        ! This avoids the "cold start" trap where V=0 makes R&D worthless
+        call initialize_value_function()
+
+        ! Initialize policies
         pol_IK = 0.0_dp
         pol_HR = 0.0_dp
         pol_Dprime = 0.0_dp

@@ -18,7 +18,10 @@ contains
     ! SUBROUTINE: locate_grid
     !
     ! DESCRIPTION:
-    !   Binary search to locate grid point for interpolation
+    !   Binary search to locate grid point for interpolation.
+    !   ALLOWS EXTRAPOLATION: If x is outside grid bounds, we extrapolate linearly
+    !   using the nearest two grid points. This is important for allowing S to
+    !   depreciate below S_min naturally without artificial clamping.
     !
     ! INPUTS:
     !   grid - 1D grid array
@@ -26,8 +29,8 @@ contains
     !   x    - Value to locate
     !
     ! OUTPUT:
-    !   i    - Lower grid index (grid(i) ≤ x < grid(i+1))
-    !   w    - Weight on upper point (linear interpolation weight)
+    !   i    - Lower grid index (grid(i) ≤ x < grid(i+1) for interior)
+    !   w    - Weight on upper point (can be negative or >1 for extrapolation)
     !===================================================================================
     subroutine locate_grid(grid, n, x, i, w)
         implicit none
@@ -37,18 +40,23 @@ contains
         real(dp), intent(out) :: w
         integer :: il, iu, im
 
-        ! Bounds checking
+        ! Handle extrapolation below grid
         if (x <= grid(1)) then
             i = 1
-            w = 0.0_dp
-            return
-        else if (x >= grid(n)) then
-            i = n - 1
-            w = 1.0_dp
+            ! Linear extrapolation: w can be negative
+            w = (x - grid(1)) / (grid(2) - grid(1))
             return
         end if
 
-        ! Binary search
+        ! Handle extrapolation above grid
+        if (x >= grid(n)) then
+            i = n - 1
+            ! Linear extrapolation: w can be > 1
+            w = (x - grid(n-1)) / (grid(n) - grid(n-1))
+            return
+        end if
+
+        ! Binary search for interior points
         il = 1
         iu = n
         do while (iu - il > 1)

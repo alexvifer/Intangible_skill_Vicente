@@ -30,7 +30,8 @@ contains
         real(dp), intent(in) :: S, HP
         real(dp) :: Q
         real(dp) :: S_safe, HP_safe
-        real(dp), parameter :: min_input = 1.0e-4_dp
+        ! Minimum input for numerical stability - smaller than S_min to allow extrapolation
+        real(dp), parameter :: min_input = 1.0e-6_dp
 
         ! For CES with rho < 0 (complements), inputs must be strictly positive
         ! to avoid numerical issues with negative exponents
@@ -67,7 +68,7 @@ contains
         real(dp), intent(in) :: K, Q
         real(dp) :: X
         real(dp) :: K_safe, Q_safe
-        real(dp), parameter :: min_input = 1.0e-4_dp
+        real(dp), parameter :: min_input = 1.0e-6_dp
 
         ! For CES with rho < 0 (complements), inputs must be strictly positive
         K_safe = max(K, min_input)
@@ -135,7 +136,7 @@ contains
         real(dp), intent(in) :: z, K, S, L, HP
         real(dp) :: Q, X, inner_nest, MPL
         real(dp) :: L_safe, X_safe
-        real(dp), parameter :: min_input = 1.0e-4_dp
+        real(dp), parameter :: min_input = 1.0e-6_dp
         real(dp), parameter :: max_MP = 1.0e6_dp
 
         L_safe = max(L, min_input)
@@ -170,7 +171,7 @@ contains
         real(dp), intent(in) :: z, K, S, L, HP
         real(dp) :: Q, X, inner_nest, dY_dX, dX_dQ, dQ_dHP, MPHP
         real(dp) :: HP_safe, Q_safe, X_safe, L_safe
-        real(dp), parameter :: min_input = 1.0e-4_dp
+        real(dp), parameter :: min_input = 1.0e-6_dp
         real(dp), parameter :: max_MP = 1.0e6_dp
 
         ! Ensure inputs are safe for negative exponents
@@ -225,7 +226,7 @@ contains
         real(dp), intent(in) :: z, K, S, L, HP
         real(dp) :: Q, X, inner_nest, dY_dX, dX_dQ, dQ_dS, MPS
         real(dp) :: S_safe, L_safe, Q_safe, X_safe
-        real(dp), parameter :: min_input = 1.0e-4_dp
+        real(dp), parameter :: min_input = 1.0e-6_dp
         real(dp), parameter :: max_MP = 1.0e6_dp
 
         ! Ensure inputs are safe for negative exponents
@@ -280,7 +281,7 @@ contains
         real(dp), intent(in) :: z, K, S, L, HP
         real(dp) :: Q, X, inner_nest, dY_dX, dX_dK, MPK
         real(dp) :: K_safe, L_safe, Q_safe, X_safe
-        real(dp), parameter :: min_input = 1.0e-4_dp
+        real(dp), parameter :: min_input = 1.0e-6_dp
         real(dp), parameter :: max_MP = 1.0e6_dp
 
         ! Ensure inputs are safe for negative exponents

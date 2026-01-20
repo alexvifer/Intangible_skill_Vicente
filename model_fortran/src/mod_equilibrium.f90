@@ -68,10 +68,25 @@ contains
             grid_IK(i) = -delta_K * K_max * 0.50_dp + step * (K_max * 0.20_dp)
         end do
 
-        ! R&D labor (0 to Hbar)
-        do i = 1, nHR
-            grid_HR(i) = Hbar * real(i-1, dp) / real(nHR-1, dp)
-        end do
+        ! R&D labor grid: log-spaced for better resolution near zero
+        ! This is critical because with xi < 1, optimal HR can be very small
+        ! Grid: {0, HR_min, ..., Hbar} with log spacing for positive values
+        block
+            real(dp), parameter :: HR_min = 1.0e-4_dp  ! Smallest positive HR
+            real(dp) :: log_ratio
+
+            grid_HR(1) = 0.0_dp  ! Keep zero as an option
+
+            if (nHR > 2) then
+                log_ratio = log(Hbar / HR_min)
+                do i = 2, nHR
+                    ! Log spacing from HR_min to Hbar
+                    grid_HR(i) = HR_min * exp(real(i-2, dp) / real(nHR-2, dp) * log_ratio)
+                end do
+            else
+                grid_HR(2) = Hbar
+            end if
+        end block
 
         ! New debt
         do i = 1, nDprime
@@ -87,6 +102,11 @@ contains
             grid_S(1), ", ", grid_S(nS), "]"
         print '(A,I4,A,F8.3,A,F8.3)', "    D grid: ", nD, " points, range [", &
             grid_D(1), ", ", grid_D(nD), "]"
+        print *, ""
+        print *, "  HR grid (log-spaced for resolution near zero):"
+        print '(A,F10.6,A,F10.6,A,F10.6,A,F10.6,A,F10.6)', "    First 5: ", &
+            grid_HR(1), ", ", grid_HR(2), ", ", grid_HR(3), ", ", grid_HR(4), ", ", grid_HR(5)
+        print '(A,F10.6)', "    Last:    ", grid_HR(nHR)
 
     end subroutine initialize_grids
 
@@ -196,8 +216,8 @@ contains
         call cpu_time(time_start)
 
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.08450_dp
-        wH = 0.38_dp
+        wL = 0.30450_dp
+        wH = 0.65_dp
 
         do iter_outer = 1, maxiter_eq
 

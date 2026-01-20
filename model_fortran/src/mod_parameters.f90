@@ -83,13 +83,14 @@ module mod_parameters
     !---------------------------------------------------------------------------
     integer, parameter :: nK = 50                  ! Grid points for tangible capital (increased from 30)
     integer, parameter :: nS = 50                  ! Grid points for intangible capital (increased from 30)
-    integer, parameter :: nD = 25                  ! Grid points for debt (increased from 15)
+    integer, parameter :: nD = 20                  ! Grid points for debt (increased from 15)
 
     ! Grid bounds (will be adjusted based on solution)
     ! Note: S_min > 0 required for numerical stability with CES complements (rho < 0)
+    ! Using small S_min to avoid "free intangibles" from grid bound clamping
     real(dp), parameter :: K_min = 0.10_dp
     real(dp), parameter :: K_max = 100.0_dp
-    real(dp), parameter :: S_min = 0.10_dp         ! Increased from 0.01 for numerical stability
+    real(dp), parameter :: S_min = 0.01_dp         ! Small but positive for CES stability
     real(dp), parameter :: S_max = 50.0_dp
     real(dp), parameter :: D_min = 0.0_dp
     real(dp), parameter :: D_max = 50.0_dp
@@ -99,15 +100,15 @@ module mod_parameters
     ! Note: Keep these moderate to avoid excessive computation time
     ! Total choice combinations per state = nIK * nHR * nDprime
     !---------------------------------------------------------------------------
-    integer, parameter :: nIK = 25                 ! Grid points for tangible investment (increased from 15)
+    integer, parameter :: nIK = 20                 ! Grid points for tangible investment (increased from 15)
     integer, parameter :: nHR = 20                 ! Grid points for R&D labor (increased from 10)
     integer, parameter :: nDprime = 20             ! Grid points for new debt (increased from 12)
 
     !---------------------------------------------------------------------------
     ! NUMERICAL PARAMETERS
     !---------------------------------------------------------------------------
-    real(dp), parameter :: tol_VFI = 1.0e-4_dp     ! Tolerance for value function iteration
-    real(dp), parameter :: tol_dist = 1.0e-4_dp    ! Tolerance for distribution
+    real(dp), parameter :: tol_VFI = 1.0e-3_dp     ! Tolerance for value function iteration
+    real(dp), parameter :: tol_dist = 1.0e-3_dp    ! Tolerance for distribution
     real(dp), parameter :: tol_eq = 1.1e-1_dp      ! Tolerance for equilibrium
     integer, parameter :: maxiter_VFI = 3000       ! Max iterations for VFI (increased from 2000)
     integer, parameter :: maxiter_dist = 5000      ! Max iterations for distribution

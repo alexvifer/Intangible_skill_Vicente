@@ -1,0 +1,13 @@
+Output_Y                     0.932024
+Consumption_C                0.681406
+Tangible_capital_K           0.727424
+Intangible_capital_S         0.337296
+Total_debt_D                 0.000000
+Unskilled_labor_L            0.944298
+Skilled_labor_prod_HP        0.188001
+Skilled_labor_RD_HR          0.051264
+Unskilled_wage_wL            0.254500
+Skilled_wage_wH              0.600000
+Frac_constrained             0.000000
+Avg_intang_intensity         0.316793
+Avg_leverage                 0.000000

@@ -504,7 +504,7 @@ contains
         integer :: idx(n), i, j, itemp
         real(dp) :: temp
 
-        if (n == 0) then
+        if (n <= 0) then
             mean_val = 0.0_dp
             std_val = 0.0_dp
             min_val = 0.0_dp
@@ -513,6 +513,19 @@ contains
             q40 = 0.0_dp
             q60 = 0.0_dp
             q80 = 0.0_dp
+            return
+        end if
+
+        ! Handle n=1 case (no sorting needed)
+        if (n == 1) then
+            mean_val = values(1)
+            std_val = 0.0_dp
+            min_val = values(1)
+            max_val = values(1)
+            q20 = values(1)
+            q40 = values(1)
+            q60 = values(1)
+            q80 = values(1)
             return
         end if
 
@@ -534,11 +547,16 @@ contains
 
         do i = 2, n
             j = i
-            do while (j > 1 .and. values(idx(j-1)) > values(idx(j)))
-                itemp = idx(j)
-                idx(j) = idx(j-1)
-                idx(j-1) = itemp
-                j = j - 1
+            ! Note: Fortran .and. does NOT short-circuit, so we must use nested ifs
+            do while (j > 1)
+                if (values(idx(j-1)) > values(idx(j))) then
+                    itemp = idx(j)
+                    idx(j) = idx(j-1)
+                    idx(j-1) = itemp
+                    j = j - 1
+                else
+                    exit
+                end if
             end do
         end do
 
