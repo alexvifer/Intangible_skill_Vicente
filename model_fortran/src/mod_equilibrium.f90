@@ -185,15 +185,19 @@ contains
         integer :: iter_outer
         real(dp) :: wL_old, wH_old, excess_L, excess_H
         real(dp) :: update_wL, update_wH
+        real(dp) :: time_start, time_current, time_elapsed_min
 
         print *, ""
         print *, "======================================"
         print *, "SOLVING FOR EQUILIBRIUM"
         print *, "======================================"
 
+        ! Start timing for equilibrium iterations
+        call cpu_time(time_start)
+
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.075_dp
-        wH = 0.52_dp
+        wL = 0.08450_dp
+        wH = 0.38_dp
 
         do iter_outer = 1, maxiter_eq
 
@@ -226,6 +230,12 @@ contains
                 ", supply = ", Lbar, ", excess = ", excess_L
             print '(A,F10.6,A,F10.6,A,F10.6)', "    Skilled:   demand = ", agg_H, &
                 ", supply = ", Hbar, ", excess = ", excess_H
+
+            ! Display cumulative elapsed time
+            call cpu_time(time_current)
+            time_elapsed_min = (time_current - time_start) / 60.0_dp
+            print *, ""
+            print '(A,F8.2,A)', "  >>> Cumulative time elapsed: ", time_elapsed_min, " minutes"
 
             ! Check convergence
             if (metric_eq_L < tol_eq .and. metric_eq_H < tol_eq) then
@@ -267,12 +277,32 @@ contains
         implicit none
         integer :: unit_agg, unit_pol
         integer :: iz, iK, iS, iD
+        integer :: ios
+        logical :: dir_exists
 
         print *, ""
         print *, "Saving results to output files..."
 
+        ! Create output directory if it doesn't exist
+        ! First try to open a test file to check if directory exists
+        inquire(file='output/.', exist=dir_exists)
+        if (.not. dir_exists) then
+            print *, "  Creating output directory..."
+            call execute_command_line('mkdir output', wait=.true.)
+        end if
+
         ! Save aggregates
-        open(newunit=unit_agg, file='../output/aggregates.txt', status='replace')
+        open(newunit=unit_agg, file='output/aggregates.txt', status='replace', iostat=ios)
+        if (ios /= 0) then
+            print *, "  ERROR: Could not open output/aggregates.txt"
+            print *, "  Trying to create output directory..."
+            call execute_command_line('mkdir output', wait=.true.)
+            open(newunit=unit_agg, file='output/aggregates.txt', status='replace', iostat=ios)
+            if (ios /= 0) then
+                print *, "  FATAL: Could not create output file. Skipping save."
+                return
+            end if
+        end if
         write(unit_agg, '(A,F12.6)') 'Output_Y                 ', agg_Y
         write(unit_agg, '(A,F12.6)') 'Consumption_C            ', agg_C
         write(unit_agg, '(A,F12.6)') 'Tangible_capital_K       ', agg_K
@@ -289,7 +319,11 @@ contains
         close(unit_agg)
 
         ! Save distribution (sparse format: only non-zero entries)
-        open(newunit=unit_pol, file='../output/distribution.txt', status='replace')
+        open(newunit=unit_pol, file='output/distribution.txt', status='replace', iostat=ios)
+        if (ios /= 0) then
+            print *, "  ERROR: Could not open output/distribution.txt"
+            return
+        end if
         write(unit_pol, '(A)') 'iz iK iS iD z K S D mass'
         do iz = 1, nz
             do iK = 1, nK
@@ -307,9 +341,141 @@ contains
         close(unit_pol)
 
         print *, "Results saved successfully."
-        print *, "  ../output/aggregates.txt"
-        print *, "  ../output/distribution.txt"
+        print *, "  output/aggregates.txt"
+        print *, "  output/distribution.txt"
+
+        ! Also save diagnostics to file
+        call save_diagnostics_to_file()
 
     end subroutine save_results
+
+    !===================================================================================
+    ! SUBROUTINE: save_diagnostics_to_file
+    !
+    ! DESCRIPTION:
+    !   Saves detailed diagnostics to a separate file for analysis.
+    !===================================================================================
+    subroutine save_diagnostics_to_file()
+        implicit none
+        integer :: unit_diag, ios
+        integer :: iz, iK, iS, iD, i
+        real(dp) :: V_S_estimate
+
+        open(newunit=unit_diag, file='output/diagnostics.txt', status='replace', iostat=ios)
+        if (ios /= 0) then
+            print *, "  WARNING: Could not open output/diagnostics.txt"
+            return
+        end if
+
+        write(unit_diag, '(A)') '========================================'
+        write(unit_diag, '(A)') 'MODEL DIAGNOSTICS'
+        write(unit_diag, '(A)') '========================================'
+        write(unit_diag, *)
+
+        ! Wages
+        write(unit_diag, '(A)') 'EQUILIBRIUM WAGES:'
+        write(unit_diag, '(A,F12.6)') '  wL (unskilled): ', wL
+        write(unit_diag, '(A,F12.6)') '  wH (skilled):   ', wH
+        write(unit_diag, '(A,F12.6)') '  Skill premium:  ', wH / wL
+        write(unit_diag, *)
+
+        ! Grid info
+        write(unit_diag, '(A)') 'GRID INFORMATION:'
+        write(unit_diag, '(A,F12.6,A,F12.6)') '  K grid: [', grid_K(1), ', ', grid_K(nK), ']'
+        write(unit_diag, '(A,F12.6,A,F12.6)') '  S grid: [', grid_S(1), ', ', grid_S(nS), ']'
+        write(unit_diag, '(A,F12.6,A,F12.6)') '  D grid: [', grid_D(1), ', ', grid_D(nD), ']'
+        write(unit_diag, '(A,F12.6,A,F12.6)') '  HR grid: [', grid_HR(1), ', ', grid_HR(nHR), ']'
+        write(unit_diag, *)
+
+        ! Value function profile in S
+        write(unit_diag, '(A)') 'VALUE FUNCTION PROFILE (z=median, K=median, D=0):'
+        write(unit_diag, '(A)') '  iS        S           V'
+        do iS = 1, nS
+            write(unit_diag, '(I5, 2F14.6)') iS, grid_S(iS), V((nz+1)/2, (nK+1)/2, iS, 1)
+        end do
+        write(unit_diag, *)
+
+        ! Value function profile in K
+        write(unit_diag, '(A)') 'VALUE FUNCTION PROFILE (z=median, S=median, D=0):'
+        write(unit_diag, '(A)') '  iK        K           V'
+        do iK = 1, nK
+            write(unit_diag, '(I5, 2F14.6)') iK, grid_K(iK), V((nz+1)/2, iK, (nS+1)/2, 1)
+        end do
+        write(unit_diag, *)
+
+        ! Policy functions at median state
+        write(unit_diag, '(A)') 'POLICY FUNCTIONS AT MEDIAN STATE (z=median, K=median, S=median, D=0):'
+        write(unit_diag, '(A,F12.6)') '  L:         ', pol_L((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, '(A,F12.6)') '  HP:        ', pol_HP((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, '(A,F12.6)') '  HR:        ', pol_HR((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, '(A,F12.6)') '  I^K:       ', pol_IK((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, '(A,F12.6)') '  D'':        ', pol_Dprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, '(A,F12.6)') '  K'':        ', pol_Kprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, '(A,F12.6)') '  S'':        ', pol_Sprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, '(A,F12.6)') '  Y:         ', pol_Y((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, *)
+
+        ! Policy at entry state (K_min, S_min, D=0)
+        write(unit_diag, '(A)') 'POLICY FUNCTIONS AT ENTRY STATE (z=median, K=K_min, S=S_min, D=0):'
+        write(unit_diag, '(A,F12.6)') '  L:         ', pol_L((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  HP:        ', pol_HP((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  HR:        ', pol_HR((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  I^K:       ', pol_IK((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  D'':        ', pol_Dprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  K'':        ', pol_Kprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  S'':        ', pol_Sprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  Y:         ', pol_Y((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  Profit:    ', pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) &
+                                                      - wH*pol_HP((nz+1)/2, 1, 1, 1)
+        write(unit_diag, *)
+
+        ! R&D profitability analysis
+        write(unit_diag, '(A)') 'R&D PROFITABILITY ANALYSIS:'
+        V_S_estimate = (V((nz+1)/2, (nK+1)/2, 5, 1) - V((nz+1)/2, (nK+1)/2, 1, 1)) / (grid_S(5) - grid_S(1))
+        write(unit_diag, '(A,F12.6)') '  Estimated dV/dS:                 ', V_S_estimate
+        write(unit_diag, '(A,F12.6)') '  wH (cost per HR):                ', wH
+        write(unit_diag, '(A,F12.6)') '  Gamma_RD:                        ', Gamma_RD
+        write(unit_diag, '(A,F12.6)') '  xi:                              ', xi
+        write(unit_diag, '(A,F12.6)') '  beta*(1-zeta):                   ', beta * (1.0_dp - zeta)
+        write(unit_diag, '(A,F12.6)') '  At HR=0.01, dS = Gamma*HR^xi:    ', Gamma_RD * 0.01_dp**xi
+        write(unit_diag, '(A,F12.6)') '  Marginal benefit at HR=0.01:     ', &
+              beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * xi * 0.01_dp**(xi - 1.0_dp)
+        write(unit_diag, '(A,F12.6)') '  Marginal cost (wH):              ', wH
+        write(unit_diag, '(A,F12.6)') '  Net marginal benefit:            ', &
+              beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * xi * 0.01_dp**(xi - 1.0_dp) - wH
+        write(unit_diag, *)
+
+        ! Budget constraint analysis at entry
+        write(unit_diag, '(A)') 'BUDGET CONSTRAINT AT ENTRY STATE:'
+        write(unit_diag, '(A,F12.6)') '  Gross profit (Y - wL*L - wH*HP): ', &
+              pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) - wH*pol_HP((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  Debt repayment (R*D):            ', R * grid_D(1)
+        write(unit_diag, '(A,F12.6)') '  New borrowing (D''):              ', pol_Dprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  Resources available:             ', &
+              pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) - wH*pol_HP((nz+1)/2, 1, 1, 1) &
+              - R * grid_D(1) + pol_Dprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  Tangible investment (I^K):       ', pol_IK((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  R&D cost (wH*HR):                ', wH * pol_HR((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  Total expenses:                  ', &
+              pol_IK((nz+1)/2, 1, 1, 1) + wH * pol_HR((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  Dividends (resources - expenses):', &
+              pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) - wH*pol_HP((nz+1)/2, 1, 1, 1) &
+              - R * grid_D(1) + pol_Dprime((nz+1)/2, 1, 1, 1) &
+              - pol_IK((nz+1)/2, 1, 1, 1) - wH * pol_HR((nz+1)/2, 1, 1, 1)
+        write(unit_diag, *)
+
+        ! Collateral constraint
+        write(unit_diag, '(A)') 'COLLATERAL CONSTRAINT AT ENTRY:'
+        write(unit_diag, '(A,F12.6)') '  alpha_K * K_min:                 ', alpha_K * grid_K(1)
+        write(unit_diag, '(A,F12.6)') '  alpha_S * S_min:                 ', alpha_S * grid_S(1)
+        write(unit_diag, '(A,F12.6)') '  Max borrowing:                   ', alpha_K * grid_K(1) + alpha_S * grid_S(1)
+        write(unit_diag, '(A,F12.6)') '  Actual D'':                       ', pol_Dprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,L)') '  Constraint binding?              ', &
+              pol_Dprime((nz+1)/2, 1, 1, 1) >= (alpha_K * grid_K(1) + alpha_S * grid_S(1)) - 0.01_dp
+
+        close(unit_diag)
+        print *, "  output/diagnostics.txt"
+
+    end subroutine save_diagnostics_to_file
 
 end module mod_equilibrium

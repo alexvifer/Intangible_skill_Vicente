@@ -261,4 +261,308 @@ contains
 
     end subroutine print_aggregates
 
+    !===================================================================================
+    ! SUBROUTINE: compute_distribution_diagnostics
+    !
+    ! DESCRIPTION:
+    !   Computes detailed distribution diagnostics: quintiles, policy stats, etc.
+    !   Helps understand the cross-sectional distribution of firms.
+    !===================================================================================
+    subroutine compute_distribution_diagnostics()
+        use mod_interpolation
+        implicit none
+        integer :: iz, iK, iS, iD, i, j, n_firms
+        real(dp) :: mass, total_mass
+        real(dp) :: cum_mass, target_pct
+
+        ! Arrays for computing weighted statistics
+        integer, parameter :: max_firms = 100000
+        real(dp) :: firm_K(max_firms), firm_S(max_firms), firm_Ktot(max_firms)
+        real(dp) :: firm_D(max_firms), firm_profit(max_firms)
+        real(dp) :: firm_L(max_firms), firm_HP(max_firms), firm_HR(max_firms)
+        real(dp) :: firm_IK(max_firms), firm_Y(max_firms)
+        real(dp) :: firm_mass(max_firms)
+        real(dp) :: sorted_val(max_firms), sorted_mass(max_firms)
+
+        ! Quintile boundaries
+        real(dp) :: q20, q40, q60, q80
+        real(dp) :: mean_val, std_val, min_val, max_val
+
+        ! R&D and constraint diagnostics
+        real(dp) :: mass_positive_HR, mass_positive_D, mass_at_Smin, mass_at_Kmin
+        real(dp) :: avg_HR_if_positive, avg_D_if_positive
+        real(dp) :: V_S_estimate, EV_high_S, EV_low_S
+        integer :: iS_low, iS_high
+
+        print *, ""
+        print *, "======================================"
+        print *, "DISTRIBUTION DIAGNOSTICS"
+        print *, "======================================"
+
+        ! Collect firm-level data from distribution
+        n_firms = 0
+        total_mass = 0.0_dp
+        mass_positive_HR = 0.0_dp
+        mass_positive_D = 0.0_dp
+        mass_at_Smin = 0.0_dp
+        mass_at_Kmin = 0.0_dp
+
+        do iz = 1, nz
+            do iK = 1, nK
+                do iS = 1, nS
+                    do iD = 1, nD
+                        mass = dist(iz, iK, iS, iD)
+                        if (mass < epsilon) cycle
+
+                        n_firms = n_firms + 1
+                        if (n_firms > max_firms) then
+                            print *, "  WARNING: Too many firm types for diagnostics"
+                            exit
+                        end if
+
+                        firm_mass(n_firms) = mass
+                        firm_K(n_firms) = grid_K(iK)
+                        firm_S(n_firms) = grid_S(iS)
+                        firm_Ktot(n_firms) = grid_K(iK) + grid_S(iS)
+                        firm_D(n_firms) = grid_D(iD)
+                        firm_L(n_firms) = pol_L(iz, iK, iS, iD)
+                        firm_HP(n_firms) = pol_HP(iz, iK, iS, iD)
+                        firm_HR(n_firms) = pol_HR(iz, iK, iS, iD)
+                        firm_IK(n_firms) = pol_IK(iz, iK, iS, iD)
+                        firm_Y(n_firms) = pol_Y(iz, iK, iS, iD)
+                        firm_profit(n_firms) = pol_Y(iz, iK, iS, iD) - wL * pol_L(iz, iK, iS, iD) &
+                                              - wH * pol_HP(iz, iK, iS, iD)
+
+                        total_mass = total_mass + mass
+
+                        ! Track special cases
+                        if (pol_HR(iz, iK, iS, iD) > epsilon) then
+                            mass_positive_HR = mass_positive_HR + mass
+                        end if
+                        if (pol_Dprime(iz, iK, iS, iD) > epsilon) then
+                            mass_positive_D = mass_positive_D + mass
+                        end if
+                        if (iS == 1) mass_at_Smin = mass_at_Smin + mass
+                        if (iK == 1) mass_at_Kmin = mass_at_Kmin + mass
+
+                    end do
+                end do
+            end do
+        end do
+
+        print '(A,I8)', "  Number of firm types with positive mass: ", n_firms
+        print '(A,F10.6)', "  Total mass (should be 1): ", total_mass
+        print *, ""
+
+        ! Mass at boundaries
+        print *, "  Mass at grid boundaries:"
+        print '(A,F8.2,A)', "    At K_min:  ", 100.0_dp * mass_at_Kmin / total_mass, "%"
+        print '(A,F8.2,A)', "    At S_min:  ", 100.0_dp * mass_at_Smin / total_mass, "%"
+        print '(A,F8.2,A)', "    With HR>0: ", 100.0_dp * mass_positive_HR / total_mass, "%"
+        print '(A,F8.2,A)', "    With D>0:  ", 100.0_dp * mass_positive_D / total_mass, "%"
+        print *, ""
+
+        ! Compute weighted statistics for key variables
+        print *, "  Weighted Statistics (across firm distribution):"
+        print *, "  -----------------------------------------------"
+
+        ! Total capital quintiles
+        call compute_weighted_quintiles(firm_Ktot, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  TOTAL CAPITAL (K+S):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F12.4,A,F12.4)', "    Min:  ", min_val, "  Max: ", max_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! Tangible capital
+        call compute_weighted_quintiles(firm_K, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  TANGIBLE CAPITAL (K):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! Intangible capital
+        call compute_weighted_quintiles(firm_S, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  INTANGIBLE CAPITAL (S):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! Profits
+        call compute_weighted_quintiles(firm_profit, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  GROSS PROFITS (Y - wL*L - wH*HP):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! Output
+        call compute_weighted_quintiles(firm_Y, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  OUTPUT (Y):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! Labor
+        call compute_weighted_quintiles(firm_L, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  UNSKILLED LABOR (L):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! HP
+        call compute_weighted_quintiles(firm_HP, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  SKILLED PRODUCTION LABOR (HP):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! HR
+        call compute_weighted_quintiles(firm_HR, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  R&D LABOR (HR):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! Tangible investment
+        call compute_weighted_quintiles(firm_IK, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  TANGIBLE INVESTMENT (I^K):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! Debt
+        call compute_weighted_quintiles(firm_D, firm_mass, n_firms, &
+                                        mean_val, std_val, min_val, max_val, q20, q40, q60, q80)
+        print *, ""
+        print *, "  DEBT (D):"
+        print '(A,F12.4,A,F12.4)', "    Mean: ", mean_val, "  Std: ", std_val
+        print '(A,F10.4,A,F10.4,A,F10.4,A,F10.4)', "    Quintiles: ", q20, " | ", q40, " | ", q60, " | ", q80
+
+        ! VALUE FUNCTION DIAGNOSTICS
+        print *, ""
+        print *, "  -----------------------------------------------"
+        print *, "  VALUE FUNCTION DIAGNOSTICS (for R&D incentives)"
+        print *, "  -----------------------------------------------"
+
+        ! Check if V is increasing in S at median K, median z, D=0
+        iS_low = 1
+        iS_high = min(nS, 5)  ! Compare S_min to 5th grid point
+
+        print *, ""
+        print *, "  V(z_median, K_median, S, D_min) for varying S:"
+        do iS = 1, min(nS, 10)
+            print '(A,I3,A,F8.3,A,F12.4)', "    iS=", iS, ", S=", grid_S(iS), &
+                  ", V=", V((nz+1)/2, (nK+1)/2, iS, 1)
+        end do
+
+        ! Estimate marginal value of S
+        V_S_estimate = (V((nz+1)/2, (nK+1)/2, iS_high, 1) - V((nz+1)/2, (nK+1)/2, iS_low, 1)) &
+                      / (grid_S(iS_high) - grid_S(iS_low))
+        print *, ""
+        print '(A,F12.6)', "  Estimated dV/dS at median state: ", V_S_estimate
+
+        ! Check R&D profitability
+        print *, ""
+        print *, "  R&D PROFITABILITY CHECK:"
+        print *, "  (Benefit of HR = second grid point vs HR = 0)"
+        print '(A,F10.6)', "    wH (cost per unit HR):           ", wH
+        print '(A,F10.6)', "    grid_HR(2):                      ", grid_HR(2)
+        print '(A,F10.6)', "    Cost of HR(2):                   ", wH * grid_HR(2)
+        print '(A,F10.6)', "    S investment from HR(2):         ", Gamma_RD * grid_HR(2)**xi
+        print '(A,F10.6)', "    beta*(1-zeta)*dV/dS*dS:          ", &
+              beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * grid_HR(2)**xi
+        print '(A,F10.6)', "    Net benefit of R&D (should be >0 if R&D worthwhile): ", &
+              beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * grid_HR(2)**xi - wH * grid_HR(2)
+
+    end subroutine compute_distribution_diagnostics
+
+    !===================================================================================
+    ! SUBROUTINE: compute_weighted_quintiles
+    !
+    ! DESCRIPTION:
+    !   Computes weighted mean, std, min, max, and quintile boundaries.
+    !===================================================================================
+    subroutine compute_weighted_quintiles(values, weights, n, mean_val, std_val, &
+                                          min_val, max_val, q20, q40, q60, q80)
+        implicit none
+        integer, intent(in) :: n
+        real(dp), intent(in) :: values(n), weights(n)
+        real(dp), intent(out) :: mean_val, std_val, min_val, max_val
+        real(dp), intent(out) :: q20, q40, q60, q80
+
+        real(dp) :: total_weight, cum_weight
+        real(dp) :: sorted_val(n), sorted_wgt(n)
+        integer :: idx(n), i, j, itemp
+        real(dp) :: temp
+
+        if (n == 0) then
+            mean_val = 0.0_dp
+            std_val = 0.0_dp
+            min_val = 0.0_dp
+            max_val = 0.0_dp
+            q20 = 0.0_dp
+            q40 = 0.0_dp
+            q60 = 0.0_dp
+            q80 = 0.0_dp
+            return
+        end if
+
+        ! Compute weighted mean
+        total_weight = sum(weights(1:n))
+        mean_val = sum(values(1:n) * weights(1:n)) / total_weight
+
+        ! Compute weighted std
+        std_val = sqrt(sum(weights(1:n) * (values(1:n) - mean_val)**2) / total_weight)
+
+        ! Min and max
+        min_val = minval(values(1:n))
+        max_val = maxval(values(1:n))
+
+        ! Sort by value for quintiles (simple insertion sort)
+        do i = 1, n
+            idx(i) = i
+        end do
+
+        do i = 2, n
+            j = i
+            do while (j > 1 .and. values(idx(j-1)) > values(idx(j)))
+                itemp = idx(j)
+                idx(j) = idx(j-1)
+                idx(j-1) = itemp
+                j = j - 1
+            end do
+        end do
+
+        ! Copy to sorted arrays
+        do i = 1, n
+            sorted_val(i) = values(idx(i))
+            sorted_wgt(i) = weights(idx(i))
+        end do
+
+        ! Find quintile boundaries
+        cum_weight = 0.0_dp
+        q20 = sorted_val(1)
+        q40 = sorted_val(1)
+        q60 = sorted_val(1)
+        q80 = sorted_val(1)
+
+        do i = 1, n
+            cum_weight = cum_weight + sorted_wgt(i)
+            if (cum_weight / total_weight >= 0.20_dp .and. q20 == sorted_val(1)) q20 = sorted_val(i)
+            if (cum_weight / total_weight >= 0.40_dp .and. q40 == sorted_val(1)) q40 = sorted_val(i)
+            if (cum_weight / total_weight >= 0.60_dp .and. q60 == sorted_val(1)) q60 = sorted_val(i)
+            if (cum_weight / total_weight >= 0.80_dp .and. q80 == sorted_val(1)) q80 = sorted_val(i)
+        end do
+
+    end subroutine compute_weighted_quintiles
+
 end module mod_distribution

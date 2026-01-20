@@ -111,10 +111,15 @@ program main
     call solve_equilibrium()
 
     !---------------------------------------------------------------------------
-    ! STEP 3: SAVE RESULTS
+    ! STEP 3: DIAGNOSTICS AND SAVE RESULTS
     !---------------------------------------------------------------------------
     print *, ""
-    print *, "STEP 3: Saving results..."
+    print *, "STEP 3: Computing diagnostics and saving results..."
+
+    ! Compute and display detailed distribution diagnostics
+    call compute_distribution_diagnostics()
+
+    ! Save results to files
     call save_results()
 
     !---------------------------------------------------------------------------
