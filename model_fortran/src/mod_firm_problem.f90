@@ -227,6 +227,7 @@ contains
         real(dp) :: Kprime, Sprime, inv_S
         real(dp) :: resources, expenses, dividends
         real(dp) :: D_max_coll, EV
+        real(dp) :: AC_K_val, AC_S_val
 
         ! First, precompute static labor solutions
         call precompute_static_labor()
@@ -238,7 +239,7 @@ contains
         !$OMP&         iIK, iHR, iDp, iIK_lo, iIK_hi, iHR_lo, iHR_hi, iDp_lo, iDp_hi, &
         !$OMP&         best_iIK, best_iHR, best_iDp, IK_choice, HR_choice, Dp_choice, &
         !$OMP&         Kprime, Sprime, inv_S, resources, expenses, dividends, &
-        !$OMP&         D_max_coll, EV) &
+        !$OMP&         D_max_coll, EV, AC_K_val, AC_S_val) &
         !$OMP& SCHEDULE(dynamic)
         do iz = 1, nz
             do iK = 1, nK
@@ -312,8 +313,12 @@ contains
                                     ! Check collateral constraint (now based on K', S')
                                     if (Dp_choice > D_max_coll + epsilon) cycle
 
+                                    ! Compute adjustment costs (0 if phi_K=0 or phi_S=0)
+                                    AC_K_val = adjustment_cost_K(IK_choice, K_val)
+                                    AC_S_val = adjustment_cost_S(inv_S, S_val)
+
                                     resources = Pi_gross - R * D_old_val + Dp_choice
-                                    expenses = IK_choice + wH * HR_choice
+                                    expenses = IK_choice + wH * HR_choice + AC_K_val + AC_S_val
                                     dividends = resources - expenses
 
                                     if (dividends < -epsilon) cycle
@@ -369,23 +374,26 @@ contains
     subroutine policy_evaluation_step()
         implicit none
         integer :: iz, iK, iS, iD
-        real(dp) :: D_old_val
+        real(dp) :: D_old_val, K_val, S_val
         real(dp) :: L_opt, HP_opt, Y_val, Pi_gross
         real(dp) :: IK_choice, HR_choice, Dp_choice
-        real(dp) :: Kprime, Sprime
+        real(dp) :: Kprime, Sprime, inv_S
         real(dp) :: resources, expenses, dividends
         real(dp) :: EV, V_eval
+        real(dp) :: AC_K_val, AC_S_val
 
         ! Loop over state space with OpenMP - using FIXED policies
         !$OMP PARALLEL DO COLLAPSE(2) &
-        !$OMP& PRIVATE(iz, iK, iS, iD, D_old_val, L_opt, HP_opt, Y_val, Pi_gross, &
-        !$OMP&         IK_choice, HR_choice, Dp_choice, Kprime, Sprime, &
-        !$OMP&         resources, expenses, dividends, EV, V_eval) &
+        !$OMP& PRIVATE(iz, iK, iS, iD, D_old_val, K_val, S_val, L_opt, HP_opt, Y_val, Pi_gross, &
+        !$OMP&         IK_choice, HR_choice, Dp_choice, Kprime, Sprime, inv_S, &
+        !$OMP&         resources, expenses, dividends, EV, V_eval, AC_K_val, AC_S_val) &
         !$OMP& SCHEDULE(dynamic)
         do iz = 1, nz
             do iK = 1, nK
+                K_val = grid_K(iK)
 
                 do iS = 1, nS
+                    S_val = grid_S(iS)
 
                     do iD = 1, nD
                         D_old_val = grid_D(iD)
@@ -406,10 +414,17 @@ contains
                         Kprime = pol_Kprime(iz, iK, iS, iD)
                         Sprime = max(pol_Sprime(iz, iK, iS, iD), 1.0e-6_dp)  ! Safety floor
 
+                        ! Compute intangible investment from R&D labor (for adjustment costs)
+                        inv_S = RD_production(HR_choice)
+
+                        ! Compute adjustment costs (0 if phi_K=0 or phi_S=0)
+                        AC_K_val = adjustment_cost_K(IK_choice, K_val)
+                        AC_S_val = adjustment_cost_S(inv_S, S_val)
+
                         ! Compute value with fixed policy
                         Pi_gross = Y_val - wL * L_opt - wH * HP_opt
                         resources = Pi_gross - R * D_old_val + Dp_choice
-                        expenses = IK_choice + wH * HR_choice
+                        expenses = IK_choice + wH * HR_choice + AC_K_val + AC_S_val
                         dividends = resources - expenses
 
                         ! Continuation value (this is the only "expensive" part)

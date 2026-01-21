@@ -363,6 +363,77 @@ contains
     end function marginal_RD_prod
 
     !===================================================================================
+    ! FUNCTION: adjustment_cost_K
+    !
+    ! DESCRIPTION:
+    !   Computes convex adjustment cost for tangible capital:
+    !   AC_K = (φ_K/2) * (I^K/K)^2 * K
+    !
+    !   Setting phi_K = 0 gives no adjustment costs.
+    !
+    ! INPUTS:
+    !   I_K - Tangible investment
+    !   K   - Current tangible capital stock
+    !
+    ! OUTPUT:
+    !   Adjustment cost (in units of output/consumption goods)
+    !===================================================================================
+    function adjustment_cost_K(I_K, K) result(AC)
+        implicit none
+        real(dp), intent(in) :: I_K, K
+        real(dp) :: AC
+        real(dp) :: K_safe
+        real(dp), parameter :: min_capital = 1.0e-6_dp
+
+        if (phi_K < epsilon) then
+            ! No adjustment costs
+            AC = 0.0_dp
+        else
+            ! Protect against division by zero
+            K_safe = max(K, min_capital)
+            ! AC = (φ/2) * (I/K)^2 * K = (φ/2) * I^2 / K
+            AC = (phi_K / 2.0_dp) * (I_K**2) / K_safe
+        end if
+
+    end function adjustment_cost_K
+
+    !===================================================================================
+    ! FUNCTION: adjustment_cost_S
+    !
+    ! DESCRIPTION:
+    !   Computes convex adjustment cost for intangible capital:
+    !   AC_S = (φ_S/2) * (ΔS/S)^2 * S
+    !
+    !   where ΔS = Γ*(H^R)^ξ is gross intangible investment from R&D.
+    !   Setting phi_S = 0 gives no adjustment costs.
+    !
+    ! INPUTS:
+    !   inv_S - Intangible investment (= Γ*(H^R)^ξ)
+    !   S     - Current intangible capital stock
+    !
+    ! OUTPUT:
+    !   Adjustment cost (in units of output/consumption goods)
+    !===================================================================================
+    function adjustment_cost_S(inv_S, S) result(AC)
+        implicit none
+        real(dp), intent(in) :: inv_S, S
+        real(dp) :: AC
+        real(dp) :: S_safe
+        real(dp), parameter :: min_capital = 1.0e-6_dp
+
+        if (phi_S < epsilon) then
+            ! No adjustment costs
+            AC = 0.0_dp
+        else
+            ! Protect against division by zero
+            S_safe = max(S, min_capital)
+            ! AC = (φ/2) * (ΔS/S)^2 * S = (φ/2) * (ΔS)^2 / S
+            AC = (phi_S / 2.0_dp) * (inv_S**2) / S_safe
+        end if
+
+    end function adjustment_cost_S
+
+    !===================================================================================
     ! FUNCTION: collateral_constraint
     !
     ! DESCRIPTION:

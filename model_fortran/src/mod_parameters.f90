@@ -57,6 +57,15 @@ module mod_parameters
     real(dp), parameter :: xi = 0.90_dp            ! Returns to scale in R&D (≤1)
 
     !---------------------------------------------------------------------------
+    ! ADJUSTMENT COST PARAMETERS
+    ! Convex adjustment costs: AC = (φ/2) * (I/K)^2 * K
+    ! Setting φ = 0 gives no adjustment costs (nests frictionless investment)
+    !---------------------------------------------------------------------------
+    real(dp), parameter :: phi_K = 2.0_dp          ! Tangible capital adjustment cost
+    real(dp), parameter :: phi_S = 2.0_dp          ! Intangible capital adjustment cost
+    ! Note: Adjustment costs apply to gross investment I^K and new intangibles Γ*(H^R)^ξ
+
+    !---------------------------------------------------------------------------
     ! FINANCIAL FRICTION PARAMETERS
     !---------------------------------------------------------------------------
     real(dp), parameter :: alpha_K = 0.381_dp    ! Tangible pledgeability (Holttinen et al. 2025)
