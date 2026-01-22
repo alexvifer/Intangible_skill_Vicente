@@ -255,9 +255,9 @@ contains
                     Y_val = static_Y(iz, iK, iS)
                     Pi_gross = static_Pi(iz, iK, iS)
 
-                    ! Note: Collateral constraint now based on NEXT period capital (K', S')
-                    ! This is computed inside the loop after K' and S' are determined
-                    ! Lenders care about collateral value at repayment time
+                    ! Collateral constraint based on CURRENT period capital (K, S)
+                    ! Lenders evaluate borrowing capacity based on assets currently in place
+                    D_max_coll = collateral_constraint(K_val, S_val)
 
                     do iD = 1, nD
                         D_old_val = grid_D(iD)
@@ -287,8 +287,7 @@ contains
                         best_iHR = iHR_lo
                         best_iDp = iDp_lo
 
-                        ! Grid search over (I^K, H^R, D') - reordered so collateral
-                        ! constraint can use next-period capital (K', S')
+                        ! Grid search over (I^K, H^R, D')
                         do iIK = iIK_lo, iIK_hi
                             IK_choice = grid_IK(iIK)
 
@@ -304,13 +303,10 @@ contains
                                 ! Allow S to go below S_min but impose a small floor
                                 Sprime = max(Sprime, 1.0e-6_dp)
 
-                                ! Collateral constraint based on NEXT period capital
-                                D_max_coll = collateral_constraint(Kprime, Sprime)
-
                                 do iDp = iDp_lo, iDp_hi
                                     Dp_choice = grid_Dprime(iDp)
 
-                                    ! Check collateral constraint (now based on K', S')
+                                    ! Check collateral constraint (based on current K, S)
                                     if (Dp_choice > D_max_coll + epsilon) cycle
 
                                     ! Compute adjustment costs (0 if phi_K=0 or phi_S=0)

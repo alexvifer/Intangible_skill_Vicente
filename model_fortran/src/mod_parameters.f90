@@ -61,9 +61,10 @@ module mod_parameters
     ! Convex adjustment costs: AC = (φ/2) * (I/K)^2 * K
     ! Setting φ = 0 gives no adjustment costs (nests frictionless investment)
     !---------------------------------------------------------------------------
-    real(dp), parameter :: phi_K = 2.0_dp          ! Tangible capital adjustment cost
-    real(dp), parameter :: phi_S = 2.0_dp          ! Intangible capital adjustment cost
+    real(dp), parameter :: phi_K = 0.0_dp          ! Tangible capital adjustment cost
+    real(dp), parameter :: phi_S = 0.0_dp          ! Intangible capital adjustment cost
     ! Note: Adjustment costs apply to gross investment I^K and new intangibles Γ*(H^R)^ξ
+    ! Baseline sets both to 0; can be increased for robustness exercises
 
     !---------------------------------------------------------------------------
     ! FINANCIAL FRICTION PARAMETERS
@@ -97,12 +98,12 @@ module mod_parameters
     ! Grid bounds (will be adjusted based on solution)
     ! Note: S_min > 0 required for numerical stability with CES complements (rho < 0)
     ! Using small S_min to avoid "free intangibles" from grid bound clamping
-    real(dp), parameter :: K_min = 0.10_dp
-    real(dp), parameter :: K_max = 100.0_dp
+    real(dp), parameter :: K_min = 0.01_dp
+    real(dp), parameter :: K_max = 3.0_dp
     real(dp), parameter :: S_min = 0.01_dp         ! Small but positive for CES stability
-    real(dp), parameter :: S_max = 50.0_dp
+    real(dp), parameter :: S_max = 3.0_dp
     real(dp), parameter :: D_min = 0.0_dp
-    real(dp), parameter :: D_max = 50.0_dp
+    real(dp), parameter :: D_max = 2.0_dp
 
     !---------------------------------------------------------------------------
     ! CHOICE GRIDS
@@ -118,7 +119,7 @@ module mod_parameters
     !---------------------------------------------------------------------------
     real(dp), parameter :: tol_VFI = 1.0e-3_dp     ! Tolerance for value function iteration
     real(dp), parameter :: tol_dist = 1.0e-3_dp    ! Tolerance for distribution
-    real(dp), parameter :: tol_eq = 1.1e-1_dp      ! Tolerance for equilibrium
+    real(dp), parameter :: tol_eq = 1.5e-1_dp      ! Tolerance for equilibrium
     integer, parameter :: maxiter_VFI = 3000       ! Max iterations for VFI (increased from 2000)
     integer, parameter :: maxiter_dist = 5000      ! Max iterations for distribution
     integer, parameter :: maxiter_eq = 300         ! Max iterations for equilibrium (increased from 100)

@@ -216,8 +216,8 @@ contains
         call cpu_time(time_start)
 
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.35450_dp
-        wH = 0.67_dp
+        wL = 0.40050_dp
+        wH = 0.80_dp
 
         do iter_outer = 1, maxiter_eq
 

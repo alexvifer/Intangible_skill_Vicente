@@ -644,11 +644,12 @@ Following the investment literature \citep{cooper2006dynamics,khan2008idiosyncra
 \text{AC}^K_{j,t} = \frac{\phi_K}{2} \left(\frac{I^K_{j,t}}{K_{j,t}}\right)^2 K_{j,t} = \frac{\phi_K}{2} \frac{(I^K_{j,t})^2}{K_{j,t}},
 \label{eq:adj_cost_K}
 \end{equation}
-where \(\phi_K \geq 0\) governs the magnitude of adjustment costs. Setting \(\phi_K = 0\) nests the frictionless investment case.
-
-\begin{remark}[Role of Adjustment Costs]
-Adjustment costs serve two purposes. First, they make capital a genuinely dynamic state variable, preventing instantaneous convergence to the frictionless optimum. Second, they create an incentive for firms to smooth investment over time, which interacts with borrowing constraints: adjustment costs make capital valuable as collateral because firms cannot instantly adjust their capital stock in response to binding constraints.
-\end{remark}
+where \(\phi_K \geq 0\) governs the magnitude of adjustment costs. Intangible investment similarly incurs:
+\begin{equation}
+\text{AC}^S_{j,t} = \frac{\phi_S}{2} \left(\frac{\Delta S_{j,t}}{S_{j,t}}\right)^2 S_{j,t} = \frac{\phi_S}{2} \frac{(\Delta S_{j,t})^2}{S_{j,t}},
+\label{eq:adj_cost_S}
+\end{equation}
+where \(\Delta S_{j,t} = \Gamma(H^R_{j,t})^{\xi}\) is gross intangible investment. Setting \(\phi_K = \phi_S = 0\) nests the frictionless investment case.
 
 \subsection{Financial Frictions}
 
@@ -661,12 +662,12 @@ Following the costly-state-verification literature \citep{townsend1979optimal,be
 \end{equation}
 where \(\alpha_K\) is the recovery rate on tangible capital and \(\alpha_S\) is the recovery rate on intangible capital, with \(\alpha_S < \alpha_K\) reflecting the lower pledgeability of intangibles \citep{holttinenmelolinnafroem2025}.
 
-To ensure no default in equilibrium, banks lend only up to the recoverable collateral value at the risk-free rate. Since debt is repaid at the beginning of the next period, lenders care about the collateral value at repayment time---namely, next period's capital stocks. Given the timing structure described below, the collateral constraint is:
+To ensure no default in equilibrium, banks lend only up to the recoverable collateral value at the risk-free rate. Banks evaluate borrowing capacity based on the firm's assets currently in place, leading to the collateral constraint:
 \begin{equation}
-D_{j,t} \le \alpha_K K_{j,t+1} + \alpha_S S_{j,t+1}.
+D_{j,t} \le \alpha_K K_{j,t} + \alpha_S S_{j,t}.
 \label{eq:collateral_constraint}
 \end{equation}
-This formulation captures that borrowing capacity depends on the capital the firm will have when the loan comes due, not the capital it currently holds.
+This formulation captures that borrowing capacity depends on assets the lender can verify and seize, namely the capital stock at the time of lending.
 
 \begin{assumption}[Low Intangible Pledgeability]
 \label{ass:pledgeability}
@@ -682,7 +683,7 @@ To clarify the sequence of decisions within each period \(t\), I specify the fol
 
 \item \textbf{Productivity shock:} Firm draws current productivity \(z_t\) from the AR(1) process conditional on \(z_{t-1}\).
 
-\item \textbf{Financial decisions:} Firm simultaneously repays old debt \(RD_{t-1}\) and obtains new debt \(D_t\) from banks. Since debt is due at the beginning of period \(t+1\), the collateral constraint \eqref{eq:collateral_constraint} is based on next period's capital stocks \((K_{t+1}, S_{t+1})\), which depend on today's investment decisions. In practice, the firm chooses debt and investment jointly to satisfy this constraint. The net financial flow to the firm is \(D_t - RD_{t-1}\).
+\item \textbf{Financial decisions:} Firm simultaneously repays old debt \(RD_{t-1}\) and obtains new debt \(D_t\) from banks. The collateral constraint \eqref{eq:collateral_constraint} is based on current capital stocks \((K_t, S_t)\), which are observable to lenders at the time of borrowing. The net financial flow to the firm is \(D_t - RD_{t-1}\).
 
 \item \textbf{Static production decisions:} Firm chooses unskilled labor \(L\) and skilled production labor \(H^P\) to maximize current gross profits. These are static choices determined by first-order conditions \eqref{eq:foc_L}, \eqref{eq:foc_HP}.
 
@@ -711,10 +712,10 @@ These choices are subject to the budget constraint \eqref{eq:budget_constraint},
 
 Given the timing above, the firm's per-period budget constraint is:
 \begin{equation}
-I^K_{j,t} + \text{AC}^K_{j,t} + w_L L_{j,t} + w_H H^P_{j,t} + w_H H^R_{j,t} + R D_{j,t-1} \le Y_{j,t} + D_{j,t},
+I^K_{j,t} + \text{AC}^K_{j,t} + \text{AC}^S_{j,t} + w_L L_{j,t} + w_H H^P_{j,t} + w_H H^R_{j,t} + R D_{j,t-1} \le Y_{j,t} + D_{j,t},
 \label{eq:budget_constraint}
 \end{equation}
-where \(\text{AC}^K_{j,t}\) is the adjustment cost from \eqref{eq:adj_cost_K}.
+where \(\text{AC}^K_{j,t}\) and \(\text{AC}^S_{j,t}\) are the adjustment costs from \eqref{eq:adj_cost_K} and \eqref{eq:adj_cost_S}.
 \textbf{Timing and Wage Equality.} Although the within-period timing describes $H^P$ as hired for production (Step 4) and $H^R$ as hired for R\&D investment (Step 7), both types of skilled labor are employed within the same period $t$ and paid the same wage $w_H$. The timing structure describes the sequence of decisions and cash flows within the period, not separate labor markets. Skilled workers are hired at the beginning of period $t$ with the understanding that some will work in production while others work in R\&D. The single wage $w_H$ clears the aggregate skilled labor market: $\int (H^P_j + H^R_j) d\Psi = \bar{H}$.
 
 We can rewrite this in terms of gross profits from production:
@@ -723,13 +724,13 @@ We can rewrite this in terms of gross profits from production:
 \]
 so that:
 \begin{equation}
-I^K_{j,t} + \text{AC}^K_{j,t} + w_H H^R_{j,t} + R D_{j,t-1} \le \Pi^{gross}_{j,t} + D_{j,t}.
+I^K_{j,t} + \text{AC}^K_{j,t} + \text{AC}^S_{j,t} + w_H H^R_{j,t} + R D_{j,t-1} \le \Pi^{gross}_{j,t} + D_{j,t}.
 \label{eq:budget_constraint_gross}
 \end{equation}
 
 Dividends (profits) distributed to shareholders are:
 \begin{equation}
-\text{Div}_{j,t} = Y_{j,t} - I^K_{j,t} - \text{AC}^K_{j,t} - w_L L_{j,t} - w_H(H^P_{j,t} + H^R_{j,t}) - R D_{j,t-1} + D_{j,t}.
+\text{Div}_{j,t} = Y_{j,t} - I^K_{j,t} - \text{AC}^K_{j,t} - \text{AC}^S_{j,t} - w_L L_{j,t} - w_H(H^P_{j,t} + H^R_{j,t}) - R D_{j,t-1} + D_{j,t}.
 \label{eq:dividends}
 \end{equation}
 
@@ -746,17 +747,17 @@ The firm's state is \((z, K, S, D_{-1})\). Given the timing structure, the firm'
 Then the value function satisfies:
 \begin{align}
 V(z, K, S, D_{-1}) &= \max_{D, I^K, H^R} \Bigg\{ \Pi^*(z, K, S) - R D_{-1} + D \nonumber \\
-&\quad - I^K - \text{AC}^K(I^K, K) - w_H H^R + \beta(1-\zeta) \E[V(z', K', S', D) \mid z] \Bigg\},
+&\quad - I^K - \text{AC}^K(I^K, K) - \text{AC}^S(\Delta S, S) - w_H H^R + \beta(1-\zeta) \E[V(z', K', S', D) \mid z] \Bigg\},
 \label{eq:value_function}
 \end{align}
 subject to:
 \begin{itemize}
 \item Capital accumulation: \(K' = (1-\delta_K)K + I^K\), \(S' = (1-\delta_S)S + \Gamma(H^R)^{\xi}\)
-\item Collateral constraint: \(D \le \alpha_K K' + \alpha_S S'\) (based on next-period capital)
-\item Non-negative dividends: \(\text{Div} = \Pi^* - I^K - \text{AC}^K - w_H H^R - R D_{-1} + D \ge 0\)
+\item Collateral constraint: \(D \le \alpha_K K + \alpha_S S\) (based on current capital)
+\item Non-negative dividends: \(\text{Div} = \Pi^* - I^K - \text{AC}^K - \text{AC}^S - w_H H^R - R D_{-1} + D \ge 0\)
 \end{itemize}
 
-\textbf{Interpretation:} The firm chooses debt \(D\) and investment \((I^K, H^R)\) jointly, since the collateral constraint depends on next-period capital stocks \((K', S')\) which are determined by investment. This creates an interaction between investment and financing decisions: higher investment expands borrowing capacity (through \(\alpha_K K' + \alpha_S S'\)), but also requires more resources. Static production choices \((L, H^P)\) are independent of these dynamic decisions and determined by first-order conditions given the state. 
+\textbf{Interpretation:} The collateral constraint depends on current capital stocks \((K, S)\), which are predetermined state variables. This means borrowing capacity is fixed at the beginning of the period: investment decisions do not affect current-period borrowing limits. Static production choices \((L, H^P)\) are independent of dynamic decisions and determined by first-order conditions given the state. 
 
 \subsubsection{First-Order Conditions}
 
@@ -773,47 +774,47 @@ Let \(\mu_{j,t}\) denote the shadow value of internal funds.\footnote{\textbf{No
 \end{equation}
 These determine \(L^*(z, K, S)\) and \(H^{P*}(z, K, S)\) as functions of the state.
 
-\paragraph{Envelope Conditions.} Taking derivatives of \(V(z, K, S, D_{-1})\) with respect to state variables yields. Since the collateral constraint \eqref{eq:collateral_constraint} depends on next-period capital \((K', S')\), current capital \((K, S)\) affects collateral value only through undepreciated capital:
+\paragraph{Envelope Conditions.} Taking derivatives of \(V(z, K, S, D_{-1})\) with respect to state variables yields. Since the collateral constraint \eqref{eq:collateral_constraint} depends on current capital \((K, S)\), the collateral value appears directly:
 \begin{equation}
-V_K(z, K, S, D_{-1}) = \mu \frac{\partial Y}{\partial K} + \mu \frac{\phi_K}{2}\left(\frac{I^K}{K}\right)^2 + (1-\delta_K)\Big[\beta(1-\zeta) \E[V_{K'}] + \lambda \alpha_K\Big],
+V_K(z, K, S, D_{-1}) = \mu \frac{\partial Y}{\partial K} + \mu \frac{\phi_K}{2}\left(\frac{I^K}{K}\right)^2 + \lambda \alpha_K + (1-\delta_K)\beta(1-\zeta) \E[V_{K'}],
 \label{eq:envelope_K}
 \end{equation}
 \begin{equation}
-V_S(z, K, S, D_{-1}) = \mu \frac{\partial Y}{\partial S} + (1-\delta_S)\Big[\beta(1-\zeta) \E[V_{S'}] + \lambda \alpha_S\Big],
+V_S(z, K, S, D_{-1}) = \mu \frac{\partial Y}{\partial S} + \mu \frac{\phi_S}{2}\left(\frac{\Delta S}{S}\right)^2 + \lambda \alpha_S + (1-\delta_S)\beta(1-\zeta) \E[V_{S'}],
 \label{eq:envelope_S}
 \end{equation}
 \begin{equation}
 V_{D_{-1}}(z, K, S, D_{-1}) = -\mu R.
 \label{eq:envelope_D}
 \end{equation}
-The term \(\mu \frac{\phi_K}{2}(I^K/K)^2\) in \eqref{eq:envelope_K} reflects that higher \(K\) reduces adjustment costs (for given \(I^K\)). The collateral terms \(\lambda \alpha_K\) and \(\lambda \alpha_S\) are multiplied by \((1-\delta_K)\) and \((1-\delta_S)\) respectively, since undepreciated capital enters next period's collateral.
+The terms \(\mu \frac{\phi_K}{2}(I^K/K)^2\) and \(\mu \frac{\phi_S}{2}(\Delta S/S)^2\) reflect that higher capital reduces adjustment costs (for given investment). The collateral terms \(\lambda \alpha_K\) and \(\lambda \alpha_S\) enter directly since current capital determines borrowing capacity.
 
-\paragraph{First-Order Condition for Tangible Investment.} From \(\partial \mathcal{L}/\partial I^K = 0\), accounting for adjustment costs and the collateral constraint on \(K'\):
+\paragraph{First-Order Condition for Tangible Investment.} From \(\partial \mathcal{L}/\partial I^K = 0\), accounting for adjustment costs:
 \begin{equation}
-\mu_{j,t} \left(1 + \phi_K \frac{I^K_{j,t}}{K_{j,t}}\right) = \beta(1-\zeta) \E[V_{K'}(z_{j,t+1}, K_{j,t+1}, S_{j,t+1}, D_{j,t}) \mid z_{j,t}] + \lambda_{j,t} \alpha_K.
+\mu_{j,t} \left(1 + \phi_K \frac{I^K_{j,t}}{K_{j,t}}\right) = \beta(1-\zeta) \E[V_{K'}(z_{j,t+1}, K_{j,t+1}, S_{j,t+1}, D_{j,t}) \mid z_{j,t}].
 \label{eq:foc_IK}
 \end{equation}
-The left-hand side is the marginal cost of investment: purchasing the unit plus the marginal adjustment cost, all valued at the shadow price \(\mu\). The right-hand side includes the continuation value of capital plus the current-period benefit of relaxing the collateral constraint (\(\lambda \alpha_K\)).
+The left-hand side is the marginal cost of investment: purchasing the unit plus the marginal adjustment cost, all valued at the shadow price \(\mu\). The right-hand side is the expected continuation value of capital. Since the collateral constraint depends on current capital (not next-period capital), investment does not directly relax the borrowing constraint within the period.
 
 Combining \eqref{eq:foc_IK} with the envelope condition \eqref{eq:envelope_K}:
 \begin{align}
-\mu_{j,t} \left(1 + \phi_K \frac{I^K_{j,t}}{K_{j,t}}\right) &= \lambda_{j,t} \alpha_K + \beta(1-\zeta) \E_{j,t}\Big[\mu_{j,t+1} \frac{\partial Y_{j,t+1}}{\partial K_{j,t+1}} + \mu_{j,t+1} \frac{\phi_K}{2}\left(\frac{I^K_{j,t+1}}{K_{j,t+1}}\right)^2 \nonumber \\
-&\quad + (1-\delta_K)\big(\beta(1-\zeta) \E_{j,t+1}[V_{K',t+2}] + \lambda_{j,t+1} \alpha_K\big)\Big],
+\mu_{j,t} \left(1 + \phi_K \frac{I^K_{j,t}}{K_{j,t}}\right) &= \beta(1-\zeta) \E_{j,t}\Big[\mu_{j,t+1} \frac{\partial Y_{j,t+1}}{\partial K_{j,t+1}} + \mu_{j,t+1} \frac{\phi_K}{2}\left(\frac{I^K_{j,t+1}}{K_{j,t+1}}\right)^2 \nonumber \\
+&\quad + \lambda_{j,t+1} \alpha_K + (1-\delta_K)\beta(1-\zeta) \E_{j,t+1}[V_{K',t+2}]\Big],
 \label{eq:euler_K}
 \end{align}
-where \(\E_{j,t}[\cdot] \equiv \E[\cdot \mid z_{j,t}]\) denotes the conditional expectation given the firm's current productivity. The adjustment cost terms create an additional incentive to smooth investment over time.
+where \(\E_{j,t}[\cdot] \equiv \E[\cdot \mid z_{j,t}]\) denotes the conditional expectation given the firm's current productivity. The collateral term \(\lambda_{j,t+1}\alpha_K\) appears inside the expectation because capital invested today becomes collateral tomorrow.
 
-\paragraph{First-Order Condition for Intangible Investment (via R\&D).} The firm chooses \(H^R\) to balance the wage cost against the marginal value of additional intangible capital. Since \(S' = (1-\delta_S)S + \Gamma(H^R)^{\xi}\), we have \(\partial S'/\partial H^R = \Gamma \xi (H^R)^{\xi-1}\). With collateral based on next-period capital, increasing \(H^R\) also relaxes the current borrowing constraint by \(\lambda \alpha_S \partial S'/\partial H^R\).
+\paragraph{First-Order Condition for Intangible Investment (via R\&D).} The firm chooses \(H^R\) to balance the wage cost (plus adjustment costs) against the marginal value of additional intangible capital. Since \(S' = (1-\delta_S)S + \Gamma(H^R)^{\xi}\), we have \(\partial S'/\partial H^R = \Gamma \xi (H^R)^{\xi-1}\).
 
 The FOC with respect to \(H^R\) is:
 \begin{equation}
-\mu_{j,t} w_H = \Big[\beta(1-\zeta) \E[V_{S'}(z_{j,t+1}, K_{j,t+1}, S_{j,t+1}, D_{j,t}) \mid z_{j,t}] + \lambda_{j,t} \alpha_S\Big] \cdot \Gamma \xi (H^R_{j,t})^{\xi-1}.
+\mu_{j,t} \left(w_H + \phi_S \frac{\Delta S_{j,t}}{S_{j,t}} \cdot \frac{\partial \Delta S_{j,t}}{\partial H^R_{j,t}}\right) = \beta(1-\zeta) \E[V_{S'}(z_{j,t+1}, K_{j,t+1}, S_{j,t+1}, D_{j,t}) \mid z_{j,t}] \cdot \Gamma \xi (H^R_{j,t})^{\xi-1}.
 \label{eq:foc_HR}
 \end{equation}
 
-Using the envelope condition \eqref{eq:envelope_S} and substituting recursively, we obtain:\footnote{Undepreciated intangible capital must be valued at its marginal replacement cost $q_{S,t+1} \equiv w_{H,t+1}/[\Gamma\xi(H^R_{j,t+1})^{\xi-1}]$, not at unity. From the period $t+1$ FOC for $H^R_{t+1}$, we have $\beta(1-\zeta)\mathbb{E}_{t+1}[V_{S,t+2}] + \lambda_{t+1}\alpha_S = \mu_{t+1}w_{H,t+1}/[\Gamma\xi(H^R_{j,t+1})^{\xi-1}]$. Substituting this expression into the envelope condition yields the correct continuation value term.}
+Using the envelope condition \eqref{eq:envelope_S} and substituting recursively, we obtain:\footnote{Undepreciated intangible capital must be valued at its marginal replacement cost $q_{S,t+1} \equiv w_{H,t+1}/[\Gamma\xi(H^R_{j,t+1})^{\xi-1}]$, not at unity. From the period $t+1$ FOC for $H^R_{t+1}$, we have $\beta(1-\zeta)\mathbb{E}_{t+1}[V_{S,t+2}] = \mu_{t+1}w_{H,t+1}/[\Gamma\xi(H^R_{j,t+1})^{\xi-1}]$. Substituting this expression into the envelope condition yields the correct continuation value term.}
 \begin{equation}
-\mu_{j,t} w_H = \Gamma \xi (H^R_{j,t})^{\xi-1} \left[\lambda_{j,t} \alpha_S + \beta(1-\zeta) \E_{j,t}\left[\mu_{j,t+1} \frac{\partial Y_{j,t+1}}{\partial S_{j,t+1}} + (1-\delta_S)\mu_{j,t+1}\frac{w_{H,t+1}}{\Gamma\xi(H^R_{j,t+1})^{\xi-1}}\right]\right].
+\mu_{j,t} w_H = \Gamma \xi (H^R_{j,t})^{\xi-1} \cdot \beta(1-\zeta) \E_{j,t}\left[\mu_{j,t+1} \frac{\partial Y_{j,t+1}}{\partial S_{j,t+1}} + \mu_{j,t+1} \frac{\phi_S}{2}\left(\frac{\Delta S_{j,t+1}}{S_{j,t+1}}\right)^2 + \lambda_{j,t+1} \alpha_S + (1-\delta_S)\mu_{j,t+1}\frac{w_{H,t+1}}{\Gamma\xi(H^R_{j,t+1})^{\xi-1}}\right].
 \label{eq:euler_S}
 \end{equation}
 
@@ -830,9 +831,9 @@ The first-order conditions \eqref{eq:foc_IK}, \eqref{eq:foc_HR} reveal the core 
 
 An unconstrained firm has \(\lambda = 0\), so its first-order conditions reduce to standard intertemporal optimality conditions equating the marginal cost of investment today (including adjustment costs) to the expected discounted marginal benefit tomorrow. The firm's investment decisions depend only on fundamentals: productivity, depreciation rates, adjustment costs, and the interest rate.
 
-A constrained firm has \(\lambda > 0\), introducing wedges into both investment conditions. Because the collateral constraint is based on \emph{next-period} capital \((K', S')\), investment today \emph{immediately} relaxes the current borrowing constraint. From \eqref{eq:foc_IK}, the term \(\lambda_{j,t} \alpha_K\) on the right-hand side reduces the effective cost of tangible investment: each unit of \(I^K\) allows the firm to borrow an additional \(\alpha_K\) today. Similarly, from \eqref{eq:foc_HR}, the term \(\lambda_{j,t} \alpha_S\) provides an analogous (but smaller) benefit for R\&D investment.
+A constrained firm has \(\lambda > 0\), introducing wedges into both investment conditions. Because the collateral constraint is based on \emph{current} capital \((K, S)\), investment today does not relax the current-period borrowing constraint. However, today's investment becomes tomorrow's capital stock, which determines future borrowing capacity. From \eqref{eq:euler_K}, the term \(\lambda_{j,t+1} \alpha_K\) inside the expectation reflects that tangible capital accumulated today provides collateral value starting next period. Similarly, from \eqref{eq:euler_S}, the term \(\lambda_{j,t+1} \alpha_S\) provides an analogous (but smaller) future collateral benefit for intangible capital.
 
-The crucial asymmetry arises from Assumption \ref{ass:pledgeability}: \(\alpha_K > \alpha_S\). When the collateral constraint binds, tangible capital provides greater collateral value than intangible capital, \emph{immediately} in the current period. This creates a pecking-order distortion where constrained firms tilt their investment composition toward tangibles, even when the fundamental marginal products would justify more intangible investment. The adjustment costs \(\phi_K\) reinforce the dynamic nature of capital, making collateral value more persistent.
+The crucial asymmetry arises from Assumption \ref{ass:pledgeability}: \(\alpha_K > \alpha_S\). Because tangible capital provides greater collateral value than intangible capital, constrained firms value the future collateral benefit of tangibles more than intangibles. This creates a pecking-order distortion where constrained firms tilt their investment composition toward tangibles, even when the fundamental marginal products would justify more intangible investment.
 
 % \paragraph{Quantifying the Distortion.} To make this concrete, consider the relative magnitudes of collateral values. For a constrained firm with \(\E[\lambda_{t+1}] > 0\), the expected collateral benefit of tangible capital is \(\E[\lambda_{t+1}]\alpha_K\), while for intangible capital it is \(\E[\lambda_{t+1}]\alpha_S\). The pledgeability gap is:
 % \begin{equation}
@@ -1068,7 +1069,7 @@ The Bellman equation is solved via value function iteration with Howard's policy
 \begin{equation}
 V^{new}(z, K, S, D_{-1}) = \max_{D', I^K, H^R} \left\{ \text{Div} + \beta(1-\zeta) \mathbb{E}_{z'|z}\left[ V(z', K', S', D') \right] \right\}
 \end{equation}
-where $\text{Div} = \Pi^*(z,K,S) - I^K - \text{AC}^K(I^K, K) - w_H H^R - R D_{-1} + D'$ includes the adjustment cost $\text{AC}^K = (\phi_K/2)(I^K)^2/K$. The optimization is subject to the collateral constraint $D' \leq \alpha_K K' + \alpha_S S'$ (based on next-period capital), the dividend non-negativity constraint $\text{Div} \geq 0$, and the laws of motion for capital $K' = (1-\delta_K)K + I^K$ and $S' = (1-\delta_S)S + \Gamma(H^R)^\xi$. This step is computationally expensive as it requires searching over $n_{I^K} \times n_{H^R} \times n_{D'}$ choice combinations at each state point.
+where $\text{Div} = \Pi^*(z,K,S) - I^K - \text{AC}^K(I^K, K) - \text{AC}^S(\Delta S, S) - w_H H^R - R D_{-1} + D'$ includes adjustment costs $\text{AC}^K = (\phi_K/2)(I^K)^2/K$ and $\text{AC}^S = (\phi_S/2)(\Delta S)^2/S$. The optimization is subject to the collateral constraint $D' \leq \alpha_K K + \alpha_S S$ (based on current capital), the dividend non-negativity constraint $\text{Div} \geq 0$, and the laws of motion for capital $K' = (1-\delta_K)K + I^K$ and $S' = (1-\delta_S)S + \Gamma(H^R)^\xi$. This step is computationally expensive as it requires searching over $n_{I^K} \times n_{H^R} \times n_{D'}$ choice combinations at each state point.
 
 \paragraph{Policy Evaluation Step.} Between policy improvements, update the value function using the \emph{fixed} policy functions without re-optimization:
 \begin{equation}
@@ -1119,7 +1120,7 @@ where $L^d, H^d$ are aggregate labor demands from integrating over $\Psi$, and $
 
 \subsection{Implementation Details}
 
-The model is implemented in Fortran 90/95 for computational efficiency, using double precision arithmetic throughout. The adjustment cost parameter is set to $\phi_K = 2.0$ in the baseline calibration, consistent with estimates in the investment literature \citep{cooper2006dynamics}. Key numerical parameters:
+The model is implemented in Fortran 90/95 for computational efficiency, using double precision arithmetic throughout. Key numerical parameters:
 \begin{center}
 \begin{tabular}{lcc}
 \toprule
