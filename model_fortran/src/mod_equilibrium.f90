@@ -70,21 +70,23 @@ contains
 
         ! R&D labor grid: log-spaced for better resolution near zero
         ! This is critical because with xi < 1, optimal HR can be very small
-        ! Grid: {0, HR_min, ..., Hbar} with log spacing for positive values
+        ! Grid: {0, HR_min, ..., HR_max} with log spacing for positive values
+        ! Note: HR_max is decoupled from Hbar - individual firms CAN demand more
+        ! than aggregate supply; it's the weighted average that must clear.
         block
-            real(dp), parameter :: HR_min = 1.0e-4_dp  ! Smallest positive HR
+            real(dp), parameter :: HR_min_grid = 1.0e-4_dp  ! Smallest positive HR
             real(dp) :: log_ratio
 
             grid_HR(1) = 0.0_dp  ! Keep zero as an option
 
             if (nHR > 2) then
-                log_ratio = log(Hbar / HR_min)
+                log_ratio = log(HR_max / HR_min_grid)
                 do i = 2, nHR
-                    ! Log spacing from HR_min to Hbar
-                    grid_HR(i) = HR_min * exp(real(i-2, dp) / real(nHR-2, dp) * log_ratio)
+                    ! Log spacing from HR_min_grid to HR_max
+                    grid_HR(i) = HR_min_grid * exp(real(i-2, dp) / real(nHR-2, dp) * log_ratio)
                 end do
             else
-                grid_HR(2) = Hbar
+                grid_HR(2) = HR_max
             end if
         end block
 
@@ -103,10 +105,11 @@ contains
         print '(A,I4,A,F8.3,A,F8.3)', "    D grid: ", nD, " points, range [", &
             grid_D(1), ", ", grid_D(nD), "]"
         print *, ""
-        print *, "  HR grid (log-spaced for resolution near zero):"
+        print *, "  HR grid (log-spaced, max decoupled from Hbar):"
+        print '(A,F10.6,A,F10.6)', "    Range: [", grid_HR(1), ", ", grid_HR(nHR), "]"
         print '(A,F10.6,A,F10.6,A,F10.6,A,F10.6,A,F10.6)', "    First 5: ", &
             grid_HR(1), ", ", grid_HR(2), ", ", grid_HR(3), ", ", grid_HR(4), ", ", grid_HR(5)
-        print '(A,F10.6)', "    Last:    ", grid_HR(nHR)
+        print '(A,F10.6,A,F10.6)', "    Hbar (aggregate supply): ", Hbar, ", HR_max (per firm): ", HR_max
 
     end subroutine initialize_grids
 

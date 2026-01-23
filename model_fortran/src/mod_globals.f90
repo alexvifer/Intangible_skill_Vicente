@@ -54,7 +54,7 @@ module mod_globals
     ! Policy indices for local search optimization
     integer, allocatable :: pol_iIK(:,:,:,:)       ! Index of optimal I^K
     integer, allocatable :: pol_iHR(:,:,:,:)       ! Index of optimal H^R
-    integer, allocatable :: pol_iDp(:,:,:,:)       ! Index of optimal D'
+    integer, allocatable :: pol_iDp(:,:,:,:)       ! DEPRECATED: D' now computed analytically (kept for compatibility)
 
     !---------------------------------------------------------------------------
     ! PRECOMPUTED STATIC LABOR SOLUTIONS
@@ -168,9 +168,10 @@ contains
         pol_constr = .false.
 
         ! Initialize policy indices to middle of grids (for local search)
+        ! Note: pol_iDp deprecated (D' now computed analytically)
         pol_iIK = nIK / 2
         pol_iHR = nHR / 2
-        pol_iDp = nDprime / 2
+        pol_iDp = 1  ! Unused but kept for compatibility
 
         ! Initialize static arrays
         static_L = 0.0_dp

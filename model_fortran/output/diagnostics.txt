@@ -14,7 +14,7 @@ GRID INFORMATION:
 ]
   D grid: [    0.000000,     2.000000
 ]
-  HR grid: [    0.000000,     0.150000
+  HR grid: [    0.000000,     0.500000
 ]
  
 VALUE FUNCTION PROFILE (z=median, K=median, D=0):
@@ -136,11 +136,11 @@ POLICY FUNCTIONS AT MEDIAN STATE (z=median, K=median, S=median, D=0):
 POLICY FUNCTIONS AT ENTRY STATE (z=median, K=K_min, S=S_min, D=0):
   L:             0.112788
   HP:            0.010000
-  HR:            0.019672
+  HR:            0.018217
   I^K:           0.007895
   D':            0.000000
   K':            0.016895
-  S':            0.052207
+  S':            0.049287
   Y:             0.079298
   Profit:        0.026127
  
@@ -161,9 +161,9 @@ BUDGET CONSTRAINT AT ENTRY STATE:
   New borrowing (D'):                  0.000000
   Resources available:                 0.026127
   Tangible investment (I^K):           0.007895
-  R&D cost (wH*HR):                    0.015737
-  Total expenses:                      0.023632
-  Dividends (resources - expenses):    0.002495
+  R&D cost (wH*HR):                    0.014574
+  Total expenses:                      0.022468
+  Dividends (resources - expenses):    0.003658
  
 COLLATERAL CONSTRAINT AT ENTRY:
   alpha_K * K_min:                     0.003810

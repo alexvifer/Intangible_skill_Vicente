@@ -437,21 +437,26 @@ contains
     ! FUNCTION: collateral_constraint
     !
     ! DESCRIPTION:
-    !   Computes maximum borrowing: D ≤ αK*K + αS*S
+    !   Computes maximum borrowing using the literature timing convention:
+    !     d_{t+1} ≤ αK * k_{t+1} + αS * s_{t+1}
+    !
+    !   Debt taken in period t (to be repaid in t+1) is collateralized by
+    !   NEXT-PERIOD capital stocks. This function should be called with
+    !   (K', S') = next-period capital after investment decisions.
     !
     ! INPUTS:
-    !   K - Tangible capital
-    !   S - Intangible capital
+    !   Kprime - Next-period tangible capital (k_{t+1})
+    !   Sprime - Next-period intangible capital (s_{t+1})
     !
     ! OUTPUT:
-    !   Maximum debt
+    !   Maximum debt (d_{t+1})
     !===================================================================================
-    function collateral_constraint(K, S) result(D_max)
+    function collateral_constraint(Kprime, Sprime) result(D_max)
         implicit none
-        real(dp), intent(in) :: K, S
+        real(dp), intent(in) :: Kprime, Sprime
         real(dp) :: D_max
 
-        D_max = alpha_K * K + alpha_S * S
+        D_max = alpha_K * Kprime + alpha_S * Sprime
 
     end function collateral_constraint
 

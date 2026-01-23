@@ -107,12 +107,18 @@ module mod_parameters
 
     !---------------------------------------------------------------------------
     ! CHOICE GRIDS
-    ! Note: Keep these moderate to avoid excessive computation time
-    ! Total choice combinations per state = nIK * nHR * nDprime
+    ! Note: D' is now computed analytically (not grid search), so nDprime unused
+    ! Total choice combinations per state = nIK * nHR
     !---------------------------------------------------------------------------
-    integer, parameter :: nIK = 20                 ! Grid points for tangible investment (increased from 15)
-    integer, parameter :: nHR = 20                 ! Grid points for R&D labor (increased from 10)
-    integer, parameter :: nDprime = 20             ! Grid points for new debt (increased from 12)
+    integer, parameter :: nIK = 20                 ! Grid points for tangible investment
+    integer, parameter :: nHR = 20                 ! Grid points for R&D labor
+    integer, parameter :: nDprime = 20             ! Grid points for new debt (unused - kept for compatibility)
+
+    ! Maximum R&D labor per firm (decoupled from Hbar for proper optimization)
+    ! Individual firms CAN demand more than aggregate supply - it's the weighted
+    ! average that must clear. Setting HR_max > Hbar allows high-z firms to
+    ! optimally choose large R&D without artificial truncation.
+    real(dp), parameter :: HR_max = 0.50_dp        ! Max HR per firm (was Hbar=0.15)
 
     !---------------------------------------------------------------------------
     ! NUMERICAL PARAMETERS
