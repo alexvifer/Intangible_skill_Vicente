@@ -3,6 +3,7 @@
 !
 ! DESCRIPTION:
 !   Global variables, grids, and arrays for the model solution.
+!   OPTIMIZED VERSION: Added precomputed expected value arrays and sparse distribution.
 !
 ! AUTHOR: Generated for Vicente (2026) - Skill-Biased Stagnation Model
 !===================================================================================
@@ -36,6 +37,13 @@ module mod_globals
     real(dp), allocatable :: V(:,:,:,:)            ! (nz, nK, nS, nD)
     real(dp), allocatable :: V_new(:,:,:,:)        ! For iteration
 
+    !---------------------------------------------------------------------------
+    ! PRECOMPUTED EXPECTED VALUE (OPTIMIZATION)
+    ! EV(iz, iK, iS, iD) = sum_{iz'} Pi_z(iz, iz') * V(iz', iK, iS, iD)
+    ! This eliminates redundant computation in expect_V calls.
+    !---------------------------------------------------------------------------
+    real(dp), allocatable :: EV_grid(:,:,:,:)      ! (nz, nK, nS, nD)
+
     ! Policy functions
     real(dp), allocatable :: pol_Kprime(:,:,:,:)   ! K' choice
     real(dp), allocatable :: pol_Sprime(:,:,:,:)   ! S' choice
@@ -54,7 +62,7 @@ module mod_globals
     ! Policy indices for local search optimization
     integer, allocatable :: pol_iIK(:,:,:,:)       ! Index of optimal I^K
     integer, allocatable :: pol_iHR(:,:,:,:)       ! Index of optimal H^R
-    integer, allocatable :: pol_iDp(:,:,:,:)       ! DEPRECATED: D' now computed analytically (kept for compatibility)
+    integer, allocatable :: pol_iDp(:,:,:,:)       ! DEPRECATED: D' now computed analytically
 
     !---------------------------------------------------------------------------
     ! PRECOMPUTED STATIC LABOR SOLUTIONS
@@ -66,10 +74,22 @@ module mod_globals
     real(dp), allocatable :: static_Pi(:,:,:)      ! Gross profits Pi(z,K,S)
 
     !---------------------------------------------------------------------------
-    ! FIRM DISTRIBUTION
+    ! FIRM DISTRIBUTION - SPARSE REPRESENTATION (OPTIMIZATION)
+    ! Instead of storing full 4D array, track only active states.
     !---------------------------------------------------------------------------
     real(dp), allocatable :: dist(:,:,:,:)         ! Firm distribution Ψ(z,K,S,D)
     real(dp), allocatable :: dist_new(:,:,:,:)     ! For iteration
+
+    ! Sparse distribution structures
+    type :: sparse_state
+        integer :: iz, iK, iS, iD
+        real(dp) :: mass
+    end type sparse_state
+
+    type(sparse_state), allocatable :: active_states(:)
+    integer :: n_active_states
+    integer, parameter :: max_active_states = 200000  ! Max tracked states
+    real(dp), parameter :: mass_threshold = 1.0e-10_dp  ! Min mass to track
 
     !---------------------------------------------------------------------------
     ! EQUILIBRIUM PRICES AND QUANTITIES
@@ -133,6 +153,7 @@ contains
         ! Value and policy functions
         allocate(V(nz,nK,nS,nD))
         allocate(V_new(nz,nK,nS,nD))
+        allocate(EV_grid(nz,nK,nS,nD))  ! OPTIMIZATION: Precomputed expected values
         allocate(pol_Kprime(nz,nK,nS,nD))
         allocate(pol_Sprime(nz,nK,nS,nD))
         allocate(pol_Dprime(nz,nK,nS,nD))
@@ -156,19 +177,21 @@ contains
         allocate(static_Y(nz,nK,nS))
         allocate(static_Pi(nz,nK,nS))
 
-        ! Distribution
+        ! Distribution (both dense and sparse)
         allocate(dist(nz,nK,nS,nD))
         allocate(dist_new(nz,nK,nS,nD))
+        allocate(active_states(max_active_states))
 
         ! Initialize
         V = 0.0_dp
         V_new = 0.0_dp
+        EV_grid = 0.0_dp
         dist = 0.0_dp
         dist_new = 0.0_dp
         pol_constr = .false.
+        n_active_states = 0
 
         ! Initialize policy indices to middle of grids (for local search)
-        ! Note: pol_iDp deprecated (D' now computed analytically)
         pol_iIK = nIK / 2
         pol_iHR = nHR / 2
         pol_iDp = 1  ! Unused but kept for compatibility
@@ -180,6 +203,8 @@ contains
         static_Pi = 0.0_dp
 
         print *, "Arrays allocated successfully."
+        print '(A,F8.2,A)', "  Memory for V arrays: ~", &
+            real(3 * nz * nK * nS * nD * 8) / (1024.0_dp * 1024.0_dp), " MB"
 
     end subroutine allocate_arrays
 
@@ -195,13 +220,14 @@ contains
         deallocate(grid_z, grid_K, grid_S, grid_D)
         deallocate(Pi_z, stat_dist_z)
         deallocate(grid_IK, grid_HR, grid_Dprime)
-        deallocate(V, V_new)
+        deallocate(V, V_new, EV_grid)
         deallocate(pol_Kprime, pol_Sprime, pol_Dprime)
         deallocate(pol_IK, pol_HR, pol_L, pol_HP, pol_Y)
         deallocate(pol_mu, pol_lambda, pol_constr)
         deallocate(pol_iIK, pol_iHR, pol_iDp)
         deallocate(static_L, static_HP, static_Y, static_Pi)
         deallocate(dist, dist_new)
+        deallocate(active_states)
 
         print *, "Arrays deallocated successfully."
 

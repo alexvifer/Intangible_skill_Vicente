@@ -34,7 +34,7 @@ set more off
 set maxvar 10000
 
 * SET YOUR ROOT DIRECTORY HERE
-global rootdir "C:\Users\alexv\OneDrive\Documentos\3-Papers\Intangible_skill_Vicente\QP_SCIE"
+global rootdir "C:\Users\alexv\OneDrive\Documentos\3-Papers\Vicente_Intangible_skill\QP_SCIE"
 
 * Verify directory exists
 capture cd "$rootdir"

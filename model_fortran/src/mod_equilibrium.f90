@@ -46,10 +46,12 @@ contains
         end do
 
         !-----------------------------------------------------------------------
-        ! Intangible capital grid
+        ! Intangible capital grid (FIX #1: log-spaced like K grid)
+        ! With CES complements (rho_Q < 0), marginal products are very high
+        ! near S_min. Log-spacing provides better resolution where it matters.
         !-----------------------------------------------------------------------
         do i = 1, nS
-            grid_S(i) = S_min + (S_max - S_min) * real(i-1, dp) / real(nS-1, dp)
+            grid_S(i) = S_min * exp(real(i-1, dp) / real(nS-1, dp) * log(S_max / S_min))
         end do
 
         !-----------------------------------------------------------------------
@@ -68,25 +70,42 @@ contains
             grid_IK(i) = -delta_K * K_max * 0.50_dp + step * (K_max * 0.20_dp)
         end do
 
-        ! R&D labor grid: log-spaced for better resolution near zero
-        ! This is critical because with xi < 1, optimal HR can be very small
-        ! Grid: {0, HR_min, ..., HR_max} with log spacing for positive values
-        ! Note: HR_max is decoupled from Hbar - individual firms CAN demand more
-        ! than aggregate supply; it's the weighted average that must clear.
+        ! FIX #7: R&D labor grid with extra fine resolution at low values
+        ! With xi < 1, the R&D production function has high curvature near zero,
+        ! so we need many points there. We use a two-segment approach:
+        !   - First half of grid points: cover [0, HR_threshold] with log spacing
+        !   - Second half: cover [HR_threshold, HR_max] with log spacing
+        ! This ensures good resolution both at very low HR and at moderate HR.
         block
-            real(dp), parameter :: HR_min_grid = 1.0e-4_dp  ! Smallest positive HR
+            real(dp), parameter :: HR_min_grid = 1.0e-5_dp  ! Smallest positive HR (finer than before)
+            real(dp), parameter :: HR_threshold = 0.02_dp   ! Transition point
             real(dp) :: log_ratio
+            integer :: n_low, n_high
 
             grid_HR(1) = 0.0_dp  ! Keep zero as an option
 
-            if (nHR > 2) then
-                log_ratio = log(HR_max / HR_min_grid)
-                do i = 2, nHR
-                    ! Log spacing from HR_min_grid to HR_max
-                    grid_HR(i) = HR_min_grid * exp(real(i-2, dp) / real(nHR-2, dp) * log_ratio)
+            if (nHR > 4) then
+                ! Split grid: more points in low range
+                n_low = (nHR * 2) / 3    ! 2/3 of points in low range
+                n_high = nHR - n_low
+
+                ! Low range: log spacing from HR_min_grid to HR_threshold
+                log_ratio = log(HR_threshold / HR_min_grid)
+                do i = 2, n_low
+                    grid_HR(i) = HR_min_grid * exp(real(i-2, dp) / real(n_low-2, dp) * log_ratio)
+                end do
+
+                ! High range: log spacing from HR_threshold to HR_max
+                log_ratio = log(HR_max / HR_threshold)
+                do i = n_low + 1, nHR
+                    grid_HR(i) = HR_threshold * exp(real(i-n_low-1, dp) / real(n_high-1, dp) * log_ratio)
                 end do
             else
-                grid_HR(2) = HR_max
+                ! Fallback for very small nHR
+                log_ratio = log(HR_max / HR_min_grid)
+                do i = 2, nHR
+                    grid_HR(i) = HR_min_grid * exp(real(i-2, dp) / real(nHR-2, dp) * log_ratio)
+                end do
             end if
         end block
 
@@ -215,12 +234,21 @@ contains
         print *, "SOLVING FOR EQUILIBRIUM"
         print *, "======================================"
 
+        ! Report counterfactual mode status
+        if (remove_collateral_constraint) then
+            print *, ""
+            print *, "  *** COUNTERFACTUAL MODE: λ = 0 FOR ALL FIRMS ***"
+            print *, "  Collateral constraint removed (unlimited borrowing)."
+            print *, "  This is the 'first-best' / 'no frictions' benchmark."
+            print *, ""
+        end if
+
         ! Start timing for equilibrium iterations
         call cpu_time(time_start)
 
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.40050_dp
-        wH = 0.80_dp
+        wL = 0.58050_dp
+        wH = 0.84_dp
 
         do iter_outer = 1, maxiter_eq
 
@@ -234,10 +262,10 @@ contains
             ! Solve firm problem given wages
             call solve_firm_problem()
 
-            ! Compute stationary distribution
-            call compute_stationary_distribution()
+            ! Compute stationary distribution (using optimized sparse method)
+            call compute_stationary_distribution_sparse()
 
-            ! Compute aggregates
+            ! Compute aggregates (OpenMP parallelized)
             call compute_aggregates()
 
             ! Check labor market clearing
@@ -370,6 +398,9 @@ contains
         ! Also save diagnostics to file
         call save_diagnostics_to_file()
 
+        ! FIX #9: Save policy functions for debugging
+        call save_policy_functions()
+
     end subroutine save_results
 
     !===================================================================================
@@ -411,18 +442,19 @@ contains
         write(unit_diag, *)
 
         ! Value function profile in S
+        ! FIX #4: Use E-format for V to handle large/small values without overflow
         write(unit_diag, '(A)') 'VALUE FUNCTION PROFILE (z=median, K=median, D=0):'
-        write(unit_diag, '(A)') '  iS        S           V'
+        write(unit_diag, '(A)') '  iS        S              V'
         do iS = 1, nS
-            write(unit_diag, '(I5, 2F14.6)') iS, grid_S(iS), V((nz+1)/2, (nK+1)/2, iS, 1)
+            write(unit_diag, '(I5, F12.6, ES16.6)') iS, grid_S(iS), V((nz+1)/2, (nK+1)/2, iS, 1)
         end do
         write(unit_diag, *)
 
         ! Value function profile in K
         write(unit_diag, '(A)') 'VALUE FUNCTION PROFILE (z=median, S=median, D=0):'
-        write(unit_diag, '(A)') '  iK        K           V'
+        write(unit_diag, '(A)') '  iK        K              V'
         do iK = 1, nK
-            write(unit_diag, '(I5, 2F14.6)') iK, grid_K(iK), V((nz+1)/2, iK, (nS+1)/2, 1)
+            write(unit_diag, '(I5, F12.6, ES16.6)') iK, grid_K(iK), V((nz+1)/2, iK, (nS+1)/2, 1)
         end do
         write(unit_diag, *)
 
@@ -453,18 +485,19 @@ contains
         write(unit_diag, *)
 
         ! R&D profitability analysis
+        ! FIX #4: Use E-format for values that may be large
         write(unit_diag, '(A)') 'R&D PROFITABILITY ANALYSIS:'
         V_S_estimate = (V((nz+1)/2, (nK+1)/2, 5, 1) - V((nz+1)/2, (nK+1)/2, 1, 1)) / (grid_S(5) - grid_S(1))
-        write(unit_diag, '(A,F12.6)') '  Estimated dV/dS:                 ', V_S_estimate
+        write(unit_diag, '(A,ES16.6)') '  Estimated dV/dS:                 ', V_S_estimate
         write(unit_diag, '(A,F12.6)') '  wH (cost per HR):                ', wH
         write(unit_diag, '(A,F12.6)') '  Gamma_RD:                        ', Gamma_RD
         write(unit_diag, '(A,F12.6)') '  xi:                              ', xi
         write(unit_diag, '(A,F12.6)') '  beta*(1-zeta):                   ', beta * (1.0_dp - zeta)
         write(unit_diag, '(A,F12.6)') '  At HR=0.01, dS = Gamma*HR^xi:    ', Gamma_RD * 0.01_dp**xi
-        write(unit_diag, '(A,F12.6)') '  Marginal benefit at HR=0.01:     ', &
+        write(unit_diag, '(A,ES16.6)') '  Marginal benefit at HR=0.01:     ', &
               beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * xi * 0.01_dp**(xi - 1.0_dp)
         write(unit_diag, '(A,F12.6)') '  Marginal cost (wH):              ', wH
-        write(unit_diag, '(A,F12.6)') '  Net marginal benefit:            ', &
+        write(unit_diag, '(A,ES16.6)') '  Net marginal benefit:            ', &
               beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * xi * 0.01_dp**(xi - 1.0_dp) - wH
         write(unit_diag, *)
 
@@ -500,5 +533,216 @@ contains
         print *, "  output/diagnostics.txt"
 
     end subroutine save_diagnostics_to_file
+
+    !===================================================================================
+    ! SUBROUTINE: save_policy_functions  (FIX #9)
+    !
+    ! DESCRIPTION:
+    !   Saves policy functions to CSV files for debugging and plotting.
+    !   Creates separate files for different cross-sections:
+    !     - policies_by_K.csv: policies as function of K (at median z, S, D=0)
+    !     - policies_by_S.csv: policies as function of S (at median z, K, D=0)
+    !     - policies_by_z.csv: policies as function of z (at median K, S, D=0)
+    !===================================================================================
+    subroutine save_policy_functions()
+        implicit none
+        integer :: unit_pol, ios
+        integer :: iz, iK, iS, iD
+        integer :: iz_med, iK_med, iS_med
+
+        print *, ""
+        print *, "Saving policy functions..."
+
+        ! Median indices
+        iz_med = (nz + 1) / 2
+        iK_med = (nK + 1) / 2
+        iS_med = (nS + 1) / 2
+        iD = 1  ! D = 0
+
+        ! Policy functions by K (at median z, S, D=0)
+        open(newunit=unit_pol, file='output/policies_by_K.csv', status='replace', iostat=ios)
+        if (ios == 0) then
+            write(unit_pol, '(A)') 'K,V,L,HP,HR,IK,Kprime,Sprime,Dprime,Y,constrained'
+            do iK = 1, nK
+                write(unit_pol, '(10(ES14.6,","),I1)') &
+                    grid_K(iK), V(iz_med, iK, iS_med, iD), &
+                    pol_L(iz_med, iK, iS_med, iD), pol_HP(iz_med, iK, iS_med, iD), &
+                    pol_HR(iz_med, iK, iS_med, iD), pol_IK(iz_med, iK, iS_med, iD), &
+                    pol_Kprime(iz_med, iK, iS_med, iD), pol_Sprime(iz_med, iK, iS_med, iD), &
+                    pol_Dprime(iz_med, iK, iS_med, iD), pol_Y(iz_med, iK, iS_med, iD), &
+                    merge(1, 0, pol_constr(iz_med, iK, iS_med, iD))
+            end do
+            close(unit_pol)
+            print *, "  output/policies_by_K.csv"
+        end if
+
+        ! Policy functions by S (at median z, K, D=0)
+        open(newunit=unit_pol, file='output/policies_by_S.csv', status='replace', iostat=ios)
+        if (ios == 0) then
+            write(unit_pol, '(A)') 'S,V,L,HP,HR,IK,Kprime,Sprime,Dprime,Y,constrained'
+            do iS = 1, nS
+                write(unit_pol, '(10(ES14.6,","),I1)') &
+                    grid_S(iS), V(iz_med, iK_med, iS, iD), &
+                    pol_L(iz_med, iK_med, iS, iD), pol_HP(iz_med, iK_med, iS, iD), &
+                    pol_HR(iz_med, iK_med, iS, iD), pol_IK(iz_med, iK_med, iS, iD), &
+                    pol_Kprime(iz_med, iK_med, iS, iD), pol_Sprime(iz_med, iK_med, iS, iD), &
+                    pol_Dprime(iz_med, iK_med, iS, iD), pol_Y(iz_med, iK_med, iS, iD), &
+                    merge(1, 0, pol_constr(iz_med, iK_med, iS, iD))
+            end do
+            close(unit_pol)
+            print *, "  output/policies_by_S.csv"
+        end if
+
+        ! Policy functions by z (at median K, S, D=0)
+        open(newunit=unit_pol, file='output/policies_by_z.csv', status='replace', iostat=ios)
+        if (ios == 0) then
+            write(unit_pol, '(A)') 'z,V,L,HP,HR,IK,Kprime,Sprime,Dprime,Y,constrained'
+            do iz = 1, nz
+                write(unit_pol, '(10(ES14.6,","),I1)') &
+                    grid_z(iz), V(iz, iK_med, iS_med, iD), &
+                    pol_L(iz, iK_med, iS_med, iD), pol_HP(iz, iK_med, iS_med, iD), &
+                    pol_HR(iz, iK_med, iS_med, iD), pol_IK(iz, iK_med, iS_med, iD), &
+                    pol_Kprime(iz, iK_med, iS_med, iD), pol_Sprime(iz, iK_med, iS_med, iD), &
+                    pol_Dprime(iz, iK_med, iS_med, iD), pol_Y(iz, iK_med, iS_med, iD), &
+                    merge(1, 0, pol_constr(iz, iK_med, iS_med, iD))
+            end do
+            close(unit_pol)
+            print *, "  output/policies_by_z.csv"
+        end if
+
+        ! FIX #10: Full policy grid at D=0 for 3D plotting
+        ! Format: z, K, S, V, HR, IK, constrained
+        open(newunit=unit_pol, file='output/policies_3D.csv', status='replace', iostat=ios)
+        if (ios == 0) then
+            write(unit_pol, '(A)') 'iz,iK,iS,z,K,S,V,HR,IK,Sprime,constrained'
+            do iz = 1, nz
+                do iK = 1, nK
+                    do iS = 1, nS
+                        write(unit_pol, '(3(I4,","),7(ES14.6,","),I1)') &
+                            iz, iK, iS, grid_z(iz), grid_K(iK), grid_S(iS), &
+                            V(iz, iK, iS, 1), pol_HR(iz, iK, iS, 1), &
+                            pol_IK(iz, iK, iS, 1), pol_Sprime(iz, iK, iS, 1), &
+                            merge(1, 0, pol_constr(iz, iK, iS, 1))
+                    end do
+                end do
+            end do
+            close(unit_pol)
+            print *, "  output/policies_3D.csv (for 3D plotting)"
+        end if
+
+    end subroutine save_policy_functions
+
+    !===================================================================================
+    ! SUBROUTINE: compute_euler_errors  (FIX #8)
+    !
+    ! DESCRIPTION:
+    !   Computes Euler equation errors to assess solution accuracy.
+    !   For interior solutions, the FOC for tangible investment is:
+    !     1 + phi_K * (I^K/K) = beta*(1-zeta)*E[dV/dK']
+    !
+    !   The Euler error is: |LHS - RHS| / LHS
+    !   Reports mean, max, and distribution of errors across states.
+    !===================================================================================
+    subroutine compute_euler_errors()
+        use mod_interpolation
+        implicit none
+        integer :: iz, iK, iS, iD, n_interior
+        real(dp) :: K_val, S_val, Kprime, Sprime, Dprime, IK_val
+        real(dp) :: LHS, RHS, euler_error
+        real(dp) :: sum_error, max_error, mean_error
+        real(dp) :: V_Kp_plus, V_Kp_minus, dV_dKp
+        real(dp) :: dK_step, EV_plus, EV_minus
+        integer :: unit_euler, ios
+
+        print *, ""
+        print *, "Computing Euler equation errors..."
+
+        sum_error = 0.0_dp
+        max_error = 0.0_dp
+        n_interior = 0
+
+        ! Small step for numerical derivative
+        dK_step = 0.01_dp * (K_max - K_min)
+
+        do iz = 1, nz
+            do iK = 2, nK-1  ! Interior points only
+                do iS = 2, nS-1
+                    do iD = 1, nD
+
+                        ! Skip if at boundary or very low mass
+                        if (dist(iz, iK, iS, iD) < 1.0e-8_dp) cycle
+
+                        K_val = grid_K(iK)
+                        S_val = grid_S(iS)
+                        Kprime = pol_Kprime(iz, iK, iS, iD)
+                        Sprime = pol_Sprime(iz, iK, iS, iD)
+                        Dprime = pol_Dprime(iz, iK, iS, iD)
+                        IK_val = pol_IK(iz, iK, iS, iD)
+
+                        ! Skip if at investment bounds (corner solution)
+                        if (abs(IK_val - grid_IK(1)) < epsilon .or. &
+                            abs(IK_val - grid_IK(nIK)) < epsilon) cycle
+
+                        ! Skip if constrained (Euler doesn't hold with equality)
+                        if (pol_constr(iz, iK, iS, iD)) cycle
+
+                        n_interior = n_interior + 1
+
+                        ! LHS: 1 + adjustment cost derivative
+                        if (K_val > epsilon) then
+                            LHS = 1.0_dp + phi_K * (IK_val / K_val)
+                        else
+                            LHS = 1.0_dp
+                        end if
+
+                        ! RHS: beta*(1-zeta)*E[dV/dK']
+                        ! Approximate dV/dK' numerically
+                        EV_plus = expect_V(iz, min(Kprime + dK_step, K_max), Sprime, Dprime)
+                        EV_minus = expect_V(iz, max(Kprime - dK_step, K_min), Sprime, Dprime)
+                        dV_dKp = (EV_plus - EV_minus) / (2.0_dp * dK_step)
+
+                        RHS = beta * (1.0_dp - zeta) * dV_dKp
+
+                        ! Euler error (relative)
+                        if (abs(LHS) > epsilon) then
+                            euler_error = abs(LHS - RHS) / abs(LHS)
+                        else
+                            euler_error = abs(LHS - RHS)
+                        end if
+
+                        sum_error = sum_error + euler_error
+                        max_error = max(max_error, euler_error)
+
+                    end do
+                end do
+            end do
+        end do
+
+        if (n_interior > 0) then
+            mean_error = sum_error / real(n_interior, dp)
+        else
+            mean_error = 0.0_dp
+        end if
+
+        print '(A,I8)', "  Interior points checked: ", n_interior
+        print '(A,ES12.4)', "  Mean Euler error:        ", mean_error
+        print '(A,ES12.4)', "  Max Euler error:         ", max_error
+
+        ! Save to file
+        open(newunit=unit_euler, file='output/euler_errors.txt', status='replace', iostat=ios)
+        if (ios == 0) then
+            write(unit_euler, '(A)') 'EULER EQUATION ERROR DIAGNOSTICS'
+            write(unit_euler, '(A)') '================================'
+            write(unit_euler, '(A,I8)') 'Interior points checked: ', n_interior
+            write(unit_euler, '(A,ES16.6)') 'Mean Euler error:        ', mean_error
+            write(unit_euler, '(A,ES16.6)') 'Max Euler error:         ', max_error
+            write(unit_euler, *)
+            write(unit_euler, '(A)') 'Note: Euler error = |1 + phi*(I/K) - beta*(1-zeta)*E[dV/dK'']| / LHS'
+            write(unit_euler, '(A)') 'Good accuracy: mean < 0.01, max < 0.05'
+            close(unit_euler)
+            print *, "  output/euler_errors.txt"
+        end if
+
+    end subroutine compute_euler_errors
 
 end module mod_equilibrium

@@ -74,6 +74,17 @@ module mod_parameters
     ! Note: alpha_S < alpha_K creates pecking-order distortion
 
     !---------------------------------------------------------------------------
+    ! COUNTERFACTUAL: NO FINANCIAL CONSTRAINTS
+    ! When true, sets λ=0 for all firms (collateral constraint never binds).
+    ! This removes the constraint entirely from the optimization, allowing
+    ! unlimited borrowing. Use this for the "first-best" benchmark.
+    ! NOTE: This is different from setting alpha=1, which still limits
+    ! borrowing to collateral value. Young/productive firms with little
+    ! collateral can still be constrained under alpha=1.
+    !---------------------------------------------------------------------------
+    logical, parameter :: remove_collateral_constraint = .false.
+
+    !---------------------------------------------------------------------------
     ! PRODUCTIVITY PROCESS (AR(1) in logs)
     !---------------------------------------------------------------------------
     ! log(z') = ρz * log(z) + σz * ε,  ε ~ N(0,1)
@@ -99,19 +110,19 @@ module mod_parameters
     ! Note: S_min > 0 required for numerical stability with CES complements (rho < 0)
     ! Using small S_min to avoid "free intangibles" from grid bound clamping
     real(dp), parameter :: K_min = 0.01_dp
-    real(dp), parameter :: K_max = 3.0_dp
+    real(dp), parameter :: K_max = 2.0_dp
     real(dp), parameter :: S_min = 0.01_dp         ! Small but positive for CES stability
-    real(dp), parameter :: S_max = 3.0_dp
+    real(dp), parameter :: S_max = 1.6_dp
     real(dp), parameter :: D_min = 0.0_dp
-    real(dp), parameter :: D_max = 2.0_dp
+    real(dp), parameter :: D_max = 0.8_dp
 
     !---------------------------------------------------------------------------
     ! CHOICE GRIDS
     ! Note: D' is now computed analytically (not grid search), so nDprime unused
     ! Total choice combinations per state = nIK * nHR
     !---------------------------------------------------------------------------
-    integer, parameter :: nIK = 20                 ! Grid points for tangible investment
-    integer, parameter :: nHR = 20                 ! Grid points for R&D labor
+    integer, parameter :: nIK = 30                 ! Grid points for tangible investment
+    integer, parameter :: nHR = 30                 ! Grid points for R&D labor
     integer, parameter :: nDprime = 20             ! Grid points for new debt (unused - kept for compatibility)
 
     ! Maximum R&D labor per firm (decoupled from Hbar for proper optimization)
@@ -123,9 +134,9 @@ module mod_parameters
     !---------------------------------------------------------------------------
     ! NUMERICAL PARAMETERS
     !---------------------------------------------------------------------------
-    real(dp), parameter :: tol_VFI = 1.0e-3_dp     ! Tolerance for value function iteration
-    real(dp), parameter :: tol_dist = 1.0e-3_dp    ! Tolerance for distribution
-    real(dp), parameter :: tol_eq = 1.5e-1_dp      ! Tolerance for equilibrium
+    real(dp), parameter :: tol_VFI = 1.0e-4_dp     ! Tolerance for value function iteration
+    real(dp), parameter :: tol_dist = 1.0e-4_dp    ! Tolerance for distribution
+    real(dp), parameter :: tol_eq = 0.5e-1_dp      ! Tolerance for equilibrium
     integer, parameter :: maxiter_VFI = 3000       ! Max iterations for VFI (increased from 2000)
     integer, parameter :: maxiter_dist = 5000      ! Max iterations for distribution
     integer, parameter :: maxiter_eq = 300         ! Max iterations for equilibrium (increased from 100)

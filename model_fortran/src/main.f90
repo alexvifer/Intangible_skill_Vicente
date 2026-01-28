@@ -2,7 +2,7 @@
 ! PROGRAM: main
 !
 ! DESCRIPTION:
-!   Main program for solving Vicente (2026) heterogeneous firm model with
+!   Main program for solving Vicente (2026) heterogeneous firms' model with
 !   intangible capital and financial frictions.
 !
 !   Model features:
@@ -39,7 +39,7 @@ program main
     ! Print header
     print *, ""
     print *, "=========================================================================="
-    print *, "   HETEROGENEOUS FIRM MODEL WITH INTANGIBLE CAPITAL"
+    print *, "   HETEROGENEOUS FIRMS' MODEL WITH INTANGIBLE CAPITAL"
     print *, "   Financial Frictions and Skill-Biased Stagnation"
     print *, ""
     print *, "   Author: Alejandro Vicente"
@@ -119,7 +119,10 @@ program main
     ! Compute and display detailed distribution diagnostics
     call compute_distribution_diagnostics()
 
-    ! Save results to files
+    ! FIX #8: Compute Euler equation errors to assess solution accuracy
+    call compute_euler_errors()
+
+    ! Save results to files (includes policy functions from FIX #9)
     call save_results()
 
     !---------------------------------------------------------------------------

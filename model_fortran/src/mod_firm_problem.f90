@@ -27,6 +27,10 @@ module mod_firm_problem
     ! Local search radius (search ± this many grid points around previous optimum)
     integer, parameter :: local_search_radius = 3
 
+    ! FIX #6: Frequency of full grid search reset (to escape local optima)
+    ! Every full_search_freq policy improvement iterations, do a full grid search
+    integer, parameter :: full_search_freq = 50
+
 contains
 
     !===================================================================================
@@ -100,67 +104,149 @@ contains
     ! DESCRIPTION:
     !   Solves for optimal static labor choices (L, HP) given state and wages.
     !   FOCs: ∂Y/∂L = wL,  ∂Y/∂HP = wH
+    !
+    !   FIX #5: Uses nested bisection for robustness.
+    !   For each L, solve for HP via bisection (MPH(L,HP) = wH).
+    !   Then bisect on L to find MPL(L,HP*(L)) = wL.
+    !   This avoids the instability of multiplicative updates.
     !===================================================================================
     subroutine solve_static_labor(z, K, S, wL_in, wH_in, L_opt, HP_opt, Y_opt)
         implicit none
         real(dp), intent(in) :: z, K, S, wL_in, wH_in
         real(dp), intent(out) :: L_opt, HP_opt, Y_opt
-        real(dp) :: L_try, HP_try, MPL, MPHP
-        real(dp) :: L_new, HP_new
-        real(dp) :: L_low, L_high, HP_low, HP_high
-        real(dp) :: tol_labor, dampen
-        integer :: iter, maxiter_labor
-        logical :: converged
+        real(dp) :: L_lo, L_hi, L_mid, HP_star
+        real(dp) :: MPL_lo, MPL_hi, MPL_mid
+        real(dp) :: tol_labor
+        integer :: iter_L, maxiter_bisect
 
-        tol_labor = 1.0e-5_dp
-        maxiter_labor = 200
-        dampen = 0.3_dp
+        tol_labor = 1.0e-6_dp
+        maxiter_bisect = 50
 
-        L_try = 0.30_dp
-        HP_try = 0.15_dp
+        ! Bounds for L (unskilled labor)
+        L_lo = 0.001_dp
+        L_hi = 10.0_dp
 
-        L_low = 0.01_dp
-        L_high = 2.0_dp
-        HP_low = 0.01_dp
-        HP_high = 1.0_dp
+        ! Check that bounds bracket the solution
+        ! MPL is decreasing in L, so MPL(L_lo) > wL and MPL(L_hi) < wL typically
+        call solve_HP_given_L(z, K, S, L_lo, wH_in, HP_star)
+        MPL_lo = marginal_product_L(z, K, S, L_lo, HP_star)
 
-        converged = .false.
-        do iter = 1, maxiter_labor
-            MPL = marginal_product_L(z, K, S, L_try, HP_try)
-            MPHP = marginal_product_HP(z, K, S, L_try, HP_try)
+        call solve_HP_given_L(z, K, S, L_hi, wH_in, HP_star)
+        MPL_hi = marginal_product_L(z, K, S, L_hi, HP_star)
 
-            if (isnan(MPL) .or. isnan(MPHP) .or. MPL > 1.0e10_dp .or. MPHP > 1.0e10_dp) then
-                L_opt = L_low
-                HP_opt = HP_low
+        ! Handle edge cases where solution is at boundary
+        if (MPL_lo <= wL_in) then
+            L_opt = L_lo
+            call solve_HP_given_L(z, K, S, L_opt, wH_in, HP_opt)
+            Y_opt = production_Y(z, K, S, L_opt, HP_opt)
+            return
+        end if
+
+        if (MPL_hi >= wL_in) then
+            L_opt = L_hi
+            call solve_HP_given_L(z, K, S, L_opt, wH_in, HP_opt)
+            Y_opt = production_Y(z, K, S, L_opt, HP_opt)
+            return
+        end if
+
+        ! Bisection on L
+        do iter_L = 1, maxiter_bisect
+            L_mid = 0.5_dp * (L_lo + L_hi)
+
+            ! For this L, find optimal HP
+            call solve_HP_given_L(z, K, S, L_mid, wH_in, HP_star)
+
+            ! Evaluate MPL at (L_mid, HP_star)
+            MPL_mid = marginal_product_L(z, K, S, L_mid, HP_star)
+
+            if (abs(MPL_mid - wL_in) < tol_labor * wL_in .or. (L_hi - L_lo) < tol_labor) then
+                L_opt = L_mid
+                HP_opt = HP_star
                 Y_opt = production_Y(z, K, S, L_opt, HP_opt)
                 return
             end if
 
-            L_new = L_try * (MPL / (wL_in + epsilon))**dampen
-            HP_new = HP_try * (MPHP / (wH_in + epsilon))**dampen
-
-            L_new = max(L_low, min(L_high, L_new))
-            HP_new = max(HP_low, min(HP_high, HP_new))
-
-            if (abs(L_new - L_try) < tol_labor .and. abs(HP_new - HP_try) < tol_labor) then
-                converged = .true.
-                L_opt = L_new
-                HP_opt = HP_new
-                exit
+            ! MPL is decreasing in L, so:
+            ! If MPL_mid > wL_in, L is too low -> increase L_lo
+            ! If MPL_mid < wL_in, L is too high -> decrease L_hi
+            if (MPL_mid > wL_in) then
+                L_lo = L_mid
+            else
+                L_hi = L_mid
             end if
-
-            L_try = L_new
-            HP_try = HP_new
         end do
 
-        if (.not. converged) then
-            L_opt = L_try
-            HP_opt = HP_try
-        end if
-
+        ! Return best guess if not converged
+        L_opt = L_mid
+        HP_opt = HP_star
         Y_opt = production_Y(z, K, S, L_opt, HP_opt)
 
     end subroutine solve_static_labor
+
+    !===================================================================================
+    ! SUBROUTINE: solve_HP_given_L
+    !
+    ! DESCRIPTION:
+    !   Given L, solves for HP such that MPH(L,HP) = wH using bisection.
+    !   This is the inner loop of the nested bisection algorithm.
+    !===================================================================================
+    subroutine solve_HP_given_L(z, K, S, L_val, wH_in, HP_opt)
+        implicit none
+        real(dp), intent(in) :: z, K, S, L_val, wH_in
+        real(dp), intent(out) :: HP_opt
+        real(dp) :: HP_lo, HP_hi, HP_mid
+        real(dp) :: MPH_lo, MPH_hi, MPH_mid
+        real(dp) :: tol_labor
+        integer :: iter, maxiter_bisect
+
+        tol_labor = 1.0e-6_dp
+        maxiter_bisect = 40
+
+        ! Bounds for HP (skilled production labor)
+        HP_lo = 0.001_dp
+        HP_hi = 5.0_dp
+
+        ! Check bounds
+        MPH_lo = marginal_product_HP(z, K, S, L_val, HP_lo)
+        MPH_hi = marginal_product_HP(z, K, S, L_val, HP_hi)
+
+        ! Handle edge cases
+        if (MPH_lo <= wH_in .or. isnan(MPH_lo)) then
+            HP_opt = HP_lo
+            return
+        end if
+
+        if (MPH_hi >= wH_in) then
+            HP_opt = HP_hi
+            return
+        end if
+
+        ! Bisection on HP
+        do iter = 1, maxiter_bisect
+            HP_mid = 0.5_dp * (HP_lo + HP_hi)
+            MPH_mid = marginal_product_HP(z, K, S, L_val, HP_mid)
+
+            if (isnan(MPH_mid)) then
+                HP_lo = HP_mid
+                cycle
+            end if
+
+            if (abs(MPH_mid - wH_in) < tol_labor * wH_in .or. (HP_hi - HP_lo) < tol_labor) then
+                HP_opt = HP_mid
+                return
+            end if
+
+            ! MPH is decreasing in HP
+            if (MPH_mid > wH_in) then
+                HP_lo = HP_mid
+            else
+                HP_hi = HP_mid
+            end if
+        end do
+
+        HP_opt = HP_mid
+
+    end subroutine solve_HP_given_L
 
     !===================================================================================
     ! SUBROUTINE: precompute_static_labor
@@ -233,10 +319,17 @@ contains
         real(dp) :: resources_before_D, expenses, dividends, financing_gap
         real(dp) :: D_max_coll, EV
         real(dp) :: AC_K_val, AC_S_val
-        real(dp) :: EV_invest, V_invest_best  ! For tracking best investment value
-        logical :: best_is_infeasible          ! Whether best investment choice is infeasible
+        real(dp) :: EV_invest                  ! Continuation value component
+        logical :: constraint_binds            ! Whether collateral constraint binds at optimal choice
+        real(dp) :: V_unconstrained_best       ! Best value ignoring feasibility (for constraint detection)
+        logical :: unconstrained_is_infeasible ! Whether unconstrained optimum is infeasible
 
-        ! First, precompute static labor solutions
+        ! OPTIMIZATION: Precompute expected value grid ONCE per VFI iteration
+        ! This moves the O(nz) summation outside the choice loop
+        ! Speedup: ~11x for expect_V calls
+        call precompute_EV_grid()
+
+        ! Precompute static labor solutions
         call precompute_static_labor()
 
         ! Loop over state space with OpenMP parallelization
@@ -247,7 +340,8 @@ contains
         !$OMP&         best_iIK, best_iHR, IK_choice, HR_choice, Dp_choice, &
         !$OMP&         Kprime, Sprime, inv_S, resources_before_D, expenses, dividends, &
         !$OMP&         financing_gap, D_max_coll, EV, AC_K_val, AC_S_val, &
-        !$OMP&         EV_invest, V_invest_best, best_is_infeasible) &
+        !$OMP&         EV_invest, constraint_binds, V_unconstrained_best, &
+        !$OMP&         unconstrained_is_infeasible) &
         !$OMP& SCHEDULE(dynamic)
         do iz = 1, nz
             do iK = 1, nK
@@ -293,10 +387,12 @@ contains
                         best_iIK = iIK_lo
                         best_iHR = iHR_lo
 
-                        ! For constraint detection: track best INVESTMENT value (ignoring dividends)
-                        ! A firm is constrained if its best investment choice is infeasible
-                        V_invest_best = -1.0e10_dp
-                        best_is_infeasible = .false.
+                        ! For constraint detection: track whether the UNCONSTRAINED optimum
+                        ! (highest value ignoring feasibility) is infeasible.
+                        ! A firm is constrained (λ > 0) when it WOULD choose a higher
+                        ! investment level but CAN'T due to the collateral constraint.
+                        V_unconstrained_best = -1.0e10_dp
+                        unconstrained_is_infeasible = .false.
 
                         ! Grid search over (I^K, H^R) - D' computed analytically
                         do iIK = iIK_lo, iIK_hi
@@ -321,8 +417,16 @@ contains
                                 ! Debt taken today (D') is collateralized by NEXT-PERIOD capital
                                 ! (K', S'). This means investment decisions directly affect
                                 ! borrowing capacity within the same period.
+                                !
+                                ! COUNTERFACTUAL (λ=0): When remove_collateral_constraint=.true.,
+                                ! set D_max_coll to effectively infinity, allowing unlimited
+                                ! borrowing. This is the proper "no frictions" benchmark.
                                 ! ============================================================
-                                D_max_coll = collateral_constraint(Kprime, Sprime)
+                                if (remove_collateral_constraint) then
+                                    D_max_coll = 1.0e10_dp  ! Effectively infinite borrowing
+                                else
+                                    D_max_coll = collateral_constraint(Kprime, Sprime)
+                                end if
 
                                 ! Compute adjustment costs (0 if phi_K=0 or phi_S=0)
                                 AC_K_val = adjustment_cost_K(IK_choice, K_val)
@@ -355,20 +459,25 @@ contains
                                 ! Compute continuation value for this investment choice
                                 EV = expect_V(iz, Kprime, Sprime, Dp_choice)
 
-                                ! Investment value = continuation value only (for constraint detection)
-                                ! This measures how attractive the investment is, ignoring current cash
+                                ! Investment value = continuation value only
                                 EV_invest = beta * (1.0_dp - zeta) * EV
 
-                                ! Track best investment choice (regardless of feasibility)
-                                if (EV_invest > V_invest_best) then
-                                    V_invest_best = EV_invest
-                                    best_is_infeasible = (dividends < -epsilon)
+                                ! Compute total value (may be infeasible if dividends < 0)
+                                V_try = dividends + EV_invest
+
+                                ! ============================================================
+                                ! CONSTRAINT DETECTION: Track unconstrained optimum
+                                ! The "unconstrained" choice is the one with highest V_try
+                                ! regardless of whether dividends < 0.
+                                ! If this choice is infeasible (dividends < 0), firm is constrained.
+                                ! ============================================================
+                                if (V_try > V_unconstrained_best) then
+                                    V_unconstrained_best = V_try
+                                    unconstrained_is_infeasible = (dividends < -epsilon)
                                 end if
 
                                 ! Skip if dividends negative (infeasible due to collateral constraint)
                                 if (dividends < -epsilon) cycle
-
-                                V_try = dividends + EV_invest
 
                                 if (V_try > V_best) then
                                     V_best = V_try
@@ -387,9 +496,28 @@ contains
                             end do  ! HR
                         end do  ! IK
 
-                        ! Store constraint status: firm is constrained if its BEST investment
-                        ! choice (by continuation value) is infeasible due to collateral constraint
-                        pol_constr(iz, iK, iS, iD) = best_is_infeasible
+                        ! ============================================================
+                        ! CONSTRAINT STATUS: λ > 0 (Collateral Constraint Binds)
+                        !
+                        ! A firm is constrained when its UNCONSTRAINED optimum
+                        ! (the (IK,HR) choice with highest value ignoring feasibility)
+                        ! is infeasible due to the collateral constraint.
+                        !
+                        ! This means the firm WOULD invest more but CAN'T.
+                        !
+                        ! In counterfactual mode (remove_collateral_constraint=.true.),
+                        ! all choices are feasible so no firm is ever constrained.
+                        ! ============================================================
+                        constraint_binds = unconstrained_is_infeasible
+                        pol_constr(iz, iK, iS, iD) = constraint_binds
+
+                        ! Also store shadow value indicator (λ > 0 when constrained)
+                        ! pol_lambda can be used for welfare calculations
+                        if (constraint_binds) then
+                            pol_lambda(iz, iK, iS, iD) = 1.0_dp  ! Qualitative indicator
+                        else
+                            pol_lambda(iz, iK, iS, iD) = 0.0_dp
+                        end if
 
                         ! Store optimal indices for next iteration's local search
                         pol_iIK(iz, iK, iS, iD) = best_iIK
@@ -424,6 +552,10 @@ contains
         real(dp) :: resources, expenses, dividends
         real(dp) :: EV, V_eval
         real(dp) :: AC_K_val, AC_S_val
+
+        ! OPTIMIZATION: Precompute expected value grid from current V
+        ! Must be called each evaluation step since V changes
+        call precompute_EV_grid()
 
         ! Loop over state space with OpenMP - using FIXED policies
         !$OMP PARALLEL DO COLLAPSE(2) &
@@ -500,8 +632,9 @@ contains
         integer :: iter, eval_iter
         real(dp) :: metric, metric_eval
         integer :: total_states, total_choices
-        logical :: do_improvement, first_improvement
+        logical :: do_improvement, first_improvement, do_full_search
         integer :: num_threads
+        integer :: n_improvements  ! Counter for policy improvement steps
 
         print *, ""
         print *, "======================================"
@@ -543,6 +676,7 @@ contains
         pol_iHR = nHR / 2
 
         first_improvement = .true.
+        n_improvements = 0
 
         ! Main iteration loop
         do iter = 1, maxiter_VFI
@@ -554,9 +688,18 @@ contains
                 !---------------------------------------------------------------
                 ! POLICY IMPROVEMENT STEP (expensive)
                 !---------------------------------------------------------------
-                print '(A,I5,A)', "  Iter ", iter, ": Policy IMPROVEMENT (full optimization)..."
+                n_improvements = n_improvements + 1
 
-                call policy_improvement_step(first_improvement)
+                ! FIX #6: Periodically do full grid search to escape local optima
+                do_full_search = first_improvement .or. (mod(n_improvements, full_search_freq) == 0)
+
+                if (do_full_search) then
+                    print '(A,I5,A)', "  Iter ", iter, ": Policy IMPROVEMENT (FULL grid search)..."
+                else
+                    print '(A,I5,A)', "  Iter ", iter, ": Policy IMPROVEMENT (local search)..."
+                end if
+
+                call policy_improvement_step(do_full_search)
                 first_improvement = .false.
 
                 ! Compute metric
