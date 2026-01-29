@@ -82,7 +82,12 @@ contains
 
                         ! Approximate value as perpetuity of profits
                         ! Bound below to avoid very negative values for high debt states
-                        V_init = max(profit_init * discount_factor, 0.0_dp)
+                        ! Guard against NaN: if any input is NaN, set V=0 (exit value)
+                        if (profit_init /= profit_init) then
+                            V_init = 0.0_dp  ! NaN guard (NaN /= NaN is true)
+                        else
+                            V_init = max(profit_init * discount_factor, 0.0_dp)
+                        end if
 
                         V(iz, iK, iS, iD) = V_init
                         V_new(iz, iK, iS, iD) = V_init
@@ -123,7 +128,11 @@ contains
         maxiter_bisect = 50
 
         ! Bounds for L (unskilled labor)
-        L_lo = 0.001_dp
+        ! NOTE: Very small firms (low z, low K) need to scale down labor
+        ! to remain profitable. Setting L_lo too high forces them to hire
+        ! more labor than optimal, causing losses. Use a small but positive
+        ! lower bound for numerical stability with CES functions.
+        L_lo = 1.0e-6_dp
         L_hi = 10.0_dp
 
         ! Check that bounds bracket the solution
@@ -181,6 +190,13 @@ contains
         HP_opt = HP_star
         Y_opt = production_Y(z, K, S, L_opt, HP_opt)
 
+        ! NaN safety: if any output is NaN, set minimal safe values
+        if (L_opt /= L_opt .or. HP_opt /= HP_opt .or. Y_opt /= Y_opt) then
+            L_opt = 1.0e-6_dp
+            HP_opt = 1.0e-6_dp
+            Y_opt = 0.0_dp
+        end if
+
     end subroutine solve_static_labor
 
     !===================================================================================
@@ -203,7 +219,9 @@ contains
         maxiter_bisect = 40
 
         ! Bounds for HP (skilled production labor)
-        HP_lo = 0.001_dp
+        ! NOTE: Allow very small HP for low-productivity firms that need to
+        ! scale down to remain profitable.
+        HP_lo = 1.0e-6_dp
         HP_hi = 5.0_dp
 
         ! Check bounds
@@ -329,8 +347,8 @@ contains
         ! Speedup: ~11x for expect_V calls
         call precompute_EV_grid()
 
-        ! Precompute static labor solutions
-        call precompute_static_labor()
+        ! NOTE: Static labor is precomputed ONCE in solve_firm_problem()
+        ! (depends only on wages, which are fixed during VFI)
 
         ! Loop over state space with OpenMP parallelization
         !$OMP PARALLEL DO COLLAPSE(2) &
@@ -465,6 +483,9 @@ contains
                                 ! Compute total value (may be infeasible if dividends < 0)
                                 V_try = dividends + EV_invest
 
+                                ! Guard against NaN from interpolation
+                                if (V_try /= V_try) cycle  ! NaN check
+
                                 ! ============================================================
                                 ! CONSTRAINT DETECTION: Track unconstrained optimum
                                 ! The "unconstrained" choice is the one with highest V_try
@@ -523,7 +544,33 @@ contains
                         pol_iIK(iz, iK, iS, iD) = best_iIK
                         pol_iHR(iz, iK, iS, iD) = best_iHR
 
-                        V_new(iz, iK, iS, iD) = V_best
+                        ! ============================================================
+                        ! HANDLE INFEASIBLE STATES (FIX: Grid Boundary Trap)
+                        !
+                        ! If V_best is still at initialization (-10^10), no feasible
+                        ! choice exists. This happens when:
+                        !   1. The firm is at K_min and can't disinvest (K' would < K_min)
+                        !   2. Gross profit is negative (can't cover labor costs)
+                        !   3. All (IK, HR) combinations yield negative dividends
+                        !
+                        ! Economic interpretation: the firm is insolvent and exits.
+                        ! Equity holders get zero; firm is replaced by an entrant.
+                        ! Setting V = 0 prevents contamination of the value function.
+                        ! ============================================================
+                        if (V_best < -1.0e9_dp) then
+                            V_new(iz, iK, iS, iD) = 0.0_dp
+                            ! Mark as constrained (insolvent)
+                            pol_constr(iz, iK, iS, iD) = .true.
+                            pol_lambda(iz, iK, iS, iD) = 1.0_dp
+                            ! Set policies to "do nothing" defaults
+                            pol_IK(iz, iK, iS, iD) = 0.0_dp
+                            pol_HR(iz, iK, iS, iD) = 0.0_dp
+                            pol_Dprime(iz, iK, iS, iD) = 0.0_dp
+                            pol_Kprime(iz, iK, iS, iD) = (1.0_dp - delta_K) * K_val
+                            pol_Sprime(iz, iK, iS, iD) = (1.0_dp - delta_S) * S_val
+                        else
+                            V_new(iz, iK, iS, iD) = V_best
+                        end if
 
                     end do  ! iD
                 end do  ! iS
@@ -573,9 +620,14 @@ contains
                     do iD = 1, nD
                         D_old_val = grid_D(iD)
 
-                        ! Skip insolvent states
-                        if (V(iz, iK, iS, iD) < -1.0e9_dp) then
-                            V_new(iz, iK, iS, iD) = V(iz, iK, iS, iD)
+                        ! Skip truly insolvent states: V was set to 0 in improvement
+                        ! step because NO feasible (IK, HR) choice existed.
+                        ! These have "do nothing" policies (IK=0, HR=0, D'=0).
+                        ! Keep at V=0 during evaluation to avoid spurious reactivation.
+                        if (V(iz, iK, iS, iD) < 1.0e-12_dp .and. &
+                            abs(pol_IK(iz, iK, iS, iD)) < 1.0e-12_dp .and. &
+                            abs(pol_HR(iz, iK, iS, iD)) < 1.0e-12_dp) then
+                            V_new(iz, iK, iS, iD) = 0.0_dp
                             cycle
                         end if
 
@@ -608,7 +660,13 @@ contains
                         ! Value
                         V_eval = dividends + beta * (1.0_dp - zeta) * EV
 
-                        V_new(iz, iK, iS, iD) = V_eval
+                        ! Guard against NaN propagation from interpolation
+                        ! NaN /= NaN is true in IEEE 754
+                        if (V_eval /= V_eval) then
+                            V_new(iz, iK, iS, iD) = 0.0_dp  ! Treat as exit
+                        else
+                            V_new(iz, iK, iS, iD) = V_eval
+                        end if
 
                     end do  ! iD
                 end do  ! iS
@@ -630,11 +688,12 @@ contains
     subroutine solve_firm_problem()
         implicit none
         integer :: iter, eval_iter
-        real(dp) :: metric, metric_eval
+        real(dp) :: metric, metric_eval, diff_tmp
         integer :: total_states, total_choices
         logical :: do_improvement, first_improvement, do_full_search
         integer :: num_threads
         integer :: n_improvements  ! Counter for policy improvement steps
+        integer :: iz_tmp, iK_tmp, iS_tmp, iD_tmp  ! For NaN-safe metric loops
 
         print *, ""
         print *, "======================================"
@@ -655,6 +714,9 @@ contains
         !$ num_threads = omp_get_max_threads()
         print '(A,I4)', "  OpenMP threads: ", num_threads
         print *, ""
+
+        ! Precompute static labor solutions ONCE (depends on wages, fixed during VFI)
+        call precompute_static_labor()
 
         ! Initialize value function with approximate stationary values
         ! This avoids the "cold start" trap where V=0 makes R&D worthless
@@ -702,11 +764,22 @@ contains
                 call policy_improvement_step(do_full_search)
                 first_improvement = .false.
 
-                ! Compute metric
-                metric = maxval(abs(V_new - V))
+                ! Compute metric (NaN-safe: skip NaN differences)
+                metric = 0.0_dp
+                do iD_tmp = 1, nD
+                    do iS_tmp = 1, nS
+                        do iK_tmp = 1, nK
+                            do iz_tmp = 1, nz
+                                diff_tmp = abs(V_new(iz_tmp,iK_tmp,iS_tmp,iD_tmp) &
+                                             - V(iz_tmp,iK_tmp,iS_tmp,iD_tmp))
+                                if (diff_tmp == diff_tmp) metric = max(metric, diff_tmp)
+                            end do
+                        end do
+                    end do
+                end do
 
-                ! Update V
-                V = update_VFI * V_new + (1.0_dp - update_VFI) * V
+                ! Update V (no dampening — VFI is a contraction mapping)
+                V = V_new
 
                 print '(A,E12.5)', "           metric = ", metric
 
@@ -726,7 +799,19 @@ contains
 
                     call policy_evaluation_step()
 
-                    metric_eval = maxval(abs(V_new - V))
+                    ! NaN-safe metric for evaluation step
+                    metric_eval = 0.0_dp
+                    do iD_tmp = 1, nD
+                        do iS_tmp = 1, nS
+                            do iK_tmp = 1, nK
+                                do iz_tmp = 1, nz
+                                    diff_tmp = abs(V_new(iz_tmp,iK_tmp,iS_tmp,iD_tmp) &
+                                                 - V(iz_tmp,iK_tmp,iS_tmp,iD_tmp))
+                                    if (diff_tmp == diff_tmp) metric_eval = max(metric_eval, diff_tmp)
+                                end do
+                            end do
+                        end do
+                    end do
 
                     ! Full update during policy evaluation (no dampening needed
                     ! since policy is fixed - we're just solving for V given policy)

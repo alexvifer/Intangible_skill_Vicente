@@ -65,10 +65,18 @@ contains
         ! Choice grids
         !-----------------------------------------------------------------------
         ! Tangible investment (allow negative for disinvestment, but bounded)
-        do i = 1, nIK
-            step = real(i-1, dp) / real(nIK-1, dp)
-            grid_IK(i) = -delta_K * K_max * 0.50_dp + step * (K_max * 0.20_dp)
-        end do
+        ! IK_min = -IK_min_coef * delta_K * K_max (max disinvestment)
+        ! IK_max = IK_min + IK_max_coef * K_max   (max investment)
+        block
+            real(dp) :: IK_min_val, IK_max_val
+            IK_min_val = -IK_min_coef * delta_K * K_max
+            IK_max_val = IK_min_val + IK_max_coef * K_max
+            do i = 1, nIK
+                step = real(i-1, dp) / real(nIK-1, dp)
+                grid_IK(i) = IK_min_val + step * (IK_max_val - IK_min_val)
+            end do
+            print '(A,F10.4,A,F10.4)', "  IK grid: [", IK_min_val, ", ", IK_max_val, "]"
+        end block
 
         ! FIX #7: R&D labor grid with extra fine resolution at low values
         ! With xi < 1, the R&D production function has high curvature near zero,
@@ -247,8 +255,8 @@ contains
         call cpu_time(time_start)
 
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.58050_dp
-        wH = 0.84_dp
+        wL = 0.50350_dp
+        wH = 0.7514_dp
 
         do iter_outer = 1, maxiter_eq
 
