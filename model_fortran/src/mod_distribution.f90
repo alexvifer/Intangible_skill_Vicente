@@ -719,7 +719,7 @@ contains
         print *, ""
         print *, "  V(z_median, K_median, S, D_min) for varying S:"
         do iS = 1, min(nS, 10)
-            print '(A,I3,A,F8.3,A,F12.4)', "    iS=", iS, ", S=", grid_S(iS), &
+            print '(A,I3,A,F8.3,A,ES14.6)', "    iS=", iS, ", S=", grid_S(iS), &
                   ", V=", V((nz+1)/2, (nK+1)/2, iS, 1)
         end do
 
@@ -727,7 +727,7 @@ contains
         V_S_estimate = (V((nz+1)/2, (nK+1)/2, iS_high, 1) - V((nz+1)/2, (nK+1)/2, iS_low, 1)) &
                       / (grid_S(iS_high) - grid_S(iS_low))
         print *, ""
-        print '(A,F12.6)', "  Estimated dV/dS at median state: ", V_S_estimate
+        print '(A,ES14.6)', "  Estimated dV/dS at median state: ", V_S_estimate
 
         ! Check R&D profitability
         print *, ""

@@ -26,7 +26,6 @@ contains
     subroutine initialize_grids()
         implicit none
         integer :: i
-        real(dp) :: step
 
         print *, ""
         print *, "======================================"
@@ -64,18 +63,37 @@ contains
         !-----------------------------------------------------------------------
         ! Choice grids
         !-----------------------------------------------------------------------
-        ! Tangible investment (allow negative for disinvestment, but bounded)
-        ! IK_min = -IK_min_coef * delta_K * K_max (max disinvestment)
-        ! IK_max = IK_min + IK_max_coef * K_max   (max investment)
+        ! Tangible investment grid: three-segment design
+        !   Segment 1: disinvestment [-IK_neg_max, 0)    -- 1/5 of points
+        !   Segment 2: small investment [0, IK_thresh]    -- 2/5 of points (critical for entrants)
+        !   Segment 3: large investment (IK_thresh, IK_pos_max] -- 2/5 of points
+        ! This ensures resolution at all firm sizes: small firms invest 0.001-0.05,
+        ! large firms invest 0.20-0.80.
         block
-            real(dp) :: IK_min_val, IK_max_val
-            IK_min_val = -IK_min_coef * delta_K * K_max
-            IK_max_val = IK_min_val + IK_max_coef * K_max
-            do i = 1, nIK
-                step = real(i-1, dp) / real(nIK-1, dp)
-                grid_IK(i) = IK_min_val + step * (IK_max_val - IK_min_val)
+            real(dp), parameter :: IK_neg_max = 0.20_dp   ! Max disinvestment
+            real(dp), parameter :: IK_thresh  = 0.05_dp   ! Small/large boundary
+            real(dp), parameter :: IK_pos_max = 0.80_dp   ! Max investment
+            integer :: n_neg, n_small, n_large
+
+            n_neg   = max(nIK / 5, 2)                     ! ~6 points for disinvestment
+            n_small = max((nIK * 2) / 5, 3)               ! ~12 points for small investment
+            n_large = nIK - n_neg - n_small                ! ~12 points for large investment
+
+            ! Segment 1: disinvestment (linearly spaced)
+            do i = 1, n_neg
+                grid_IK(i) = -IK_neg_max + IK_neg_max * real(i-1, dp) / real(n_neg, dp)
             end do
-            print '(A,F10.4,A,F10.4)', "  IK grid: [", IK_min_val, ", ", IK_max_val, "]"
+
+            ! Segment 2: small investment (linearly spaced for fine resolution)
+            do i = 1, n_small
+                grid_IK(n_neg + i) = IK_thresh * real(i-1, dp) / real(n_small - 1, dp)
+            end do
+
+            ! Segment 3: large investment (linearly spaced)
+            do i = 1, n_large
+                grid_IK(n_neg + n_small + i) = IK_thresh &
+                    + (IK_pos_max - IK_thresh) * real(i, dp) / real(n_large, dp)
+            end do
         end block
 
         ! FIX #7: R&D labor grid with extra fine resolution at low values
@@ -123,14 +141,16 @@ contains
         end do
 
         print *, "  Grids initialized."
-        print '(A,I4,A,F8.3,A,F8.3)', "    z grid: ", nz, " points, range [", &
+        print '(A,I4,A,F8.3,A,F8.3)', "    z grid:  ", nz, " points, range [", &
             grid_z(1), ", ", grid_z(nz), "]"
-        print '(A,I4,A,F8.3,A,F8.3)', "    K grid: ", nK, " points, range [", &
+        print '(A,I4,A,F8.3,A,F8.3)', "    K grid:  ", nK, " points, range [", &
             grid_K(1), ", ", grid_K(nK), "]"
-        print '(A,I4,A,F8.3,A,F8.3)', "    S grid: ", nS, " points, range [", &
+        print '(A,I4,A,F8.3,A,F8.3)', "    S grid:  ", nS, " points, range [", &
             grid_S(1), ", ", grid_S(nS), "]"
-        print '(A,I4,A,F8.3,A,F8.3)', "    D grid: ", nD, " points, range [", &
+        print '(A,I4,A,F8.3,A,F8.3)', "    D grid:  ", nD, " points, range [", &
             grid_D(1), ", ", grid_D(nD), "]"
+        print '(A,I4,A,F8.3,A,F8.3)', "    IK grid: ", nIK, " points, range [", &
+            grid_IK(1), ", ", grid_IK(nIK), "]"
         print *, ""
         print *, "  HR grid (log-spaced, max decoupled from Hbar):"
         print '(A,F10.6,A,F10.6)', "    Range: [", grid_HR(1), ", ", grid_HR(nHR), "]"
@@ -255,8 +275,8 @@ contains
         call cpu_time(time_start)
 
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.50350_dp
-        wH = 0.7514_dp
+        wL = 0.655180_dp
+        wH = 0.871480_dp
 
         do iter_outer = 1, maxiter_eq
 
@@ -276,12 +296,12 @@ contains
             ! Compute aggregates (OpenMP parallelized)
             call compute_aggregates()
 
-            ! Check labor market clearing
+            ! Check labor market clearing (relative excess demand)
             excess_L = agg_L - Lbar
             excess_H = agg_H - Hbar
 
-            metric_eq_L = abs(excess_L)
-            metric_eq_H = abs(excess_H)
+            metric_eq_L = abs(excess_L) / Lbar
+            metric_eq_H = abs(excess_H) / Hbar
 
             print *, ""
             print *, "  Market clearing:"
@@ -289,6 +309,7 @@ contains
                 ", supply = ", Lbar, ", excess = ", excess_L
             print '(A,F10.6,A,F10.6,A,F10.6)', "    Skilled:   demand = ", agg_H, &
                 ", supply = ", Hbar, ", excess = ", excess_H
+            print '(A,F10.6,A,F10.6)', "    Relative excess: L = ", metric_eq_L, ", H = ", metric_eq_H
 
             ! Display cumulative elapsed time
             call cpu_time(time_current)
@@ -296,7 +317,7 @@ contains
             print *, ""
             print '(A,F8.2,A)', "  >>> Cumulative time elapsed: ", time_elapsed_min, " minutes"
 
-            ! Check convergence
+            ! Check convergence (relative excess demand < tol_eq)
             if (metric_eq_L < tol_eq .and. metric_eq_H < tol_eq) then
                 print *, ""
                 print *, "======================================"

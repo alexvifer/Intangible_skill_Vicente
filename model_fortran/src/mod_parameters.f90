@@ -53,7 +53,7 @@ module mod_parameters
     real(dp), parameter :: delta_S = 0.15_dp       ! Intangible capital depreciation
 
     ! R&D production: S' = (1-δS)*S + Γ*(HR)^ξ
-    real(dp), parameter :: Gamma_RD = 1.20_dp      ! R&D productivity parameter
+    real(dp), parameter :: Gamma_RD = 1.50_dp      ! R&D productivity parameter
     real(dp), parameter :: xi = 0.90_dp            ! Returns to scale in R&D (≤1)
 
     !---------------------------------------------------------------------------
@@ -88,8 +88,8 @@ module mod_parameters
     ! PRODUCTIVITY PROCESS (AR(1) in logs)
     !---------------------------------------------------------------------------
     ! log(z') = ρz * log(z) + σz * ε,  ε ~ N(0,1)
-    real(dp), parameter :: rho_z = 0.90_dp         ! Persistence
-    real(dp), parameter :: sigma_z = 0.20_dp       ! Std dev of innovations
+    real(dp), parameter :: rho_z = 0.95_dp         ! Persistence
+    real(dp), parameter :: sigma_z = 0.15_dp       ! Std dev of innovations
     integer, parameter :: nz = 11                  ! Grid points for z (increased from 5)
     real(dp), parameter :: m_z = 3.0_dp            ! Grid coverage (m std devs)
 
@@ -109,44 +109,38 @@ module mod_parameters
     ! Grid bounds (will be adjusted based on solution)
     ! Note: S_min > 0 required for numerical stability with CES complements (rho < 0)
     ! Using small S_min to avoid "free intangibles" from grid bound clamping
-    real(dp), parameter :: K_min = 0.05_dp
-    real(dp), parameter :: K_max = 3.0_dp
-    real(dp), parameter :: S_min = 0.05_dp         ! Small but positive for CES stability
-    real(dp), parameter :: S_max = 3.0_dp
+    real(dp), parameter :: K_min = 0.01_dp
+    real(dp), parameter :: K_max = 2.0_dp
+    real(dp), parameter :: S_min = 0.01_dp         ! Small but positive for CES stability
+    real(dp), parameter :: S_max = 2.5_dp          ! Must exceed max achievable S'
     real(dp), parameter :: D_min = 0.0_dp
-    real(dp), parameter :: D_max = 0.8_dp
+    real(dp), parameter :: D_max = 1.20_dp          ! Must cover max collateral value
 
     !---------------------------------------------------------------------------
     ! CHOICE GRIDS
-    ! Note: D' is now computed analytically (not grid search), so nDprime unused
-    ! Total choice combinations per state = nIK * nHR
+    ! Total choice combinations per state = nIK * nHR * nDp_search
     !---------------------------------------------------------------------------
     integer, parameter :: nIK = 30                 ! Grid points for tangible investment
     integer, parameter :: nHR = 30                 ! Grid points for R&D labor
-    integer, parameter :: nDprime = 20             ! Grid points for new debt (unused - kept for compatibility)
+    integer, parameter :: nDprime = 20             ! Grid points for new debt (used by grid_Dprime)
+    integer, parameter :: nDp_search = 5           ! D' search points per (IK,HR) choice
 
     ! Maximum R&D labor per firm (decoupled from Hbar for proper optimization)
     ! Individual firms CAN demand more than aggregate supply - it's the weighted
     ! average that must clear. Setting HR_max > Hbar allows high-z firms to
     ! optimally choose large R&D without artificial truncation.
-    real(dp), parameter :: HR_max = 1.00_dp        ! Max HR per firm (was Hbar=0.15)
-
-    ! Tangible investment bounds (as fraction of K_max)
-    ! IK_min = -IK_min_coef * delta_K * K_max  (max disinvestment, negative)
-    ! IK_max = IK_min + IK_max_coef * K_max    (max investment, positive)
-    real(dp), parameter :: IK_min_coef = 0.50_dp   ! Disinvestment bound coefficient
-    real(dp), parameter :: IK_max_coef = 0.50_dp   ! Investment bound coefficient (was 0.20)
+    real(dp), parameter :: HR_max = 0.50_dp        ! Max HR per firm (was Hbar=0.15)
 
     !---------------------------------------------------------------------------
     ! NUMERICAL PARAMETERS
     !---------------------------------------------------------------------------
-    real(dp), parameter :: tol_VFI = 1.0e-3_dp     ! Tolerance for value function iteration
-    real(dp), parameter :: tol_dist = 1.0e-3_dp    ! Tolerance for distribution
-    real(dp), parameter :: tol_eq = 5.0e-1_dp      ! Tolerance for equilibrium
+    real(dp), parameter :: tol_VFI = 1.0e-4_dp     ! Tolerance for value function iteration
+    real(dp), parameter :: tol_dist = 1.0e-4_dp    ! Tolerance for distribution
+    real(dp), parameter :: tol_eq = 1.0e-2_dp      ! Tolerance for equilibrium (relative excess demand)
     integer, parameter :: maxiter_VFI = 3000       ! Max iterations for VFI (increased from 2000)
     integer, parameter :: maxiter_dist = 5000      ! Max iterations for distribution
     integer, parameter :: maxiter_eq = 300         ! Max iterations for equilibrium (increased from 100)
-    real(dp), parameter :: update_VFI = 0.70_dp    ! Update weight for VFI
+    real(dp), parameter :: update_VFI = 1.0_dp     ! Full VFI update (no dampening needed with limited liability)
     real(dp), parameter :: update_dist = 0.10_dp   ! Update weight for distribution
     real(dp), parameter :: update_wage = 0.05_dp   ! Update weight for wage iteration
 

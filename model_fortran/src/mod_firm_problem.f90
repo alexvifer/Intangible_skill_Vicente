@@ -25,11 +25,11 @@ module mod_firm_problem
     implicit none
 
     ! Local search radius (search ± this many grid points around previous optimum)
-    integer, parameter :: local_search_radius = 3
+    integer, parameter :: local_search_radius = 5
 
-    ! FIX #6: Frequency of full grid search reset (to escape local optima)
+    ! Frequency of full grid search reset (to escape local optima)
     ! Every full_search_freq policy improvement iterations, do a full grid search
-    integer, parameter :: full_search_freq = 50
+    integer, parameter :: full_search_freq = 10
 
 contains
 
@@ -82,12 +82,7 @@ contains
 
                         ! Approximate value as perpetuity of profits
                         ! Bound below to avoid very negative values for high debt states
-                        ! Guard against NaN: if any input is NaN, set V=0 (exit value)
-                        if (profit_init /= profit_init) then
-                            V_init = 0.0_dp  ! NaN guard (NaN /= NaN is true)
-                        else
-                            V_init = max(profit_init * discount_factor, 0.0_dp)
-                        end if
+                        V_init = max(profit_init * discount_factor, 0.0_dp)
 
                         V(iz, iK, iS, iD) = V_init
                         V_new(iz, iK, iS, iD) = V_init
@@ -128,11 +123,7 @@ contains
         maxiter_bisect = 50
 
         ! Bounds for L (unskilled labor)
-        ! NOTE: Very small firms (low z, low K) need to scale down labor
-        ! to remain profitable. Setting L_lo too high forces them to hire
-        ! more labor than optimal, causing losses. Use a small but positive
-        ! lower bound for numerical stability with CES functions.
-        L_lo = 1.0e-6_dp
+        L_lo = 0.001_dp
         L_hi = 10.0_dp
 
         ! Check that bounds bracket the solution
@@ -190,13 +181,6 @@ contains
         HP_opt = HP_star
         Y_opt = production_Y(z, K, S, L_opt, HP_opt)
 
-        ! NaN safety: if any output is NaN, set minimal safe values
-        if (L_opt /= L_opt .or. HP_opt /= HP_opt .or. Y_opt /= Y_opt) then
-            L_opt = 1.0e-6_dp
-            HP_opt = 1.0e-6_dp
-            Y_opt = 0.0_dp
-        end if
-
     end subroutine solve_static_labor
 
     !===================================================================================
@@ -219,9 +203,7 @@ contains
         maxiter_bisect = 40
 
         ! Bounds for HP (skilled production labor)
-        ! NOTE: Allow very small HP for low-productivity firms that need to
-        ! scale down to remain profitable.
-        HP_lo = 1.0e-6_dp
+        HP_lo = 0.001_dp
         HP_hi = 5.0_dp
 
         ! Check bounds
@@ -310,56 +292,53 @@ contains
     !
     ! DESCRIPTION:
     !   Full policy optimization step with local search optimization.
-    !   For each state, searches over choice combinations near previous optimum.
-    !   Uses OpenMP for parallelization over the state space.
+    !   For each state, searches over (I^K, H^R, D') combinations.
     !
-    !   OPTIMIZATION: D' is computed ANALYTICALLY instead of grid search.
-    !   With R = 1/β, firms are indifferent about borrowing (NPV = 0), so:
-    !     - If firm has surplus funds: D' = 0
-    !     - If firm needs financing: D' = min(financing_gap, collateral_limit)
-    !   This eliminates the nDprime loop, reducing computation by ~20x.
+    !   D' SEARCH: For each (I^K, H^R), searches over nDp_search levels of D'
+    !   from 0 to the collateral limit. With exit probability zeta > 0 and
+    !   R = 1/beta, firms generally prefer to borrow (exit risk subsidizes debt:
+    !   the effective cost is beta*(1-zeta)*(1+r) = (1-zeta) < 1 per unit).
+    !   The optimal D' balances current dividends vs. continuation value.
+    !
+    !   LIMITED LIABILITY: V >= 0 at all states. If no feasible (IK, HR, D')
+    !   combination exists (firm is insolvent), V = 0. The firm's owners can
+    !   always walk away with zero under limited liability / Div >= 0.
     !
     !   LOCAL SEARCH: Searches ±local_search_radius around previous optimal indices
-    !   for I^K and H^R. On first iteration, searches full grid.
+    !   for I^K and H^R. On first iteration (or every full_search_freq), full grid.
     !===================================================================================
     subroutine policy_improvement_step(first_iteration)
         implicit none
         logical, intent(in) :: first_iteration
-        integer :: iz, iK, iS, iD
+        integer :: iz, iK, iS, iD, iDp
         real(dp) :: z_val, K_val, S_val, D_old_val
         real(dp) :: L_opt, HP_opt, Y_val, Pi_gross
         real(dp) :: V_best, V_try
         integer :: iIK, iHR
         integer :: iIK_lo, iIK_hi, iHR_lo, iHR_hi
         integer :: best_iIK, best_iHR
-        real(dp) :: IK_choice, HR_choice, Dp_choice
+        real(dp) :: IK_choice, HR_choice, Dp_try
         real(dp) :: Kprime, Sprime, inv_S
-        real(dp) :: resources_before_D, expenses, dividends, financing_gap
-        real(dp) :: D_max_coll, EV
+        real(dp) :: resources_before_D, expenses, dividends
+        real(dp) :: D_max_coll, D_ub, EV
         real(dp) :: AC_K_val, AC_S_val
-        real(dp) :: EV_invest                  ! Continuation value component
-        logical :: constraint_binds            ! Whether collateral constraint binds at optimal choice
-        real(dp) :: V_unconstrained_best       ! Best value ignoring feasibility (for constraint detection)
-        logical :: unconstrained_is_infeasible ! Whether unconstrained optimum is infeasible
+        real(dp) :: EV_invest
+        logical :: constraint_binds
+        real(dp) :: best_D_max_coll  ! Collateral limit at optimal choice
 
-        ! OPTIMIZATION: Precompute expected value grid ONCE per VFI iteration
-        ! This moves the O(nz) summation outside the choice loop
-        ! Speedup: ~11x for expect_V calls
+        ! Precompute expected value grid and static labor
         call precompute_EV_grid()
-
-        ! NOTE: Static labor is precomputed ONCE in solve_firm_problem()
-        ! (depends only on wages, which are fixed during VFI)
+        call precompute_static_labor()
 
         ! Loop over state space with OpenMP parallelization
         !$OMP PARALLEL DO COLLAPSE(2) &
-        !$OMP& PRIVATE(iz, iK, iS, iD, z_val, K_val, S_val, D_old_val, &
+        !$OMP& PRIVATE(iz, iK, iS, iD, iDp, z_val, K_val, S_val, D_old_val, &
         !$OMP&         L_opt, HP_opt, Y_val, Pi_gross, V_best, V_try, &
         !$OMP&         iIK, iHR, iIK_lo, iIK_hi, iHR_lo, iHR_hi, &
-        !$OMP&         best_iIK, best_iHR, IK_choice, HR_choice, Dp_choice, &
+        !$OMP&         best_iIK, best_iHR, IK_choice, HR_choice, Dp_try, &
         !$OMP&         Kprime, Sprime, inv_S, resources_before_D, expenses, dividends, &
-        !$OMP&         financing_gap, D_max_coll, EV, AC_K_val, AC_S_val, &
-        !$OMP&         EV_invest, constraint_binds, V_unconstrained_best, &
-        !$OMP&         unconstrained_is_infeasible) &
+        !$OMP&         D_max_coll, D_ub, EV, AC_K_val, AC_S_val, &
+        !$OMP&         EV_invest, constraint_binds, best_D_max_coll) &
         !$OMP& SCHEDULE(dynamic)
         do iz = 1, nz
             do iK = 1, nK
@@ -375,10 +354,6 @@ contains
                     Y_val = static_Y(iz, iK, iS)
                     Pi_gross = static_Pi(iz, iK, iS)
 
-                    ! Note: Collateral constraint is based on NEXT-PERIOD capital (K', S')
-                    ! following the literature convention: d_{t+1} <= alpha_K * k_{t+1} + alpha_S * s_{t+1}
-                    ! This means D_max_coll is computed INSIDE the investment loop below
-
                     do iD = 1, nD
                         D_old_val = grid_D(iD)
 
@@ -387,32 +362,26 @@ contains
 
                         ! Determine search bounds (local search or full grid)
                         if (first_iteration) then
-                            ! Full grid search on first iteration
                             iIK_lo = 1
                             iIK_hi = nIK
                             iHR_lo = 1
                             iHR_hi = nHR
                         else
-                            ! Local search around previous optimum
                             iIK_lo = max(1, pol_iIK(iz, iK, iS, iD) - local_search_radius)
                             iIK_hi = min(nIK, pol_iIK(iz, iK, iS, iD) + local_search_radius)
                             iHR_lo = max(1, pol_iHR(iz, iK, iS, iD) - local_search_radius)
                             iHR_hi = min(nHR, pol_iHR(iz, iK, iS, iD) + local_search_radius)
                         end if
 
-                        ! Initialize best value and indices
+                        ! Initialize: sentinel below limited liability floor
                         V_best = -1.0e10_dp
                         best_iIK = iIK_lo
                         best_iHR = iHR_lo
+                        best_D_max_coll = 0.0_dp
 
-                        ! For constraint detection: track whether the UNCONSTRAINED optimum
-                        ! (highest value ignoring feasibility) is infeasible.
-                        ! A firm is constrained (λ > 0) when it WOULD choose a higher
-                        ! investment level but CAN'T due to the collateral constraint.
-                        V_unconstrained_best = -1.0e10_dp
-                        unconstrained_is_infeasible = .false.
-
-                        ! Grid search over (I^K, H^R) - D' computed analytically
+                        ! ============================================================
+                        ! Grid search over (I^K, H^R, D')
+                        ! ============================================================
                         do iIK = iIK_lo, iIK_hi
                             IK_choice = grid_IK(iIK)
 
@@ -425,117 +394,107 @@ contains
 
                                 inv_S = RD_production(HR_choice)
                                 Sprime = (1.0_dp - delta_S) * S_val + inv_S
-                                ! Allow S to go below S_min but impose a small floor
                                 Sprime = max(Sprime, 1.0e-6_dp)
 
-                                ! ============================================================
-                                ! COLLATERAL CONSTRAINT: Literature Timing Convention
-                                ! d_{t+1} <= alpha_K * k_{t+1} + alpha_S * s_{t+1}
-                                !
-                                ! Debt taken today (D') is collateralized by NEXT-PERIOD capital
-                                ! (K', S'). This means investment decisions directly affect
-                                ! borrowing capacity within the same period.
-                                !
-                                ! COUNTERFACTUAL (λ=0): When remove_collateral_constraint=.true.,
-                                ! set D_max_coll to effectively infinity, allowing unlimited
-                                ! borrowing. This is the proper "no frictions" benchmark.
-                                ! ============================================================
+                                ! S' bounds check: skip if outside grid
+                                if (Sprime > S_max) cycle
+
+                                ! Collateral constraint: d_{t+1} <= alpha_K*k_{t+1} + alpha_S*s_{t+1}
                                 if (remove_collateral_constraint) then
-                                    D_max_coll = 1.0e10_dp  ! Effectively infinite borrowing
+                                    D_max_coll = D_max  ! Cap at grid bound in counterfactual
                                 else
                                     D_max_coll = collateral_constraint(Kprime, Sprime)
                                 end if
 
-                                ! Compute adjustment costs (0 if phi_K=0 or phi_S=0)
+                                ! Adjustment costs
                                 AC_K_val = adjustment_cost_K(IK_choice, K_val)
                                 AC_S_val = adjustment_cost_S(inv_S, S_val)
 
-                                ! Total expenses for this (IK, HR) combination
+                                ! Total investment expenses
                                 expenses = IK_choice + wH * HR_choice + AC_K_val + AC_S_val
 
-                                ! ============================================================
-                                ! ANALYTICAL D' COMPUTATION
-                                ! With R = 1/β, firm is indifferent about borrowing level.
-                                ! Optimal policy: borrow only what's needed, up to constraint.
-                                ! ============================================================
-                                financing_gap = expenses - resources_before_D
+                                ! D' upper bound (can't exceed grid boundary for interpolation)
+                                D_ub = min(D_max_coll, D_max)
 
-                                if (financing_gap <= 0.0_dp) then
-                                    ! Firm has enough internal funds - no need to borrow
-                                    Dp_choice = 0.0_dp
-                                else if (financing_gap <= D_max_coll) then
-                                    ! Firm needs external funds but can borrow enough
-                                    Dp_choice = financing_gap
-                                else
-                                    ! Firm needs more than collateral allows
-                                    Dp_choice = D_max_coll
-                                end if
+                                ! Search over D' from 0 to D_ub
+                                do iDp = 1, nDp_search
+                                    if (nDp_search > 1) then
+                                        Dp_try = D_ub * real(iDp - 1, dp) / real(nDp_search - 1, dp)
+                                    else
+                                        Dp_try = 0.0_dp
+                                    end if
 
-                                ! Compute dividends
-                                dividends = resources_before_D + Dp_choice - expenses
+                                    ! Dividends = gross profit - debt repayment + new borrowing - expenses
+                                    dividends = resources_before_D + Dp_try - expenses
 
-                                ! Compute continuation value for this investment choice
-                                EV = expect_V(iz, Kprime, Sprime, Dp_choice)
+                                    ! Non-negative dividends constraint (no equity issuance)
+                                    if (dividends < -epsilon) cycle
 
-                                ! Investment value = continuation value only
-                                EV_invest = beta * (1.0_dp - zeta) * EV
+                                    ! Continuation value
+                                    EV = expect_V(iz, Kprime, Sprime, Dp_try)
+                                    EV_invest = beta * (1.0_dp - zeta) * EV
 
-                                ! Compute total value (may be infeasible if dividends < 0)
-                                V_try = dividends + EV_invest
+                                    V_try = dividends + EV_invest
 
-                                ! Guard against NaN from interpolation
-                                if (V_try /= V_try) cycle  ! NaN check
+                                    if (V_try > V_best) then
+                                        V_best = V_try
+                                        best_iIK = iIK
+                                        best_iHR = iHR
+                                        pol_IK(iz, iK, iS, iD) = IK_choice
+                                        pol_HR(iz, iK, iS, iD) = HR_choice
+                                        pol_Dprime(iz, iK, iS, iD) = Dp_try
+                                        pol_Kprime(iz, iK, iS, iD) = Kprime
+                                        pol_Sprime(iz, iK, iS, iD) = Sprime
+                                        pol_L(iz, iK, iS, iD) = L_opt
+                                        pol_HP(iz, iK, iS, iD) = HP_opt
+                                        pol_Y(iz, iK, iS, iD) = Y_val
+                                        best_D_max_coll = D_max_coll
+                                    end if
 
-                                ! ============================================================
-                                ! CONSTRAINT DETECTION: Track unconstrained optimum
-                                ! The "unconstrained" choice is the one with highest V_try
-                                ! regardless of whether dividends < 0.
-                                ! If this choice is infeasible (dividends < 0), firm is constrained.
-                                ! ============================================================
-                                if (V_try > V_unconstrained_best) then
-                                    V_unconstrained_best = V_try
-                                    unconstrained_is_infeasible = (dividends < -epsilon)
-                                end if
-
-                                ! Skip if dividends negative (infeasible due to collateral constraint)
-                                if (dividends < -epsilon) cycle
-
-                                if (V_try > V_best) then
-                                    V_best = V_try
-                                    best_iIK = iIK
-                                    best_iHR = iHR
-                                    pol_IK(iz, iK, iS, iD) = IK_choice
-                                    pol_HR(iz, iK, iS, iD) = HR_choice
-                                    pol_Dprime(iz, iK, iS, iD) = Dp_choice
-                                    pol_Kprime(iz, iK, iS, iD) = Kprime
-                                    pol_Sprime(iz, iK, iS, iD) = Sprime
-                                    pol_L(iz, iK, iS, iD) = L_opt
-                                    pol_HP(iz, iK, iS, iD) = HP_opt
-                                    pol_Y(iz, iK, iS, iD) = Y_val
-                                end if
-
+                                end do  ! D'
                             end do  ! HR
                         end do  ! IK
 
                         ! ============================================================
-                        ! CONSTRAINT STATUS: λ > 0 (Collateral Constraint Binds)
-                        !
-                        ! A firm is constrained when its UNCONSTRAINED optimum
-                        ! (the (IK,HR) choice with highest value ignoring feasibility)
-                        ! is infeasible due to the collateral constraint.
-                        !
-                        ! This means the firm WOULD invest more but CAN'T.
-                        !
-                        ! In counterfactual mode (remove_collateral_constraint=.true.),
-                        ! all choices are feasible so no firm is ever constrained.
+                        ! LIMITED LIABILITY: V >= 0
+                        ! Under limited liability (Div >= 0), firm value is non-negative.
+                        ! If no feasible choice exists (firm is insolvent), V = 0:
+                        ! the firm exits/defaults and shareholders get nothing.
+                        ! This prevents the sentinel -1e10 from poisoning the
+                        ! value function through interpolation and expected values.
                         ! ============================================================
-                        constraint_binds = unconstrained_is_infeasible
+                        if (V_best < -1.0e9_dp) then
+                            ! No feasible choice: set safe default policies
+                            ! (depreciate capital, no investment, no borrowing)
+                            V_new(iz, iK, iS, iD) = 0.0_dp
+                            pol_IK(iz, iK, iS, iD) = 0.0_dp
+                            pol_HR(iz, iK, iS, iD) = 0.0_dp
+                            pol_Dprime(iz, iK, iS, iD) = 0.0_dp
+                            pol_Kprime(iz, iK, iS, iD) = max((1.0_dp - delta_K) * K_val, K_min)
+                            pol_Sprime(iz, iK, iS, iD) = max((1.0_dp - delta_S) * S_val, S_min)
+                            pol_L(iz, iK, iS, iD) = L_opt
+                            pol_HP(iz, iK, iS, iD) = HP_opt
+                            pol_Y(iz, iK, iS, iD) = Y_val
+                        else
+                            V_new(iz, iK, iS, iD) = max(V_best, 0.0_dp)
+                        end if
+
+                        ! ============================================================
+                        ! CONSTRAINT DETECTION: λ > 0 when D' = collateral limit
+                        ! The collateral constraint binds when the optimal D' equals
+                        ! the maximum allowed by collateral. This means the firm
+                        ! would borrow more if it could.
+                        ! ============================================================
+                        if (.not. remove_collateral_constraint .and. V_best > -1.0e9_dp &
+                            .and. best_D_max_coll > epsilon) then
+                            constraint_binds = (pol_Dprime(iz, iK, iS, iD) >= best_D_max_coll - epsilon)
+                        else
+                            constraint_binds = .false.
+                        end if
                         pol_constr(iz, iK, iS, iD) = constraint_binds
 
-                        ! Also store shadow value indicator (λ > 0 when constrained)
-                        ! pol_lambda can be used for welfare calculations
                         if (constraint_binds) then
-                            pol_lambda(iz, iK, iS, iD) = 1.0_dp  ! Qualitative indicator
+                            pol_lambda(iz, iK, iS, iD) = 1.0_dp
                         else
                             pol_lambda(iz, iK, iS, iD) = 0.0_dp
                         end if
@@ -543,34 +502,6 @@ contains
                         ! Store optimal indices for next iteration's local search
                         pol_iIK(iz, iK, iS, iD) = best_iIK
                         pol_iHR(iz, iK, iS, iD) = best_iHR
-
-                        ! ============================================================
-                        ! HANDLE INFEASIBLE STATES (FIX: Grid Boundary Trap)
-                        !
-                        ! If V_best is still at initialization (-10^10), no feasible
-                        ! choice exists. This happens when:
-                        !   1. The firm is at K_min and can't disinvest (K' would < K_min)
-                        !   2. Gross profit is negative (can't cover labor costs)
-                        !   3. All (IK, HR) combinations yield negative dividends
-                        !
-                        ! Economic interpretation: the firm is insolvent and exits.
-                        ! Equity holders get zero; firm is replaced by an entrant.
-                        ! Setting V = 0 prevents contamination of the value function.
-                        ! ============================================================
-                        if (V_best < -1.0e9_dp) then
-                            V_new(iz, iK, iS, iD) = 0.0_dp
-                            ! Mark as constrained (insolvent)
-                            pol_constr(iz, iK, iS, iD) = .true.
-                            pol_lambda(iz, iK, iS, iD) = 1.0_dp
-                            ! Set policies to "do nothing" defaults
-                            pol_IK(iz, iK, iS, iD) = 0.0_dp
-                            pol_HR(iz, iK, iS, iD) = 0.0_dp
-                            pol_Dprime(iz, iK, iS, iD) = 0.0_dp
-                            pol_Kprime(iz, iK, iS, iD) = (1.0_dp - delta_K) * K_val
-                            pol_Sprime(iz, iK, iS, iD) = (1.0_dp - delta_S) * S_val
-                        else
-                            V_new(iz, iK, iS, iD) = V_best
-                        end if
 
                     end do  ! iD
                 end do  ! iS
@@ -620,17 +551,6 @@ contains
                     do iD = 1, nD
                         D_old_val = grid_D(iD)
 
-                        ! Skip truly insolvent states: V was set to 0 in improvement
-                        ! step because NO feasible (IK, HR) choice existed.
-                        ! These have "do nothing" policies (IK=0, HR=0, D'=0).
-                        ! Keep at V=0 during evaluation to avoid spurious reactivation.
-                        if (V(iz, iK, iS, iD) < 1.0e-12_dp .and. &
-                            abs(pol_IK(iz, iK, iS, iD)) < 1.0e-12_dp .and. &
-                            abs(pol_HR(iz, iK, iS, iD)) < 1.0e-12_dp) then
-                            V_new(iz, iK, iS, iD) = 0.0_dp
-                            cycle
-                        end if
-
                         ! Use stored policy functions (no optimization!)
                         L_opt = pol_L(iz, iK, iS, iD)
                         HP_opt = pol_HP(iz, iK, iS, iD)
@@ -639,12 +559,12 @@ contains
                         HR_choice = pol_HR(iz, iK, iS, iD)
                         Dp_choice = pol_Dprime(iz, iK, iS, iD)
                         Kprime = pol_Kprime(iz, iK, iS, iD)
-                        Sprime = max(pol_Sprime(iz, iK, iS, iD), 1.0e-6_dp)  ! Safety floor
+                        Sprime = max(pol_Sprime(iz, iK, iS, iD), 1.0e-6_dp)
 
                         ! Compute intangible investment from R&D labor (for adjustment costs)
                         inv_S = RD_production(HR_choice)
 
-                        ! Compute adjustment costs (0 if phi_K=0 or phi_S=0)
+                        ! Compute adjustment costs
                         AC_K_val = adjustment_cost_K(IK_choice, K_val)
                         AC_S_val = adjustment_cost_S(inv_S, S_val)
 
@@ -654,19 +574,12 @@ contains
                         expenses = IK_choice + wH * HR_choice + AC_K_val + AC_S_val
                         dividends = resources - expenses
 
-                        ! Continuation value (this is the only "expensive" part)
+                        ! Continuation value
                         EV = expect_V(iz, Kprime, Sprime, Dp_choice)
 
-                        ! Value
+                        ! Value with limited liability floor
                         V_eval = dividends + beta * (1.0_dp - zeta) * EV
-
-                        ! Guard against NaN propagation from interpolation
-                        ! NaN /= NaN is true in IEEE 754
-                        if (V_eval /= V_eval) then
-                            V_new(iz, iK, iS, iD) = 0.0_dp  ! Treat as exit
-                        else
-                            V_new(iz, iK, iS, iD) = V_eval
-                        end if
+                        V_new(iz, iK, iS, iD) = max(V_eval, 0.0_dp)
 
                     end do  ! iD
                 end do  ! iS
@@ -688,12 +601,11 @@ contains
     subroutine solve_firm_problem()
         implicit none
         integer :: iter, eval_iter
-        real(dp) :: metric, metric_eval, diff_tmp
+        real(dp) :: metric, metric_eval
         integer :: total_states, total_choices
         logical :: do_improvement, first_improvement, do_full_search
         integer :: num_threads
         integer :: n_improvements  ! Counter for policy improvement steps
-        integer :: iz_tmp, iK_tmp, iS_tmp, iD_tmp  ! For NaN-safe metric loops
 
         print *, ""
         print *, "======================================"
@@ -701,11 +613,11 @@ contains
         print *, "======================================"
 
         total_states = nz * nK * nS * nD
-        total_choices = nIK * nHR  ! D' is now computed analytically
+        total_choices = nIK * nHR * nDp_search
         print '(A,I8)', "  Total state space points: ", total_states
         print '(A,I8)', "  Choice combinations (full): ", total_choices
-        print '(A)', "  Note: D' computed analytically (not grid search)"
-        print '(A,I8)', "  Choice combinations (local): ", (2*local_search_radius+1)**2
+        print '(A,I4,A)', "  D'' search: ", nDp_search, " points per (IK, HR)"
+        print '(A,I8)', "  Choice combinations (local): ", (2*local_search_radius+1)**2 * nDp_search
         print '(A,I4)', "  Howard improvement frequency: ", howard_freq
         print '(A,I4)', "  Howard evaluation steps: ", howard_eval_steps
 
@@ -714,9 +626,6 @@ contains
         !$ num_threads = omp_get_max_threads()
         print '(A,I4)', "  OpenMP threads: ", num_threads
         print *, ""
-
-        ! Precompute static labor solutions ONCE (depends on wages, fixed during VFI)
-        call precompute_static_labor()
 
         ! Initialize value function with approximate stationary values
         ! This avoids the "cold start" trap where V=0 makes R&D worthless
@@ -764,21 +673,10 @@ contains
                 call policy_improvement_step(do_full_search)
                 first_improvement = .false.
 
-                ! Compute metric (NaN-safe: skip NaN differences)
-                metric = 0.0_dp
-                do iD_tmp = 1, nD
-                    do iS_tmp = 1, nS
-                        do iK_tmp = 1, nK
-                            do iz_tmp = 1, nz
-                                diff_tmp = abs(V_new(iz_tmp,iK_tmp,iS_tmp,iD_tmp) &
-                                             - V(iz_tmp,iK_tmp,iS_tmp,iD_tmp))
-                                if (diff_tmp == diff_tmp) metric = max(metric, diff_tmp)
-                            end do
-                        end do
-                    end do
-                end do
+                ! Compute metric
+                metric = maxval(abs(V_new - V))
 
-                ! Update V (no dampening — VFI is a contraction mapping)
+                ! Update V (full update: no dampening needed with limited liability floor)
                 V = V_new
 
                 print '(A,E12.5)', "           metric = ", metric
@@ -799,19 +697,7 @@ contains
 
                     call policy_evaluation_step()
 
-                    ! NaN-safe metric for evaluation step
-                    metric_eval = 0.0_dp
-                    do iD_tmp = 1, nD
-                        do iS_tmp = 1, nS
-                            do iK_tmp = 1, nK
-                                do iz_tmp = 1, nz
-                                    diff_tmp = abs(V_new(iz_tmp,iK_tmp,iS_tmp,iD_tmp) &
-                                                 - V(iz_tmp,iK_tmp,iS_tmp,iD_tmp))
-                                    if (diff_tmp == diff_tmp) metric_eval = max(metric_eval, diff_tmp)
-                                end do
-                            end do
-                        end do
-                    end do
+                    metric_eval = maxval(abs(V_new - V))
 
                     ! Full update during policy evaluation (no dampening needed
                     ! since policy is fixed - we're just solving for V given policy)
