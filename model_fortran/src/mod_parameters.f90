@@ -69,8 +69,8 @@ module mod_parameters
     !---------------------------------------------------------------------------
     ! FINANCIAL FRICTION PARAMETERS
     !---------------------------------------------------------------------------
-    real(dp), parameter :: alpha_K = 0.381_dp    ! Tangible pledgeability (Holttinen et al. 2025)
-    real(dp), parameter :: alpha_S = 0.134_dp    ! Intangible pledgeability (Holttinen et al. 2025)
+    real(dp), parameter :: alpha_K = 0.781_dp    ! Tangible pledgeability (Holttinen et al. 2025)
+    real(dp), parameter :: alpha_S = 0.034_dp    ! Intangible pledgeability (Holttinen et al. 2025)
     ! Note: alpha_S < alpha_K creates pecking-order distortion
 
     ! Costly equity issuance (Hennessy & Whited 2007)
