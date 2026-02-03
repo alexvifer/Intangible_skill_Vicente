@@ -42,9 +42,12 @@ contains
     !   appear worthless, leading to zero R&D from the first iteration.
     !
     !   For each state (z, K, S, D), we compute the approximate perpetuity value
-    !   of staying at that state forever with no investment:
+    !   of staying at that state forever with debt rollover:
     !     V ≈ profit / (1 - β(1-ζ))
-    !   where profit = Y - wL*L - wH*HP - R*D
+    !   where profit = Y - wL*L - wH*HP - (R-1)*D
+    !   The (R-1)*D term assumes the firm rolls over debt each period,
+    !   paying only interest. This avoids over-penalizing debt states
+    !   (gradient -R/(1-β(1-ζ)) ≈ -7.66 vs correct -(R-1)/(1-β(1-ζ)) ≈ -0.31).
     !===================================================================================
     subroutine initialize_value_function()
         implicit none
@@ -77,8 +80,8 @@ contains
                     do iD = 1, nD
                         D_val = grid_D(iD)
 
-                        ! Compute profit net of debt service
-                        profit_init = Y_init - wL * L_init - wH * HP_init - R * D_val
+                        ! Compute profit net of interest cost (debt rollover assumption)
+                        profit_init = Y_init - wL * L_init - wH * HP_init - (R - 1.0_dp) * D_val
 
                         ! Approximate value as perpetuity of profits
                         ! Bound below to avoid very negative values for high debt states
@@ -294,11 +297,13 @@ contains
     !   Full policy optimization step with local search optimization.
     !   For each state, searches over (I^K, H^R, D') combinations.
     !
-    !   D' SEARCH: For each (I^K, H^R), searches over nDp_search levels of D'
-    !   from 0 to the collateral limit. With exit probability zeta > 0 and
-    !   R = 1/beta, firms generally prefer to borrow (exit risk subsidizes debt:
-    !   the effective cost is beta*(1-zeta)*(1+r) = (1-zeta) < 1 per unit).
-    !   The optimal D' balances current dividends vs. continuation value.
+    !   D' SEARCH: With exit repayment, D'=D_ub is no longer always optimal.
+    !   Upon exit, the firm liquidates tangible capital K' and repays R*D'.
+    !   Intangible capital S' is lost. Shareholders get max(K' - R*D', 0).
+    !   This removes the "exit subsidy" for solvent firms (K' > R*D'):
+    !     - Dividend-paying firms expecting future equity needs: DON'T borrow
+    !     - Equity-issuing firms or insolvent-at-exit firms: still borrow to limit
+    !   The optimal D' is interior, so we search over nDp_search grid points.
     !
     !   LIMITED LIABILITY: V >= 0 at all states. If no feasible (IK, HR, D')
     !   combination exists (firm is insolvent), V = 0. The firm's owners can
@@ -319,10 +324,10 @@ contains
         integer :: best_iIK, best_iHR
         real(dp) :: IK_choice, HR_choice, Dp_try
         real(dp) :: Kprime, Sprime, inv_S
-        real(dp) :: resources_before_D, expenses, dividends
+        real(dp) :: resources_before_D, expenses, dividends, payout
         real(dp) :: D_max_coll, D_ub, EV
         real(dp) :: AC_K_val, AC_S_val
-        real(dp) :: EV_invest
+        real(dp) :: EV_invest, exit_payoff
         logical :: constraint_binds
         real(dp) :: best_D_max_coll  ! Collateral limit at optimal choice
 
@@ -336,9 +341,9 @@ contains
         !$OMP&         L_opt, HP_opt, Y_val, Pi_gross, V_best, V_try, &
         !$OMP&         iIK, iHR, iIK_lo, iIK_hi, iHR_lo, iHR_hi, &
         !$OMP&         best_iIK, best_iHR, IK_choice, HR_choice, Dp_try, &
-        !$OMP&         Kprime, Sprime, inv_S, resources_before_D, expenses, dividends, &
+        !$OMP&         Kprime, Sprime, inv_S, resources_before_D, expenses, dividends, payout, &
         !$OMP&         D_max_coll, D_ub, EV, AC_K_val, AC_S_val, &
-        !$OMP&         EV_invest, constraint_binds, best_D_max_coll) &
+        !$OMP&         EV_invest, exit_payoff, constraint_binds, best_D_max_coll) &
         !$OMP& SCHEDULE(dynamic)
         do iz = 1, nz
             do iK = 1, nK
@@ -416,7 +421,14 @@ contains
                                 ! D' upper bound (can't exceed grid boundary for interpolation)
                                 D_ub = min(D_max_coll, D_max)
 
-                                ! Search over D' from 0 to D_ub
+                                ! ======================================================
+                                ! D' SEARCH with EXIT REPAYMENT
+                                ! Upon exit (prob ζ), firm liquidates tangible capital K'
+                                ! and repays R*D'. Intangible S' is lost.
+                                ! exit_payoff = max(K' - R*D', 0)  [limited liability]
+                                ! This removes the exit subsidy for solvent firms,
+                                ! creating interior D' solutions.
+                                ! ======================================================
                                 do iDp = 1, nDp_search
                                     if (nDp_search > 1) then
                                         Dp_try = D_ub * real(iDp - 1, dp) / real(nDp_search - 1, dp)
@@ -427,14 +439,19 @@ contains
                                     ! Dividends = gross profit - debt repayment + new borrowing - expenses
                                     dividends = resources_before_D + Dp_try - expenses
 
-                                    ! Non-negative dividends constraint (no equity issuance)
-                                    if (dividends < -epsilon) cycle
+                                    ! Apply equity issuance cost
+                                    if (dividends >= 0.0_dp) then
+                                        payout = dividends
+                                    else
+                                        payout = (1.0_dp + lambda_equity) * dividends
+                                    end if
 
-                                    ! Continuation value
+                                    ! Continuation value + exit payoff
                                     EV = expect_V(iz, Kprime, Sprime, Dp_try)
-                                    EV_invest = beta * (1.0_dp - zeta) * EV
+                                    exit_payoff = max(Kprime - R * Dp_try, 0.0_dp)
+                                    EV_invest = beta * ((1.0_dp - zeta) * EV + zeta * exit_payoff)
 
-                                    V_try = dividends + EV_invest
+                                    V_try = payout + EV_invest
 
                                     if (V_try > V_best) then
                                         V_best = V_try
@@ -527,8 +544,8 @@ contains
         real(dp) :: L_opt, HP_opt, Y_val, Pi_gross
         real(dp) :: IK_choice, HR_choice, Dp_choice
         real(dp) :: Kprime, Sprime, inv_S
-        real(dp) :: resources, expenses, dividends
-        real(dp) :: EV, V_eval
+        real(dp) :: resources, expenses, dividends, payout
+        real(dp) :: EV, V_eval, exit_payoff
         real(dp) :: AC_K_val, AC_S_val
 
         ! OPTIMIZATION: Precompute expected value grid from current V
@@ -539,7 +556,8 @@ contains
         !$OMP PARALLEL DO COLLAPSE(2) &
         !$OMP& PRIVATE(iz, iK, iS, iD, D_old_val, K_val, S_val, L_opt, HP_opt, Y_val, Pi_gross, &
         !$OMP&         IK_choice, HR_choice, Dp_choice, Kprime, Sprime, inv_S, &
-        !$OMP&         resources, expenses, dividends, EV, V_eval, AC_K_val, AC_S_val) &
+        !$OMP&         resources, expenses, dividends, payout, EV, V_eval, exit_payoff, &
+        !$OMP&         AC_K_val, AC_S_val) &
         !$OMP& SCHEDULE(dynamic)
         do iz = 1, nz
             do iK = 1, nK
@@ -574,11 +592,19 @@ contains
                         expenses = IK_choice + wH * HR_choice + AC_K_val + AC_S_val
                         dividends = resources - expenses
 
-                        ! Continuation value
+                        ! Apply equity issuance cost
+                        if (dividends >= 0.0_dp) then
+                            payout = dividends
+                        else
+                            payout = (1.0_dp + lambda_equity) * dividends
+                        end if
+
+                        ! Continuation value + exit payoff
                         EV = expect_V(iz, Kprime, Sprime, Dp_choice)
+                        exit_payoff = max(Kprime - R * Dp_choice, 0.0_dp)
 
                         ! Value with limited liability floor
-                        V_eval = dividends + beta * (1.0_dp - zeta) * EV
+                        V_eval = payout + beta * ((1.0_dp - zeta) * EV + zeta * exit_payoff)
                         V_new(iz, iK, iS, iD) = max(V_eval, 0.0_dp)
 
                     end do  ! iD
@@ -617,6 +643,7 @@ contains
         print '(A,I8)', "  Total state space points: ", total_states
         print '(A,I8)', "  Choice combinations (full): ", total_choices
         print '(A,I4,A)', "  D'' search: ", nDp_search, " points per (IK, HR)"
+        print '(A)',    "  Exit repayment: scrap = K'' (tangible only, S'' lost)"
         print '(A,I8)', "  Choice combinations (local): ", (2*local_search_radius+1)**2 * nDp_search
         print '(A,I4)', "  Howard improvement frequency: ", howard_freq
         print '(A,I4)', "  Howard evaluation steps: ", howard_eval_steps

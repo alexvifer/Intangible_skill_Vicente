@@ -365,6 +365,8 @@ contains
         real(dp) :: mass
         real(dp) :: loc_K, loc_S, loc_L, loc_HP, loc_HR, loc_D, loc_Y, loc_IK
         real(dp) :: loc_mass, loc_constr
+        real(dp) :: div_firm, Pi_gross, expenses, inv_S
+        real(dp) :: AC_K_val, AC_S_val
 
         ! Initialize
         agg_K = 0.0_dp
@@ -377,10 +379,12 @@ contains
         agg_IK = 0.0_dp
         mass_firms = 0.0_dp
         frac_constrained = 0.0_dp
+        agg_equity = 0.0_dp
+        frac_equity_issuing = 0.0_dp
 
         !$OMP PARALLEL DO COLLAPSE(2) &
-        !$OMP& PRIVATE(iz, iK, iS, iD, mass) &
-        !$OMP& REDUCTION(+:agg_K, agg_S, agg_L, agg_HP, agg_HR, agg_D, agg_Y, agg_IK, mass_firms, frac_constrained) &
+        !$OMP& PRIVATE(iz, iK, iS, iD, mass, div_firm, Pi_gross, expenses, inv_S, AC_K_val, AC_S_val) &
+        !$OMP& REDUCTION(+:agg_K, agg_S, agg_L, agg_HP, agg_HR, agg_D, agg_Y, agg_IK, mass_firms, frac_constrained, agg_equity, frac_equity_issuing) &
         !$OMP& SCHEDULE(static)
         do iz = 1, nz
             do iK = 1, nK
@@ -405,6 +409,21 @@ contains
                             frac_constrained = frac_constrained + mass
                         end if
 
+                        ! Compute firm-level dividends for equity issuance tracking
+                        Pi_gross = pol_Y(iz, iK, iS, iD) - wL * pol_L(iz, iK, iS, iD) &
+                                   - wH * pol_HP(iz, iK, iS, iD)
+                        inv_S = RD_production(pol_HR(iz, iK, iS, iD))
+                        AC_K_val = adjustment_cost_K(pol_IK(iz, iK, iS, iD), grid_K(iK))
+                        AC_S_val = adjustment_cost_S(inv_S, grid_S(iS))
+                        expenses = pol_IK(iz, iK, iS, iD) + wH * pol_HR(iz, iK, iS, iD) &
+                                   + AC_K_val + AC_S_val
+                        div_firm = Pi_gross - R * grid_D(iD) + pol_Dprime(iz, iK, iS, iD) - expenses
+
+                        if (div_firm < 0.0_dp) then
+                            agg_equity = agg_equity + mass * (-div_firm)
+                            frac_equity_issuing = frac_equity_issuing + mass
+                        end if
+
                     end do
                 end do
             end do
@@ -414,8 +433,8 @@ contains
         ! Total skilled labor
         agg_H = agg_HP + agg_HR
 
-        ! Consumption (from resource constraint)
-        agg_C = agg_Y - agg_IK - zeta * ce * mass_firms
+        ! Consumption (from resource constraint, includes equity issuance cost)
+        agg_C = agg_Y - agg_IK - zeta * ce * mass_firms - lambda_equity * agg_equity
 
         ! Statistics
         if (agg_K + agg_S > epsilon) then
@@ -431,6 +450,7 @@ contains
         end if
 
         frac_constrained = frac_constrained / max(mass_firms, epsilon)
+        frac_equity_issuing = frac_equity_issuing / max(mass_firms, epsilon)
 
     end subroutine compute_aggregates
 
@@ -463,6 +483,10 @@ contains
         print '(A,F10.2,A)', "  Fraction constrained:        ", frac_constrained*100.0_dp, "%"
         print '(A,F10.4)', "  Avg intangible intensity:    ", avg_intang_intensity
         print '(A,F10.4)', "  Avg leverage:                ", avg_leverage
+        print *, ""
+        print '(A,F12.6)', "  Agg equity issuance:         ", agg_equity
+        print '(A,F12.6)', "  Agg equity issuance cost:    ", lambda_equity * agg_equity
+        print '(A,F10.2,A)', "  Fraction issuing equity:     ", frac_equity_issuing*100.0_dp, "%"
         print *, ""
 
     end subroutine print_aggregates

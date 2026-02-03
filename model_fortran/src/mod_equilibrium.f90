@@ -54,11 +54,20 @@ contains
         end do
 
         !-----------------------------------------------------------------------
-        ! Debt grid
+        ! Debt grid (log-spaced with D(1) = 0 for fine resolution at low debt)
+        ! Most firms borrow little; a log grid concentrates points where it matters.
+        ! Approach: first point at zero, remaining points log-spaced from D_min_pos to D_max.
         !-----------------------------------------------------------------------
-        do i = 1, nD
-            grid_D(i) = D_min + (D_max - D_min) * real(i-1, dp) / real(nD-1, dp)
-        end do
+        block
+            real(dp), parameter :: D_min_pos = 1.0e-3_dp  ! Smallest positive debt level
+            real(dp) :: log_ratio_D
+
+            grid_D(1) = 0.0_dp
+            log_ratio_D = log(D_max / D_min_pos)
+            do i = 2, nD
+                grid_D(i) = D_min_pos * exp(real(i-2, dp) / real(nD-2, dp) * log_ratio_D)
+            end do
+        end block
 
         !-----------------------------------------------------------------------
         ! Choice grids
@@ -135,10 +144,17 @@ contains
             end if
         end block
 
-        ! New debt
-        do i = 1, nDprime
-            grid_Dprime(i) = D_min + (D_max - D_min) * real(i-1, dp) / real(nDprime-1, dp)
-        end do
+        ! New debt (log-spaced, matching state grid)
+        block
+            real(dp), parameter :: Dp_min_pos = 1.0e-3_dp
+            real(dp) :: log_ratio_Dp
+
+            grid_Dprime(1) = 0.0_dp
+            log_ratio_Dp = log(D_max / Dp_min_pos)
+            do i = 2, nDprime
+                grid_Dprime(i) = Dp_min_pos * exp(real(i-2, dp) / real(nDprime-2, dp) * log_ratio_Dp)
+            end do
+        end block
 
         print *, "  Grids initialized."
         print '(A,I4,A,F8.3,A,F8.3)', "    z grid:  ", nz, " points, range [", &
@@ -149,6 +165,12 @@ contains
             grid_S(1), ", ", grid_S(nS), "]"
         print '(A,I4,A,F8.3,A,F8.3)', "    D grid:  ", nD, " points, range [", &
             grid_D(1), ", ", grid_D(nD), "]"
+        print *, ""
+        print *, "  D grid (log-spaced, D(1)=0 then log from 0.001):"
+        print '(A,F10.6,A,F10.6,A,F10.6,A,F10.6,A,F10.6)', "    First 5: ", &
+            grid_D(1), ", ", grid_D(2), ", ", grid_D(3), ", ", grid_D(4), ", ", grid_D(5)
+        print '(A,F10.6,A,F10.6,A,F10.6)', "    Mid:     ", &
+            grid_D(nD/2-1), ", ", grid_D(nD/2), ", ", grid_D(nD/2+1)
         print '(A,I4,A,F8.3,A,F8.3)', "    IK grid: ", nIK, " points, range [", &
             grid_IK(1), ", ", grid_IK(nIK), "]"
         print *, ""
@@ -256,6 +278,7 @@ contains
         real(dp) :: wL_old, wH_old, excess_L, excess_H
         real(dp) :: update_wL, update_wH
         real(dp) :: time_start, time_current, time_elapsed_min
+        real(dp) :: abs_excess_L, abs_excess_H
 
         print *, ""
         print *, "======================================"
@@ -275,8 +298,8 @@ contains
         call cpu_time(time_start)
 
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.655180_dp
-        wH = 0.871480_dp
+        wL = 0.726152_dp
+        wH = 1.019053_dp
 
         do iter_outer = 1, maxiter_eq
 
@@ -300,8 +323,13 @@ contains
             excess_L = agg_L - Lbar
             excess_H = agg_H - Hbar
 
+            ! Relative excess demand
             metric_eq_L = abs(excess_L) / Lbar
             metric_eq_H = abs(excess_H) / Hbar
+
+            ! Absolute excess demand
+            abs_excess_L = abs(excess_L)
+            abs_excess_H = abs(excess_H)
 
             print *, ""
             print *, "  Market clearing:"
@@ -310,6 +338,7 @@ contains
             print '(A,F10.6,A,F10.6,A,F10.6)', "    Skilled:   demand = ", agg_H, &
                 ", supply = ", Hbar, ", excess = ", excess_H
             print '(A,F10.6,A,F10.6)', "    Relative excess: L = ", metric_eq_L, ", H = ", metric_eq_H
+            print '(A,F10.6,A,F10.6)', "    Absolute excess: L = ", abs_excess_L, ", H = ", abs_excess_H
 
             ! Display cumulative elapsed time
             call cpu_time(time_current)
@@ -317,8 +346,15 @@ contains
             print *, ""
             print '(A,F8.2,A)', "  >>> Cumulative time elapsed: ", time_elapsed_min, " minutes"
 
-            ! Check convergence (relative excess demand < tol_eq)
-            if (metric_eq_L < tol_eq .and. metric_eq_H < tol_eq) then
+            !---------------------------------------------------------------
+            ! CONVERGENCE CHECK: uncomment ONE of the two options below
+            !---------------------------------------------------------------
+
+            ! OPTION 1: Relative excess demand (default)
+            !if (metric_eq_L < tol_eq .and. metric_eq_H < tol_eq) then
+
+            ! OPTION 2: Absolute excess demand
+            if (abs_excess_L < tol_eq .and. abs_excess_H < tol_eq) then
                 print *, ""
                 print *, "======================================"
                 print *, "EQUILIBRIUM FOUND!"
@@ -396,6 +432,9 @@ contains
         write(unit_agg, '(A,F12.6)') 'Frac_constrained         ', frac_constrained
         write(unit_agg, '(A,F12.6)') 'Avg_intang_intensity     ', avg_intang_intensity
         write(unit_agg, '(A,F12.6)') 'Avg_leverage             ', avg_leverage
+        write(unit_agg, '(A,F12.6)') 'Agg_equity_issuance      ', agg_equity
+        write(unit_agg, '(A,F12.6)') 'Agg_equity_cost          ', lambda_equity * agg_equity
+        write(unit_agg, '(A,F12.6)') 'Frac_equity_issuing      ', frac_equity_issuing
         close(unit_agg)
 
         ! Save distribution (sparse format: only non-zero entries)
@@ -513,6 +552,14 @@ contains
                                                       - wH*pol_HP((nz+1)/2, 1, 1, 1)
         write(unit_diag, *)
 
+        ! Equity issuance parameters
+        write(unit_diag, '(A)') 'EQUITY ISSUANCE PARAMETERS:'
+        write(unit_diag, '(A,F12.6)') '  lambda_equity:          ', lambda_equity
+        write(unit_diag, '(A,F12.6)') '  Agg equity issuance:    ', agg_equity
+        write(unit_diag, '(A,F12.6)') '  Agg equity cost:        ', lambda_equity * agg_equity
+        write(unit_diag, '(A,F10.2,A)') '  Frac issuing equity:    ', frac_equity_issuing * 100.0_dp, '%'
+        write(unit_diag, *)
+
         ! R&D profitability analysis
         ! FIX #4: Use E-format for values that may be large
         write(unit_diag, '(A)') 'R&D PROFITABILITY ANALYSIS:'
@@ -543,10 +590,21 @@ contains
         write(unit_diag, '(A,F12.6)') '  R&D cost (wH*HR):                ', wH * pol_HR((nz+1)/2, 1, 1, 1)
         write(unit_diag, '(A,F12.6)') '  Total expenses:                  ', &
               pol_IK((nz+1)/2, 1, 1, 1) + wH * pol_HR((nz+1)/2, 1, 1, 1)
-        write(unit_diag, '(A,F12.6)') '  Dividends (resources - expenses):', &
-              pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) - wH*pol_HP((nz+1)/2, 1, 1, 1) &
-              - R * grid_D(1) + pol_Dprime((nz+1)/2, 1, 1, 1) &
-              - pol_IK((nz+1)/2, 1, 1, 1) - wH * pol_HR((nz+1)/2, 1, 1, 1)
+        block
+            real(dp) :: entry_div, entry_payout
+            entry_div = pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) &
+                        - wH*pol_HP((nz+1)/2, 1, 1, 1) &
+                        - R * grid_D(1) + pol_Dprime((nz+1)/2, 1, 1, 1) &
+                        - pol_IK((nz+1)/2, 1, 1, 1) - wH * pol_HR((nz+1)/2, 1, 1, 1)
+            if (entry_div >= 0.0_dp) then
+                entry_payout = entry_div
+            else
+                entry_payout = (1.0_dp + lambda_equity) * entry_div
+            end if
+            write(unit_diag, '(A,F12.6)') '  Dividends (resources - expenses):', entry_div
+            write(unit_diag, '(A,F12.6)') '  Payout (after equity cost):      ', entry_payout
+            write(unit_diag, '(A,F12.6)') '  lambda_equity:                   ', lambda_equity
+        end block
         write(unit_diag, *)
 
         ! Collateral constraint
@@ -557,6 +615,18 @@ contains
         write(unit_diag, '(A,F12.6)') '  Actual D'':                       ', pol_Dprime((nz+1)/2, 1, 1, 1)
         write(unit_diag, '(A,L)') '  Constraint binding?              ', &
               pol_Dprime((nz+1)/2, 1, 1, 1) >= (alpha_K * grid_K(1) + alpha_S * grid_S(1)) - 0.01_dp
+        write(unit_diag, *)
+        write(unit_diag, '(A)') 'EXIT REPAYMENT:'
+        write(unit_diag, '(A)')    '  Scrap value:                     K'' (tangible only, S'' lost)'
+        write(unit_diag, '(A,F12.6)') '  K'' at entry:                     ', pol_Kprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  R*D'' at entry:                   ', R * pol_Dprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  Exit payoff at entry:            ', &
+              max(pol_Kprime((nz+1)/2, 1, 1, 1) - R * pol_Dprime((nz+1)/2, 1, 1, 1), 0.0_dp)
+        write(unit_diag, '(A,F12.6)') '  K'' at median:                    ', pol_Kprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, '(A,F12.6)') '  R*D'' at median:                  ', R * pol_Dprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+        write(unit_diag, '(A,F12.6)') '  Exit payoff at median:           ', &
+              max(pol_Kprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1) &
+              - R * pol_Dprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1), 0.0_dp)
 
         close(unit_diag)
         print *, "  output/diagnostics.txt"

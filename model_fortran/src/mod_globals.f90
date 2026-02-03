@@ -115,6 +115,10 @@ module mod_globals
     real(dp) :: avg_leverage                       ! Average leverage
     real(dp) :: avg_intang_intensity               ! Average S/(K+S)
 
+    ! Equity issuance aggregates
+    real(dp) :: agg_equity                         ! Aggregate equity issuance (sum of max(-div,0)*mass)
+    real(dp) :: frac_equity_issuing                ! Fraction of firms with div < 0
+
     !---------------------------------------------------------------------------
     ! ITERATION CONTROL
     !---------------------------------------------------------------------------

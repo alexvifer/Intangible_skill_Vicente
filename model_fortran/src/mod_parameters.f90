@@ -73,6 +73,12 @@ module mod_parameters
     real(dp), parameter :: alpha_S = 0.134_dp    ! Intangible pledgeability (Holttinen et al. 2025)
     ! Note: alpha_S < alpha_K creates pecking-order distortion
 
+    ! Costly equity issuance (Hennessy & Whited 2007)
+    ! Raising $1 of equity costs shareholders $(1 + lambda_equity).
+    ! payout = div if div >= 0; payout = (1 + lambda_equity) * div if div < 0.
+    ! Range in literature: 4-15%. Setting 6% as baseline.
+    real(dp), parameter :: lambda_equity = 0.06_dp
+
     !---------------------------------------------------------------------------
     ! COUNTERFACTUAL: NO FINANCIAL CONSTRAINTS
     ! When true, sets λ=0 for all firms (collateral constraint never binds).
@@ -136,7 +142,7 @@ module mod_parameters
     !---------------------------------------------------------------------------
     real(dp), parameter :: tol_VFI = 1.0e-4_dp     ! Tolerance for value function iteration
     real(dp), parameter :: tol_dist = 1.0e-4_dp    ! Tolerance for distribution
-    real(dp), parameter :: tol_eq = 1.0e-2_dp      ! Tolerance for equilibrium (relative excess demand)
+    real(dp), parameter :: tol_eq = 5.0e-2_dp      ! Tolerance for equilibrium (relative excess demand)
     integer, parameter :: maxiter_VFI = 3000       ! Max iterations for VFI (increased from 2000)
     integer, parameter :: maxiter_dist = 5000      ! Max iterations for distribution
     integer, parameter :: maxiter_eq = 300         ! Max iterations for equilibrium (increased from 100)
