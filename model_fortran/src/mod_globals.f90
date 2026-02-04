@@ -122,6 +122,10 @@ module mod_globals
     ! Exit value aggregates
     real(dp) :: agg_exit_val                       ! ζ * sum(exit_val * mass)
 
+    ! Entry capital endowment (K0 = E[K], S0 = E[S] from stationary distribution)
+    real(dp) :: entry_K                            ! Entry tangible capital
+    real(dp) :: entry_S                            ! Entry intangible capital
+
     !---------------------------------------------------------------------------
     ! ITERATION CONTROL
     !---------------------------------------------------------------------------

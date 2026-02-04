@@ -69,7 +69,7 @@ module mod_parameters
     !---------------------------------------------------------------------------
     ! FINANCIAL FRICTION PARAMETERS
     !---------------------------------------------------------------------------
-    real(dp), parameter :: alpha_K = 0.781_dp    ! Tangible pledgeability (Holttinen et al. 2025)
+    real(dp), parameter :: alpha_K = 0.381_dp    ! Tangible pledgeability (Holttinen et al. 2025)
     real(dp), parameter :: alpha_S = 0.134_dp    ! Intangible pledgeability (Holttinen et al. 2025)
     ! Note: alpha_S < alpha_K creates pecking-order distortion
 
@@ -100,8 +100,8 @@ module mod_parameters
     !---------------------------------------------------------------------------
     ! ENTRY AND EXIT
     !---------------------------------------------------------------------------
-    real(dp), parameter :: zeta = 0.10_dp          ! Exit probability
-    real(dp), parameter :: ce = 1.00_dp            ! Entry cost (to be calibrated)
+    real(dp), parameter :: zeta = 0.10_dp          ! Exit probability (exogenous)
+    ! Entry is exogenous (mass zeta); entrants receive K0=E[K], S0=E[S], D0=0
 
     !---------------------------------------------------------------------------
     ! STATE SPACE GRIDS

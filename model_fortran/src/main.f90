@@ -59,7 +59,6 @@ program main
     print *, "Model parameters:"
     print '(A,F8.4)', "  Discount factor (β):              ", beta
     print '(A,F8.4)', "  Risk-free rate (R = 1/β):         ", R
-    print '(A,F8.4)', "  Exit probability (ζ):             ", zeta
     print *, ""
     print *, "Labor supply:"
     print '(A,F8.4)', "  Unskilled (L̄):                    ", Lbar
@@ -81,6 +80,10 @@ program main
     print '(A,F8.4)', "  Tangible pledgeability (αK):      ", alpha_K
     print '(A,F8.4)', "  Intangible pledgeability (αS):    ", alpha_S
     print '(A,F8.4)', "  Pledgeability gap (αK - αS):      ", alpha_K - alpha_S
+    print *, ""
+    print *, "Entry/exit:"
+    print '(A,F8.4)', "  Exit probability (ζ):             ", zeta
+    print '(A)',       "  Entry/exit: exogenous (rate zeta); entrants get K0=E[K], S0=E[S], D0=0"
     print *, ""
     print *, "Productivity process:"
     print '(A,F8.4)', "  Persistence (ρz):                 ", rho_z

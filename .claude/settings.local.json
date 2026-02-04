@@ -4,7 +4,10 @@
       "Bash(wc:*)",
       "Bash(gfortran --version:*)",
       "Bash(gfortran:*)",
-      "Bash(OMP_NUM_THREADS=8 ./model_fortran.exe:*)"
+      "Bash(OMP_NUM_THREADS=8 ./model_fortran.exe:*)",
+      "Bash(make clean:*)",
+      "Bash(make:*)",
+      "Bash(timeout 600 ./model_vicente:*)"
     ]
   }
 }

@@ -39,17 +39,35 @@ contains
         real(dp) :: Kprime, Sprime, Dprime, mass_exit, mass_entry
         real(dp) :: metric, wKp, wSp, wDp
         real(dp) :: dist_contrib
+        ! Entry interpolation variables
+        integer :: iK_entry, iS_entry
+        real(dp) :: wK_entry, wS_entry
 
         print *, ""
         print *, "======================================"
         print *, "COMPUTING STATIONARY DISTRIBUTION"
         print *, "======================================"
 
-        ! Initialize distribution
-        ! Start all mass at entry point: K=S=D=0, z drawn from stationary dist
+        ! Locate entry capital on grids
+        call locate_grid(grid_K, nK, entry_K, iK_entry, wK_entry)
+        call locate_grid(grid_S, nS, entry_S, iS_entry, wS_entry)
+        wK_entry = max(0.0_dp, min(1.0_dp, wK_entry))
+        wS_entry = max(0.0_dp, min(1.0_dp, wS_entry))
+
+        print '(A,F10.4,A,F10.4)', "  Entry capital: K0 = ", entry_K, ", S0 = ", entry_S
+
+        ! Initialize distribution at entry point (entry_K, entry_S, D=0)
         dist = 0.0_dp
         do iz = 1, nz
-            dist(iz, 1, 1, 1) = stat_dist_z(iz)  ! Entry at (z, K_min, S_min, D_min)
+            ! Bilinear interpolation onto grid for entry at (entry_K, entry_S, D=0)
+            dist(iz, iK_entry,   iS_entry,   1) = dist(iz, iK_entry,   iS_entry,   1) &
+                + stat_dist_z(iz) * (1.0_dp - wK_entry) * (1.0_dp - wS_entry)
+            dist(iz, iK_entry,   iS_entry+1, 1) = dist(iz, iK_entry,   iS_entry+1, 1) &
+                + stat_dist_z(iz) * (1.0_dp - wK_entry) * wS_entry
+            dist(iz, iK_entry+1, iS_entry,   1) = dist(iz, iK_entry+1, iS_entry,   1) &
+                + stat_dist_z(iz) * wK_entry * (1.0_dp - wS_entry)
+            dist(iz, iK_entry+1, iS_entry+1, 1) = dist(iz, iK_entry+1, iS_entry+1, 1) &
+                + stat_dist_z(iz) * wK_entry * wS_entry
         end do
 
         ! Normalize
@@ -64,9 +82,16 @@ contains
             mass_exit = zeta * sum(dist)
             mass_entry = mass_exit
 
-            ! Add entrants at (z, K_min, S_min, D_min) with productivity drawn from stat dist
+            ! Add entrants at (entry_K, entry_S, D=0) with productivity drawn from stat dist
             do iz = 1, nz
-                dist_new(iz, 1, 1, 1) = dist_new(iz, 1, 1, 1) + mass_entry * stat_dist_z(iz)
+                dist_new(iz, iK_entry,   iS_entry,   1) = dist_new(iz, iK_entry,   iS_entry,   1) &
+                    + mass_entry * stat_dist_z(iz) * (1.0_dp - wK_entry) * (1.0_dp - wS_entry)
+                dist_new(iz, iK_entry,   iS_entry+1, 1) = dist_new(iz, iK_entry,   iS_entry+1, 1) &
+                    + mass_entry * stat_dist_z(iz) * (1.0_dp - wK_entry) * wS_entry
+                dist_new(iz, iK_entry+1, iS_entry,   1) = dist_new(iz, iK_entry+1, iS_entry,   1) &
+                    + mass_entry * stat_dist_z(iz) * wK_entry * (1.0_dp - wS_entry)
+                dist_new(iz, iK_entry+1, iS_entry+1, 1) = dist_new(iz, iK_entry+1, iS_entry+1, 1) &
+                    + mass_entry * stat_dist_z(iz) * wK_entry * wS_entry
             end do
 
             ! Survivors transition according to policy functions
@@ -222,16 +247,34 @@ contains
         real(dp) :: Kprime, Sprime, Dprime, mass_exit, mass_entry
         real(dp) :: metric, wKp, wSp, wDp
         real(dp) :: dist_contrib, mass
+        ! Entry interpolation variables
+        integer :: iK_entry, iS_entry
+        real(dp) :: wK_entry, wS_entry
 
         print *, ""
         print *, "======================================"
         print *, "COMPUTING STATIONARY DISTRIBUTION (SPARSE)"
         print *, "======================================"
 
-        ! Initialize distribution
+        ! Locate entry capital on grids
+        call locate_grid(grid_K, nK, entry_K, iK_entry, wK_entry)
+        call locate_grid(grid_S, nS, entry_S, iS_entry, wS_entry)
+        wK_entry = max(0.0_dp, min(1.0_dp, wK_entry))
+        wS_entry = max(0.0_dp, min(1.0_dp, wS_entry))
+
+        print '(A,F10.4,A,F10.4)', "  Entry capital: K0 = ", entry_K, ", S0 = ", entry_S
+
+        ! Initialize distribution at entry point (entry_K, entry_S, D=0)
         dist = 0.0_dp
         do iz = 1, nz
-            dist(iz, 1, 1, 1) = stat_dist_z(iz)
+            dist(iz, iK_entry,   iS_entry,   1) = dist(iz, iK_entry,   iS_entry,   1) &
+                + stat_dist_z(iz) * (1.0_dp - wK_entry) * (1.0_dp - wS_entry)
+            dist(iz, iK_entry,   iS_entry+1, 1) = dist(iz, iK_entry,   iS_entry+1, 1) &
+                + stat_dist_z(iz) * (1.0_dp - wK_entry) * wS_entry
+            dist(iz, iK_entry+1, iS_entry,   1) = dist(iz, iK_entry+1, iS_entry,   1) &
+                + stat_dist_z(iz) * wK_entry * (1.0_dp - wS_entry)
+            dist(iz, iK_entry+1, iS_entry+1, 1) = dist(iz, iK_entry+1, iS_entry+1, 1) &
+                + stat_dist_z(iz) * wK_entry * wS_entry
         end do
         dist = dist / sum(dist)
 
@@ -248,9 +291,16 @@ contains
             mass_exit = zeta * sum(dist)
             mass_entry = mass_exit
 
-            ! Add entrants
+            ! Add entrants at (entry_K, entry_S, D=0)
             do iz = 1, nz
-                dist_new(iz, 1, 1, 1) = dist_new(iz, 1, 1, 1) + mass_entry * stat_dist_z(iz)
+                dist_new(iz, iK_entry,   iS_entry,   1) = dist_new(iz, iK_entry,   iS_entry,   1) &
+                    + mass_entry * stat_dist_z(iz) * (1.0_dp - wK_entry) * (1.0_dp - wS_entry)
+                dist_new(iz, iK_entry,   iS_entry+1, 1) = dist_new(iz, iK_entry,   iS_entry+1, 1) &
+                    + mass_entry * stat_dist_z(iz) * (1.0_dp - wK_entry) * wS_entry
+                dist_new(iz, iK_entry+1, iS_entry,   1) = dist_new(iz, iK_entry+1, iS_entry,   1) &
+                    + mass_entry * stat_dist_z(iz) * wK_entry * (1.0_dp - wS_entry)
+                dist_new(iz, iK_entry+1, iS_entry+1, 1) = dist_new(iz, iK_entry+1, iS_entry+1, 1) &
+                    + mass_entry * stat_dist_z(iz) * wK_entry * wS_entry
             end do
 
             ! Process only active states (sparse iteration)
@@ -424,7 +474,8 @@ contains
                         ! Exit value for aggregate accounting
                         Pi_gross = pol_Y(iz, iK, iS, iD) - wL * pol_L(iz, iK, iS, iD) &
                                    - wH * pol_HP(iz, iK, iS, iD)
-                        exit_val_firm = max(Pi_gross + grid_K(iK) + grid_S(iS) &
+                        exit_val_firm = max(Pi_gross + (1.0_dp - delta_K) * grid_K(iK) &
+                                           + (1.0_dp - delta_S) * grid_S(iS) &
                                            - R * grid_D(iD), 0.0_dp)
                         agg_exit_val = agg_exit_val + mass * exit_val_firm
 
@@ -440,11 +491,13 @@ contains
         agg_H = agg_HP + (1.0_dp - zeta) * agg_HR
 
         ! Consumption from resource constraint
-        ! C = Y - (1-zeta)*IK + zeta*(K+S) - zeta*ce*mass
-        ! Exit firms sell undepreciated capital K+S (adds to consumption)
+        ! C = Y - (1-zeta)*IK + zeta*((1-dK)*K + (1-dS)*S) - zeta*(K0+S0)
+        ! Exit firms sell depreciated capital (adds to consumption)
+        ! Entrants receive (K0, S0) capital (subtracts from consumption)
         ! Only survivors invest IK
         agg_C = agg_Y - (1.0_dp - zeta) * agg_IK &
-              + zeta * (agg_K + agg_S) - zeta * ce * mass_firms
+              + zeta * ((1.0_dp - delta_K) * agg_K + (1.0_dp - delta_S) * agg_S) &
+              - zeta * (entry_K + entry_S)
 
         ! Statistics
         if (agg_K + agg_S > epsilon) then

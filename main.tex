@@ -32,10 +32,9 @@
 % Figure note command
 \newcommand{\note}[1]{\par\vspace{6pt}\footnotesize\textit{Note:} #1}
 
-\title{\textbf{Financial Frictions, Intangible Capital and Productivity: A Model of Skill-Biased Stagnation}}
-\author[1]{Alejandro Vicente}
-\affil[1]{University of Alicante}
-\date{\textcolor{red}{PRELIMINARY AND INCOMPLETE, DO NOT CIRCULATE} \\ \today}
+\title{\textbf{Skill-biased stagnation}}
+\author{Alejandro Vicente\thanks{University of Alicante. Email: alejandro.vicente@ua.es}}
+\date{\today \\ \vspace{0.25cm} \textcolor{red}{PRELIMINARY AND INCOMPLETE, DO NOT CIRCULATE}}
 
 \begin{document}
 \maketitle
@@ -43,6 +42,13 @@
 \begin{abstract}
 This paper studies how financial frictions prevent economies from fully exploiting productivity gains from rising human capital. Using Portuguese matched employer-employee and firm balance sheet data for 2011-2022, I document three empirical facts: (1) intangible capital and skilled labor are complements in production, (2) financially constrained firms underinvest in intangibles and R\&D labor, and (3) constrained firms underexploit the complementarity: during Portugal's skill supply expansion, wage premia declined more sharply at constrained firms despite hiring skilled workers at similar rates. I develop a quantitative heterogeneous-firm model with nested CES production, endogenous intangible accumulation through R\&D, and collateral constraints with differential pledgeability (\(\alpha_K > \alpha_S\)). The model rationalizes the empirical patterns and reveals a \emph{skill-biased stagnation} mechanism: when skilled labor becomes more abundant, unconstrained firms exploit the complementarity by investing in both intangibles and skills, while constrained firms hire skilled workers but cannot finance complementary intangible investments, leading to underexploitation and muted aggregate productivity gains. Counterfactual experiments quantify the role of financial frictions in limiting returns to human capital accumulation.
 \end{abstract}
+
+\bigskip
+\noindent \textbf{Keywords:} Intangible capital, financial frictions, skilled labor, productivity, firm dynamics
+
+\noindent \textbf{JEL Classification:} E22, E24, G32
+
+\newpage
 
 \section{Introduction}
 
@@ -182,31 +188,31 @@ The three facts establish the key building blocks of the theoretical mechanism. 
 
 \subsection{Environment}
 
-Consider a two-period economy with a representative firm and no aggregate uncertainty. The firm is endowed with initial tangible capital $K_0 > 0$, initial wealth $W_0 \geq 0$, and a lifetime allocation of skilled labor $\bar{H} > 0$. Productivity $z > 0$ is constant and known.
+Consider a static economy with a representative firm and no aggregate uncertainty. Within the period, there are two sequential stages: an \emph{investment stage} followed by a \emph{production stage}. The firm is endowed with initial tangible capital $K_0 > 0$, initial wealth $W_0 \geq 0$, and a total allocation of skilled labor $\bar{H} > 0$. Productivity $z > 0$ is constant and known.
 
-\textbf{Period 1 (Investment Phase):} The firm chooses tangible investment $I^K \geq 0$ and allocates skilled labor between R\&D ($H^R \geq 0$) and production for period 2 ($H^P = \bar{H} - H^R$). Intangible capital is produced linearly:
+\textbf{Investment Stage:} The firm chooses tangible investment $I^K \geq 0$ and allocates skilled labor between R\&D ($H^R \geq 0$) and production ($H^P = \bar{H} - H^R$). Intangible capital is produced linearly:
 \begin{equation}
 S = \Gamma H^R, \quad \Gamma > 0.
 \label{eq:toy_intangible_prod}
 \end{equation}
 
-\textbf{Period 2 (Production Phase):} The firm produces output using accumulated capital and the skilled labor allocated in period 1. No further investment decisions are made.
+\textbf{Production Stage:} The firm produces output using accumulated capital and the skilled labor allocated in the investment stage. No further investment decisions are made.
 
 \subsection{Technology}
 
-\textbf{Capital Stocks.} Period 2 tangible capital is:
+\textbf{Capital Stocks.} The tangible capital stock entering production is:
 \begin{equation}
 K = K_0 + I^K.
 \end{equation}
 
-\textbf{Intangible-Skill Composite.} The intangible capital $S$ from period 1 combines with the allocated production labor $H^P = \bar{H} - H^R$ to form:
+\textbf{Intangible-Skill Composite.} The intangible capital $S$ from the investment stage combines with the allocated production labor $H^P = \bar{H} - H^R$ to form:
 \begin{equation}
 Q(S, H^P) = \left[\omega S^{\rho} + (1-\omega)(H^P)^{\rho}\right]^{1/\rho}, \quad \omega \in (0,1), \, \rho < 0.
 \label{eq:toy_Q}
 \end{equation}
 The elasticity of substitution $\sigma_Q = 1/(1-\rho) < 1$ captures complementarity.
 
-\textbf{Production.} Period 2 output is:
+\textbf{Production.} Output in the production stage is:
 \begin{equation}
 Y = z K^{\alpha} Q(S, H^P)^{1-\alpha}, \quad \alpha \in (0,1).
 \label{eq:toy_production}
@@ -216,14 +222,14 @@ For tractability, I abstract from unskilled labor and normalize away depreciatio
 
 \subsection{Financial Constraint}
 
-The firm may borrow only against tangible assets. At the end of period 1, the pledgeable capital stock equals $K_0 + I^K$. Thus:
+The firm may borrow only against tangible assets. At the end of the investment stage, the pledgeable capital stock equals $K_0 + I^K$. Thus:
 \begin{equation}
 D \leq \alpha_K (K_0 + I^K), \quad \alpha_K \in (0,1),
 \label{eq:toy_collateral}
 \end{equation}
-where $D$ denotes borrowing in period 1. Intangible capital is non-pledgeable: $\alpha_S = 0$.
+where $D$ denotes borrowing in the investment stage. Intangible capital is non-pledgeable: $\alpha_S = 0$.
 
-\textbf{Period 1 Budget Constraint:}
+\textbf{Investment Stage Budget Constraint:}
 \begin{equation}
 I^K + w_H H^R \leq W_0 + D.
 \label{eq:toy_budget_raw}
@@ -249,7 +255,7 @@ I^K(1 - \alpha_K) + w_H H^R \leq W'_0.
 
 \subsection{Firm Problem}
 
-The firm chooses $(I^K, H^R)$ to maximize net output:
+The firm chooses $(I^K, H^R)$ in the investment stage to maximize net output:
 \begin{equation}
 \max_{I^K \geq 0, \, H^R \in [0, \bar{H}]} \quad Y - I^K - w_H \bar{H}
 \label{eq:toy_objective}
@@ -1023,129 +1029,83 @@ The pattern of underexploitation is robust across outcome measures: the compleme
 \section{Computational Methods}
 \label{app:computation}
 
-This appendix provides a detailed description of the numerical methods used to solve and simulate the quantitative model. The computational implementation follows standard practices in the heterogeneous-agent and heterogeneous-firm literature while incorporating several acceleration techniques to handle the large state space.
+This appendix describes the numerical methods used to solve and simulate the quantitative model. The computational implementation follows standard practices in the heterogeneous firm literature while incorporating several optimizations to handle the four-dimensional state space efficiently.
 
-\subsection{Overview of the Solution Algorithm}
+\subsection{Solution Algorithm Overview}
 
-The model is solved by finding a stationary recursive competitive equilibrium, which requires:
+The model is solved by finding a stationary recursive competitive equilibrium. The algorithm consists of three nested loops:
 \begin{enumerate}[label=(\roman*)]
-\item Solving the firm's dynamic optimization problem via value function iteration (VFI)
-\item Computing the stationary distribution of firms over the state space
-\item Clearing labor markets by iterating on wages until excess demand is zero
+\item \textbf{Outer loop}: Iterate on wages $(w_L, w_H)$ until labor markets clear
+\item \textbf{Middle loop}: For given wages, compute the stationary distribution of firms over the state space
+\item \textbf{Inner loop}: Solve the firm's dynamic optimization problem via value function iteration
 \end{enumerate}
 
-The outer loop iterates on wages $(w_L, w_H)$ until labor market clearing conditions are satisfied within tolerance. For each wage guess, the inner loops solve the firm problem and compute the implied stationary distribution and aggregate labor demands.
+The outer loop updates wages based on excess labor demand until equilibrium is achieved within tolerance. For each wage guess, the inner loops solve the firm problem and compute the implied stationary distribution and aggregate labor demands.
 
 \subsection{State and Choice Spaces}
 
-\paragraph{State Variables.} The firm's state is $(z, K, S, D)$ where $z$ is idiosyncratic productivity, $K$ is tangible capital, $S$ is intangible capital, and $D$ is debt to be repaid this period. Productivity $z$ is discretized using the \citet{tauchen1986} method with $n_z$ grid points covering $\pm 3$ unconditional standard deviations. The continuous state variables $(K, S, D)$ are discretized on grids:
+\paragraph{State Variables.} The firm's state is $(z, K, S, D_{-1})$ where $z$ is idiosyncratic productivity, $K$ is tangible capital, $S$ is intangible capital, and $D_{-1}$ is debt inherited from the previous period. Idiosyncratic productivity follows an AR(1) process in logs and is discretized using the \citet{tauchen1986} method with evenly-spaced grid points in log space covering multiple unconditional standard deviations of the process. The continuous state variables are discretized on grids:
 \begin{itemize}
-\item Tangible capital $K$: $n_K$ points, log-spaced from $K_{\min}$ to $K_{\max}$ for better resolution at low capital levels where marginal products are highest
-\item Intangible capital $S$: $n_S$ points, linearly spaced from $S_{\min}$ to $S_{\max}$
-\item Debt $D$: $n_D$ points, linearly spaced from $D_{\min}=0$ to $D_{\max}$
+\item Tangible capital $K$: Exponentially spaced grid providing finer resolution at low capital levels where marginal products are highest
+\item Intangible capital $S$: Exponentially spaced grid (similar to tangible capital) to capture high curvature in marginal products when $S$ is low, particularly important given the complementarity structure
+\item Debt $D$: Linearly spaced grid from zero to an upper bound
 \end{itemize}
 
-The total state space contains $n_z \times n_K \times n_S \times n_D$ points. With the baseline calibration ($n_z=11$, $n_K=50$, $n_S=50$, $n_D=25$), this yields 687,500 state points.
-
-\paragraph{Choice Variables.} The firm chooses tangible investment $I^K$, R\&D labor $H^R$, and new debt $D'$. Static labor inputs $(L, H^P)$ are solved analytically from first-order conditions given the state and wages. The investment choices are discretized on grids:
+\paragraph{Choice Variables.} The firm chooses tangible investment $I^K$, R\&D labor $H^R$, and new debt $D'$. Static labor inputs $(L, H^P)$ are determined by intratemporal first-order conditions given the state and wages, solved via nested bisection. The investment choices are discretized on grids:
 \begin{itemize}
-\item Tangible investment $I^K$: $n_{I^K}$ points from $-\delta_K K_{\max}/2$ (disinvestment) to $K_{\max}/5$ (large investment)
-\item R\&D labor $H^R$: $n_{H^R}$ points from 0 to $\bar{H}$ (total skilled labor supply)
+\item Tangible investment $I^K$: Linearly spaced grid allowing both positive investment and bounded disinvestment
+\item R\&D labor $H^R$: Two-segment exponentially spaced grid with finer resolution at low values to capture high curvature in the R\&D production function when returns to scale are less than unity
 \end{itemize}
-New debt $D'$ is computed analytically rather than searched over a grid. Given investment choices $(I^K, H^R)$, the collateral constraint $D' \leq \alpha_K K' + \alpha_S S'$ and dividend non-negativity $\text{Div} \geq 0$ jointly determine optimal borrowing: $D' = \min(\text{financing gap}, \alpha_K K' + \alpha_S S')$ where the financing gap is total expenditures minus internal resources.
 
-\subsection{Value Function Iteration with Howard's Policy Improvement}
+New debt $D'$ is computed analytically rather than via grid search. Given investment choices $(I^K, H^R)$, the collateral constraint and dividend non-negativity jointly determine optimal borrowing as the minimum of the financing gap and available collateral.
 
-The Bellman equation is solved via value function iteration with Howard's policy improvement algorithm to accelerate convergence. The algorithm alternates between:
+\subsection{Value Function Iteration with Policy Improvement}
 
-\paragraph{Policy Improvement Step.} Every $n_H$ iterations, perform full optimization over the choice space to update policy functions:
-\begin{equation}
-V^{new}(z, K, S, D) = \max_{D', I^K, H^R} \left\{ \text{Div} + \beta(1-\zeta) \mathbb{E}_{z'|z}\left[ V(z', K', S', D') \right] \right\}
-\end{equation}
-where $\text{Div} = \Pi^*(z,K,S) - I^K - \text{AC}^K(I^K, K) - \text{AC}^S(\Delta S, S) - w_H H^R - R D + D'$ includes adjustment costs $\text{AC}^K = (\phi_K/2)(I^K)^2/K$ and $\text{AC}^S = (\phi_S/2)(\Delta S)^2/S$. The optimization is subject to the collateral constraint $D' \leq \alpha_K K' + \alpha_S S'$ (based on next-period capital), the dividend non-negativity constraint $\text{Div} \geq 0$, and the laws of motion for capital $K' = (1-\delta_K)K + I^K$ and $S' = (1-\delta_S)S + \Gamma(H^R)^\xi$. This step is computationally expensive as it requires searching over $n_{I^K} \times n_{H^R}$ choice combinations at each state point (debt $D'$ is computed analytically given the investment choices).
+The Bellman equation is solved via value function iteration enhanced with Howard's policy improvement algorithm. The algorithm alternates between two types of steps:
 
-\paragraph{Policy Evaluation Step.} Between policy improvements, update the value function using the \emph{fixed} policy functions without re-optimization:
-\begin{equation}
-V^{new}(z, K, S, D) = \text{Div}^*(z, K, S, D) + \beta(1-\zeta) \mathbb{E}_{z'|z}\left[ V(z', K'^*, S'^*, D'^*) \right]
-\end{equation}
-where starred variables denote the stored optimal policies, and $\text{Div}^*$ is computed using these policies (including the associated adjustment costs). This step has computational complexity $O(n_z \times n_K \times n_S \times n_D)$ compared to $O(n_z \times n_K \times n_S \times n_D \times n_{I^K} \times n_{H^R})$ for full optimization.
+\paragraph{Policy Improvement.} Every several iterations, the algorithm performs full optimization over the choice space to update policy functions. This step searches over the discrete choice grids for $(I^K, H^R)$ while computing $D'$ analytically subject to the collateral constraint $D' \leq \alpha_K K' + \alpha_S S'$ and dividend non-negativity $\text{Div} \geq 0$. This step is computationally intensive as it requires evaluating all choice combinations at each state point.
 
-The Howard improvement frequency $n_H$ trades off accuracy (frequent policy updates) against speed (more evaluation steps). With $n_H = 15$ and up to 20 evaluation steps between improvements, convergence is typically achieved in 50--200 VFI iterations.
+To escape potential local optima, the algorithm periodically reverts to searching the entire choice grid rather than using local search. Between these full searches, subsequent policy improvements employ local search around the previous optimal policy, examining only a small neighborhood of grid points. This substantially reduces the effective choice space while maintaining solution accuracy.
+
+\paragraph{Policy Evaluation.} Between policy improvements, the value function is updated using the \emph{fixed} policy functions without re-optimization. This step evaluates the value function given the stored optimal policies, requiring only continuation value computation rather than choice optimization. Multiple policy evaluation steps can be performed between each policy improvement, dramatically reducing computational cost while maintaining convergence.
+
+The value function is initialized with approximate stationary values based on perpetuity calculations rather than zero, which avoids a ``cold start'' problem where zero continuation values make future investments appear worthless.
 
 \subsection{Computational Optimizations}
 
-Four key optimizations reduce computation time by an order of magnitude:
+Several optimizations reduce computation time substantially:
 
-\paragraph{1. OpenMP Parallelization.} The state space loops are parallelized using OpenMP directives. Since the Bellman equation at each state point is independent, the outer loops over $(z, K)$ can be executed in parallel across CPU cores. With 8 threads, this yields approximately 6--7$\times$ speedup.
+\paragraph{Parallelization.} The state space loops are parallelized using OpenMP directives. Since the Bellman equation evaluation at each state point is independent conditional on the value function, outer loops can be executed in parallel across CPU cores.
 
-\paragraph{2. Local Search.} After the first VFI iteration, the optimal policy at each state typically changes only slightly. Instead of searching the entire choice grid, subsequent policy improvement steps search only within $\pm 3$ grid points of the previous optimum for $(I^K, H^R)$. Since debt $D'$ is computed analytically (given the collateral constraint on next-period capital), this reduces the choice space from $n_{I^K} \times n_{H^R} = 400$ combinations to $(2 \times 3 + 1)^2 = 49$ combinations, an 8$\times$ reduction.
+\paragraph{Precomputed Static Labor.} The static labor choices $(L^*, H^{P*})$ depend only on $(z, K, S)$ and wages, not on debt $D_{-1}$. These solutions and associated output and gross profits are precomputed for all productivity-capital triplets before each policy improvement step, eliminating redundant computation across the debt dimension.
 
-\paragraph{3. Precomputed Static Labor.} The static labor choices $(L^*, H^{P*})$ depend only on $(z, K, S)$ and wages---not on debt $D$. Before each policy improvement step, optimal static labor and associated output $Y^*$ and gross profits $\Pi^*$ are precomputed for all $(z, K, S)$ triplets. This reduces redundant computation by a factor of $n_D$.
+\paragraph{Feasibility Screening.} Investment choices that would violate capital grid bounds or the dividend constraint are identified and skipped immediately, avoiding unnecessary continuation value evaluations.
 
-\paragraph{4. Feasibility Screening.} Investment choices that violate $K' \in [K_{\min}, K_{\max}]$ or the dividend constraint are skipped immediately, avoiding unnecessary continuation value computation.
+\paragraph{Robust Static Labor Solution.} Static labor demands are solved via nested bisection rather than gradient-based methods. For each candidate level of unskilled labor $L$, optimal skilled production labor $H^P$ is found by bisecting on the skilled labor first-order condition. Then unskilled labor $L$ is determined by bisecting on the unskilled labor first-order condition evaluated at the optimal $H^P(L)$. This approach ensures robustness for firms with extreme state combinations.
 
 \subsection{Interpolation}
 
-Continuation values require evaluating $V(z', K', S', D')$ at points $(K', S', D')$ that may not lie on grid nodes. Trilinear interpolation is used:
-\begin{equation}
-V(z', K', S', D') = \sum_{i,j,k \in \{0,1\}} \omega^K_i \omega^S_j \omega^D_k \, V(z', K_{i_K+i}, S_{i_S+j}, D_{i_D+k})
-\end{equation}
-where $(i_K, i_S, i_D)$ are the lower grid indices and $(\omega^K, \omega^S, \omega^D)$ are the interpolation weights. Grid location uses binary search for $O(\log n)$ complexity.
+Continuation values require evaluating the value function at next-period state points $(K', S', D')$ that typically do not lie on grid nodes. Trilinear interpolation is employed across the three continuous state dimensions, with grid location performed via binary search for computational efficiency.
 
 \subsection{Stationary Distribution}
 
-The stationary distribution $\Psi(z, K, S, D)$ is computed via forward iteration with entry and exit:
-\begin{equation}
-\Psi^{new}(z', K', S', D') = (1-\zeta) \sum_{z, K, S, D} \Psi(z, K, S, D) \cdot \pi(z'|z) \cdot \mathbf{1}\{K'=g^K(\cdot), S'=g^S(\cdot), D'=g^D(\cdot)\}
-\end{equation}
-plus entry mass at $(z, K_{\min}, S_{\min}, 0)$ drawn from the stationary productivity distribution. Since policy functions map to off-grid points, mass is distributed to neighboring grid nodes using trilinear interpolation weights.
+The stationary distribution $\Psi(z, K, S, D)$ is computed via forward iteration accounting for firm entry and exit. Each iteration distributes firm mass according to:
+\begin{enumerate}[label=(\roman*)]
+\item Survivors transition according to policy functions and productivity shocks, with survival probability $1-\zeta$
+\item Exiters are replaced by entrants starting at the minimum capital values with zero debt, with productivity drawn from the stationary distribution of the AR(1) process
+\end{enumerate}
 
-Iteration continues until $\|\Psi^{new} - \Psi\|_\infty < 10^{-4}$, typically achieved in 1,000--3,000 iterations with dampening parameter 0.1.
+Since policy functions map states to off-grid points, firm mass is distributed to neighboring grid nodes using trilinear interpolation weights. The algorithm includes safeguards to prevent mass leakage when policies approach or exceed grid boundaries.
+
+An optimized sparse representation tracks only states with non-trivial mass above a threshold, substantially accelerating distribution iteration when the equilibrium distribution is concentrated on a subset of the state space.
 
 \subsection{Equilibrium Computation}
 
-The outer wage iteration uses a simple fixed-point updating rule:
-\begin{equation}
-w_L^{new} = w_L \cdot \left(1 + \lambda \cdot \frac{L^d - \bar{L}}{\bar{L}}\right), \quad
-w_H^{new} = w_H \cdot \left(1 + \lambda \cdot \frac{H^d - \bar{H}}{\bar{H}}\right)
-\end{equation}
-where $L^d, H^d$ are aggregate labor demands from integrating over $\Psi$, and $\lambda = 0.2$ is the dampening parameter. Convergence is declared when $|L^d - \bar{L}|/\bar{L} < 0.01$ and $|H^d - \bar{H}|/\bar{H} < 0.01$.
+The outer wage iteration employs a dampened fixed-point updating rule. Given aggregate labor demands $L^d$ and $H^d$ computed by integrating firm-level demands over the stationary distribution, wages are updated proportionally to excess demand. The dampening parameter balances convergence speed against stability. Convergence is declared when both labor markets clear within tolerance.
 
-\subsection{Implementation Details}
+\subsection{Implementation}
 
-The model is implemented in Fortran 90/95 for computational efficiency, using double precision arithmetic throughout. Key numerical parameters:
-\begin{center}
-\begin{tabular}{lcc}
-\toprule
-Parameter & Symbol & Value \\
-\midrule
-VFI tolerance & $\varepsilon_{VFI}$ & $10^{-4}$ \\
-Distribution tolerance & $\varepsilon_{dist}$ & $10^{-4}$ \\
-Equilibrium tolerance & $\varepsilon_{eq}$ & $10^{-2}$ \\
-VFI dampening & $\theta_{VFI}$ & 0.70 \\
-Distribution dampening & $\theta_{dist}$ & 0.10 \\
-Wage dampening & $\lambda$ & 0.20 \\
-Howard frequency & $n_H$ & 15 \\
-Max Howard evaluations & --- & 20 \\
-Local search radius & --- & $\pm 3$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-Compilation uses Intel Fortran (ifx/ifort) via Microsoft Visual Studio with full optimization and OpenMP enabled. Typical runtime for full equilibrium computation is 30--60 minutes on an 8-core workstation, depending on convergence speed of the wage iteration.
-
-\subsection{Numerical Validation}
-
-Several checks ensure numerical accuracy:
-\begin{itemize}
-\item \textbf{Grid refinement:} Key results are verified to be stable when doubling grid density
-\item \textbf{Euler equation errors:} Checked at random state points to ensure errors are below $10^{-3}$ in consumption-equivalent units
-\item \textbf{Distribution mass:} Verified to sum to unity after each iteration
-\item \textbf{Market clearing:} Final equilibrium satisfies labor market clearing within stated tolerance
-\end{itemize}
-
-The code is available upon request and will be made publicly available upon publication.
-
+The model is implemented in Fortran 90 with double precision arithmetic throughout. The code employs the Intel Fortran compiler with full optimization and OpenMP enabled.
 
 \bibliographystyle{apalike}
 \bibliography{references}

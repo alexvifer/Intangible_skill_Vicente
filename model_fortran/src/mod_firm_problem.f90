@@ -8,13 +8,13 @@
 !   BELLMAN EQUATION:
 !     V(z,K,S,D) = zeta * exit_val + (1-zeta) * max(W, 0)
 !   where:
-!     exit_val = max(Pi + K + S - R*D, 0)     [exit after production, sell capital]
+!     exit_val = max(Pi + (1-dK)*K + (1-dS)*S - R*D, 0)  [exit: sell depreciated capital]
 !     W = max_{IK,HR} { div + beta * E[V'] }  [continuation value]
 !     div = Pi - R*D + D' - IK - wH*HR - AC   [dividends, must be >= 0]
 !     D' determined analytically (Khan & Thomas 2013 style)
 !
 !   EXIT TIMING: After production, before investment. Exiting firms sell
-!   undepreciated tangible AND intangible capital, repay debt R*D.
+!   depreciated tangible and intangible capital, repay debt R*D.
 !
 !   ANALYTICAL D' (3 regions, no grid search):
 !     Type A (mu=0, lambda=0): D'=0, div>0      -- unconstrained (absorbing)
@@ -90,8 +90,9 @@ contains
                     do iD = 1, nD
                         D_val = grid_D(iD)
 
-                        ! Exit value: sell capital, repay debt
-                        exit_val = max(Pi_init + K_val + S_val - R * D_val, 0.0_dp)
+                        ! Exit value: sell undepreciated capital, repay debt
+                        exit_val = max(Pi_init + (1.0_dp - delta_K) * K_val &
+                                       + (1.0_dp - delta_S) * S_val - R * D_val, 0.0_dp)
 
                         ! Continuation approximation: perpetuity of net profits
                         cont_val = max(Pi_init - (R - 1.0_dp) * D_val, 0.0_dp) * discount_factor
@@ -295,7 +296,7 @@ contains
     !
     !   NEW BELLMAN STRUCTURE:
     !     V(z,K,S,D) = zeta * exit_val + (1-zeta) * max(W_best, 0)
-    !   where exit_val = max(Pi + K + S - R*D, 0)  [depends on state, not choices]
+    !   where exit_val = max(Pi + (1-dK)*K + (1-dS)*S - R*D, 0)  [state-dependent]
     !   and W_best = max over feasible (IK,HR) of { div + beta * E[V'] }
     !
     !   EXIT TIMING: After production, before investment.
@@ -372,7 +373,8 @@ contains
                         ! Exit happens after production, before investment.
                         ! Firm sells undepreciated K and S, repays R*D.
                         ! ==========================================================
-                        exit_val = max(Pi_gross + K_val + S_val - R * D_old_val, 0.0_dp)
+                        exit_val = max(Pi_gross + (1.0_dp - delta_K) * K_val &
+                                       + (1.0_dp - delta_S) * S_val - R * D_old_val, 0.0_dp)
 
                         ! Cash flow available for investment
                         cash_flow = Pi_gross - R * D_old_val
@@ -664,7 +666,8 @@ contains
                         Pi_gross = Y_val - wL * L_opt - wH * HP_opt
 
                         ! Exit value (current state, not choices)
-                        exit_val = max(Pi_gross + K_val + S_val - R * D_old_val, 0.0_dp)
+                        exit_val = max(Pi_gross + (1.0_dp - delta_K) * K_val &
+                                       + (1.0_dp - delta_S) * S_val - R * D_old_val, 0.0_dp)
 
                         ! Compute intangible investment (for adjustment costs)
                         inv_S = RD_production(HR_choice)
@@ -728,7 +731,7 @@ contains
         print '(A)',    "    Type B: D''=D_needed, div=0 (potentially constrained)"
         print '(A)',    "    Type C: D''=D_ub, div=0 (actually constrained)"
         print '(A)',    "  Exit timing: after production, before investment"
-        print '(A)',    "  Exit value: max(Pi + K + S - R*D, 0)"
+        print '(A)',    "  Exit value: max(Pi + (1-dK)*K + (1-dS)*S - R*D, 0)"
         print '(A)',    "  Dividend constraint: div >= 0 (hard, no equity issuance)"
         print '(A,I8)', "  Choice combinations (local): ", (2*local_search_radius+1)**2
         print '(A,I4)', "  Howard improvement frequency: ", howard_freq

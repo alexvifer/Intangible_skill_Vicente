@@ -297,6 +297,11 @@ contains
         ! Start timing for equilibrium iterations
         call cpu_time(time_start)
 
+        ! Initialize entry capital endowment to grid midpoints (will converge to E[K], E[S])
+        entry_K = grid_K((nK + 1) / 2)
+        entry_S = grid_S((nS + 1) / 2)
+        print '(A,F10.4,A,F10.4)', "  Initial entry capital: K0 = ", entry_K, ", S0 = ", entry_S
+
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
         wL = 0.649562_dp
         wH = 0.968310_dp
@@ -318,6 +323,11 @@ contains
 
             ! Compute aggregates (OpenMP parallelized)
             call compute_aggregates()
+
+            ! Update entry capital endowment from aggregates (K0 = E[K], S0 = E[S])
+            entry_K = agg_K
+            entry_S = agg_S
+            print '(A,F10.4,A,F10.4)', "  Updated entry capital: K0 = ", entry_K, ", S0 = ", entry_S
 
             ! Check labor market clearing (relative excess demand)
             excess_L = agg_L - Lbar
@@ -435,6 +445,8 @@ contains
         write(unit_agg, '(A,F12.6)') 'Avg_intang_intensity     ', avg_intang_intensity
         write(unit_agg, '(A,F12.6)') 'Avg_leverage             ', avg_leverage
         write(unit_agg, '(A,F12.6)') 'Agg_exit_value           ', agg_exit_val
+        write(unit_agg, '(A,F12.6)') 'Entry_K                  ', entry_K
+        write(unit_agg, '(A,F12.6)') 'Entry_S                  ', entry_S
         close(unit_agg)
 
         ! Save distribution (sparse format: only non-zero entries)
@@ -599,7 +611,8 @@ contains
                         - pol_IK((nz+1)/2, 1, 1, 1) - wH * pol_HR((nz+1)/2, 1, 1, 1)
             write(unit_diag, '(A,F12.6)') '  Dividends (must be >= 0):        ', entry_div
             write(unit_diag, '(A,F12.6)') '  Exit value at entry:             ', &
-                  max(entry_Pi + grid_K(1) + grid_S(1) - R * grid_D(1), 0.0_dp)
+                  max(entry_Pi + (1.0_dp-delta_K)*grid_K(1) + (1.0_dp-delta_S)*grid_S(1) &
+                      - R * grid_D(1), 0.0_dp)
         end block
         write(unit_diag, *)
 
@@ -615,8 +628,8 @@ contains
               + alpha_S * pol_Sprime((nz+1)/2, 1, 1, 1)) - 0.01_dp
         write(unit_diag, *)
         write(unit_diag, '(A)') 'EXIT VALUE (after production, before investment):'
-        write(unit_diag, '(A)') '  exit_val = max(Pi + K + S - R*D, 0)'
-        write(unit_diag, '(A)') '  Firms sell undepreciated K AND S, repay R*D'
+        write(unit_diag, '(A)') '  exit_val = max(Pi + (1-dK)*K + (1-dS)*S - R*D, 0)'
+        write(unit_diag, '(A)') '  Firms sell depreciated K and S, repay R*D'
         block
             real(dp) :: Pi_entry, Pi_median
             Pi_entry = pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) &
@@ -629,12 +642,14 @@ contains
             write(unit_diag, '(A,F12.6)') '  S at entry:                      ', grid_S(1)
             write(unit_diag, '(A,F12.6)') '  R*D at entry:                    ', R * grid_D(1)
             write(unit_diag, '(A,F12.6)') '  Exit value at entry:             ', &
-                  max(Pi_entry + grid_K(1) + grid_S(1) - R * grid_D(1), 0.0_dp)
+                  max(Pi_entry + (1.0_dp-delta_K)*grid_K(1) + (1.0_dp-delta_S)*grid_S(1) &
+                      - R * grid_D(1), 0.0_dp)
             write(unit_diag, '(A,F12.6)') '  Pi at median:                    ', Pi_median
             write(unit_diag, '(A,F12.6)') '  K at median:                     ', grid_K((nK+1)/2)
             write(unit_diag, '(A,F12.6)') '  S at median:                     ', grid_S((nS+1)/2)
             write(unit_diag, '(A,F12.6)') '  Exit value at median:            ', &
-                  max(Pi_median + grid_K((nK+1)/2) + grid_S((nS+1)/2) - R * grid_D(1), 0.0_dp)
+                  max(Pi_median + (1.0_dp-delta_K)*grid_K((nK+1)/2) &
+                      + (1.0_dp-delta_S)*grid_S((nS+1)/2) - R * grid_D(1), 0.0_dp)
             write(unit_diag, '(A,F12.6)') '  Agg exit value:                  ', agg_exit_val
         end block
 
