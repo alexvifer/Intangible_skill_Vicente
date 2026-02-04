@@ -70,14 +70,12 @@ module mod_parameters
     ! FINANCIAL FRICTION PARAMETERS
     !---------------------------------------------------------------------------
     real(dp), parameter :: alpha_K = 0.781_dp    ! Tangible pledgeability (Holttinen et al. 2025)
-    real(dp), parameter :: alpha_S = 0.034_dp    ! Intangible pledgeability (Holttinen et al. 2025)
+    real(dp), parameter :: alpha_S = 0.134_dp    ! Intangible pledgeability (Holttinen et al. 2025)
     ! Note: alpha_S < alpha_K creates pecking-order distortion
 
-    ! Costly equity issuance (Hennessy & Whited 2007)
-    ! Raising $1 of equity costs shareholders $(1 + lambda_equity).
-    ! payout = div if div >= 0; payout = (1 + lambda_equity) * div if div < 0.
-    ! Range in literature: 4-15%. Setting 6% as baseline.
-    real(dp), parameter :: lambda_equity = 0.06_dp
+    ! Costly equity issuance - DISABLED (hard div >= 0 constraint instead)
+    ! Kept for reference. Hennessy & Whited (2007) range: 4-15%.
+    ! real(dp), parameter :: lambda_equity = 0.06_dp
 
     !---------------------------------------------------------------------------
     ! COUNTERFACTUAL: NO FINANCIAL CONSTRAINTS
@@ -124,12 +122,11 @@ module mod_parameters
 
     !---------------------------------------------------------------------------
     ! CHOICE GRIDS
-    ! Total choice combinations per state = nIK * nHR * nDp_search
+    ! Total choice combinations per state = nIK * nHR (D' is analytical)
     !---------------------------------------------------------------------------
     integer, parameter :: nIK = 30                 ! Grid points for tangible investment
     integer, parameter :: nHR = 30                 ! Grid points for R&D labor
     integer, parameter :: nDprime = 20             ! Grid points for new debt (used by grid_Dprime)
-    integer, parameter :: nDp_search = 5           ! D' search points per (IK,HR) choice
 
     ! Maximum R&D labor per firm (decoupled from Hbar for proper optimization)
     ! Individual firms CAN demand more than aggregate supply - it's the weighted

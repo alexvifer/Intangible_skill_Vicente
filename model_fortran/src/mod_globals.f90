@@ -62,7 +62,6 @@ module mod_globals
     ! Policy indices for local search optimization
     integer, allocatable :: pol_iIK(:,:,:,:)       ! Index of optimal I^K
     integer, allocatable :: pol_iHR(:,:,:,:)       ! Index of optimal H^R
-    integer, allocatable :: pol_iDp(:,:,:,:)       ! DEPRECATED: D' now computed analytically
 
     !---------------------------------------------------------------------------
     ! PRECOMPUTED STATIC LABOR SOLUTIONS
@@ -115,9 +114,13 @@ module mod_globals
     real(dp) :: avg_leverage                       ! Average leverage
     real(dp) :: avg_intang_intensity               ! Average S/(K+S)
 
-    ! Equity issuance aggregates
-    real(dp) :: agg_equity                         ! Aggregate equity issuance (sum of max(-div,0)*mass)
-    real(dp) :: frac_equity_issuing                ! Fraction of firms with div < 0
+    ! Firm type fractions (Khan & Thomas classification)
+    real(dp) :: frac_unconstrained                 ! μ=0, λ=0: D'=0, div>0 (absorbing)
+    real(dp) :: frac_potentially_constrained        ! μ>0, λ=0: D'=D_needed, div=0
+    ! frac_constrained already defined above        ! μ>0, λ>0: D'=D_ub, div=0
+
+    ! Exit value aggregates
+    real(dp) :: agg_exit_val                       ! ζ * sum(exit_val * mass)
 
     !---------------------------------------------------------------------------
     ! ITERATION CONTROL
@@ -173,7 +176,6 @@ contains
         ! Policy indices for local search
         allocate(pol_iIK(nz,nK,nS,nD))
         allocate(pol_iHR(nz,nK,nS,nD))
-        allocate(pol_iDp(nz,nK,nS,nD))
 
         ! Precomputed static labor solutions
         allocate(static_L(nz,nK,nS))
@@ -198,7 +200,6 @@ contains
         ! Initialize policy indices to middle of grids (for local search)
         pol_iIK = nIK / 2
         pol_iHR = nHR / 2
-        pol_iDp = 1  ! Unused but kept for compatibility
 
         ! Initialize static arrays
         static_L = 0.0_dp
@@ -228,7 +229,7 @@ contains
         deallocate(pol_Kprime, pol_Sprime, pol_Dprime)
         deallocate(pol_IK, pol_HR, pol_L, pol_HP, pol_Y)
         deallocate(pol_mu, pol_lambda, pol_constr)
-        deallocate(pol_iIK, pol_iHR, pol_iDp)
+        deallocate(pol_iIK, pol_iHR)
         deallocate(static_L, static_HP, static_Y, static_Pi)
         deallocate(dist, dist_new)
         deallocate(active_states)

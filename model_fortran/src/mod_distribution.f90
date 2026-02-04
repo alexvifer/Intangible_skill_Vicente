@@ -363,10 +363,7 @@ contains
         implicit none
         integer :: iz, iK, iS, iD
         real(dp) :: mass
-        real(dp) :: loc_K, loc_S, loc_L, loc_HP, loc_HR, loc_D, loc_Y, loc_IK
-        real(dp) :: loc_mass, loc_constr
-        real(dp) :: div_firm, Pi_gross, expenses, inv_S
-        real(dp) :: AC_K_val, AC_S_val
+        real(dp) :: Pi_gross, exit_val_firm
 
         ! Initialize
         agg_K = 0.0_dp
@@ -379,12 +376,15 @@ contains
         agg_IK = 0.0_dp
         mass_firms = 0.0_dp
         frac_constrained = 0.0_dp
-        agg_equity = 0.0_dp
-        frac_equity_issuing = 0.0_dp
+        frac_unconstrained = 0.0_dp
+        frac_potentially_constrained = 0.0_dp
+        agg_exit_val = 0.0_dp
 
         !$OMP PARALLEL DO COLLAPSE(2) &
-        !$OMP& PRIVATE(iz, iK, iS, iD, mass, div_firm, Pi_gross, expenses, inv_S, AC_K_val, AC_S_val) &
-        !$OMP& REDUCTION(+:agg_K, agg_S, agg_L, agg_HP, agg_HR, agg_D, agg_Y, agg_IK, mass_firms, frac_constrained, agg_equity, frac_equity_issuing) &
+        !$OMP& PRIVATE(iz, iK, iS, iD, mass, Pi_gross, exit_val_firm) &
+        !$OMP& REDUCTION(+:agg_K, agg_S, agg_L, agg_HP, agg_HR, agg_D, agg_Y, agg_IK, &
+        !$OMP&           mass_firms, frac_constrained, frac_unconstrained, &
+        !$OMP&           frac_potentially_constrained, agg_exit_val) &
         !$OMP& SCHEDULE(static)
         do iz = 1, nz
             do iK = 1, nK
@@ -396,33 +396,37 @@ contains
 
                         mass_firms = mass_firms + mass
 
+                        ! All firms produce (exit happens after production)
                         agg_K = agg_K + mass * grid_K(iK)
                         agg_S = agg_S + mass * grid_S(iS)
                         agg_L = agg_L + mass * pol_L(iz, iK, iS, iD)
                         agg_HP = agg_HP + mass * pol_HP(iz, iK, iS, iD)
+                        agg_Y = agg_Y + mass * pol_Y(iz, iK, iS, iD)
+
+                        ! Only survivors invest (exit before investment)
+                        ! HR and IK are conditional on survival
                         agg_HR = agg_HR + mass * pol_HR(iz, iK, iS, iD)
                         agg_D = agg_D + mass * pol_Dprime(iz, iK, iS, iD)
-                        agg_Y = agg_Y + mass * pol_Y(iz, iK, iS, iD)
                         agg_IK = agg_IK + mass * pol_IK(iz, iK, iS, iD)
 
-                        if (pol_constr(iz, iK, iS, iD)) then
+                        ! Firm type classification (Khan & Thomas)
+                        if (pol_lambda(iz, iK, iS, iD) > 0.5_dp) then
+                            ! Type C: actually constrained (mu>0, lambda>0)
                             frac_constrained = frac_constrained + mass
+                        else if (pol_mu(iz, iK, iS, iD) > 0.5_dp) then
+                            ! Type B: potentially constrained (mu>0, lambda=0)
+                            frac_potentially_constrained = frac_potentially_constrained + mass
+                        else
+                            ! Type A: unconstrained (mu=0, lambda=0)
+                            frac_unconstrained = frac_unconstrained + mass
                         end if
 
-                        ! Compute firm-level dividends for equity issuance tracking
+                        ! Exit value for aggregate accounting
                         Pi_gross = pol_Y(iz, iK, iS, iD) - wL * pol_L(iz, iK, iS, iD) &
                                    - wH * pol_HP(iz, iK, iS, iD)
-                        inv_S = RD_production(pol_HR(iz, iK, iS, iD))
-                        AC_K_val = adjustment_cost_K(pol_IK(iz, iK, iS, iD), grid_K(iK))
-                        AC_S_val = adjustment_cost_S(inv_S, grid_S(iS))
-                        expenses = pol_IK(iz, iK, iS, iD) + wH * pol_HR(iz, iK, iS, iD) &
-                                   + AC_K_val + AC_S_val
-                        div_firm = Pi_gross - R * grid_D(iD) + pol_Dprime(iz, iK, iS, iD) - expenses
-
-                        if (div_firm < 0.0_dp) then
-                            agg_equity = agg_equity + mass * (-div_firm)
-                            frac_equity_issuing = frac_equity_issuing + mass
-                        end if
+                        exit_val_firm = max(Pi_gross + grid_K(iK) + grid_S(iS) &
+                                           - R * grid_D(iD), 0.0_dp)
+                        agg_exit_val = agg_exit_val + mass * exit_val_firm
 
                     end do
                 end do
@@ -430,11 +434,17 @@ contains
         end do
         !$OMP END PARALLEL DO
 
-        ! Total skilled labor
-        agg_H = agg_HP + agg_HR
+        ! Total skilled labor demand
+        ! All firms hire HP (production before exit)
+        ! Only survivors hire HR: effective demand = (1-zeta) * agg_HR
+        agg_H = agg_HP + (1.0_dp - zeta) * agg_HR
 
-        ! Consumption (from resource constraint, includes equity issuance cost)
-        agg_C = agg_Y - agg_IK - zeta * ce * mass_firms - lambda_equity * agg_equity
+        ! Consumption from resource constraint
+        ! C = Y - (1-zeta)*IK + zeta*(K+S) - zeta*ce*mass
+        ! Exit firms sell undepreciated capital K+S (adds to consumption)
+        ! Only survivors invest IK
+        agg_C = agg_Y - (1.0_dp - zeta) * agg_IK &
+              + zeta * (agg_K + agg_S) - zeta * ce * mass_firms
 
         ! Statistics
         if (agg_K + agg_S > epsilon) then
@@ -450,7 +460,8 @@ contains
         end if
 
         frac_constrained = frac_constrained / max(mass_firms, epsilon)
-        frac_equity_issuing = frac_equity_issuing / max(mass_firms, epsilon)
+        frac_potentially_constrained = frac_potentially_constrained / max(mass_firms, epsilon)
+        frac_unconstrained = frac_unconstrained / max(mass_firms, epsilon)
 
     end subroutine compute_aggregates
 
@@ -480,13 +491,14 @@ contains
         print '(A,F12.6)', "  Total skilled (HP+HR):       ", agg_H
         print *, ""
         print '(A,F12.6)', "  Mass of firms:               ", mass_firms
-        print '(A,F10.2,A)', "  Fraction constrained:        ", frac_constrained*100.0_dp, "%"
         print '(A,F10.4)', "  Avg intangible intensity:    ", avg_intang_intensity
         print '(A,F10.4)', "  Avg leverage:                ", avg_leverage
         print *, ""
-        print '(A,F12.6)', "  Agg equity issuance:         ", agg_equity
-        print '(A,F12.6)', "  Agg equity issuance cost:    ", lambda_equity * agg_equity
-        print '(A,F10.2,A)', "  Fraction issuing equity:     ", frac_equity_issuing*100.0_dp, "%"
+        print *, "  Firm types (Khan & Thomas):"
+        print '(A,F10.2,A)', "    Type A (unconstrained):    ", frac_unconstrained*100.0_dp, "%"
+        print '(A,F10.2,A)', "    Type B (pot. constrained): ", frac_potentially_constrained*100.0_dp, "%"
+        print '(A,F10.2,A)', "    Type C (act. constrained): ", frac_constrained*100.0_dp, "%"
+        print '(A,F12.6)', "  Agg exit value (zeta-wtd):   ", zeta * agg_exit_val
         print *, ""
 
     end subroutine print_aggregates
@@ -761,10 +773,10 @@ contains
         print '(A,F10.6)', "    grid_HR(2):                      ", grid_HR(2)
         print '(A,F10.6)', "    Cost of HR(2):                   ", wH * grid_HR(2)
         print '(A,F10.6)', "    S investment from HR(2):         ", Gamma_RD * grid_HR(2)**xi
-        print '(A,F10.6)', "    beta*(1-zeta)*dV/dS*dS:          ", &
-              beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * grid_HR(2)**xi
+        print '(A,F10.6)', "    beta*dV/dS*dS:                   ", &
+              beta * V_S_estimate * Gamma_RD * grid_HR(2)**xi
         print '(A,F10.6)', "    Net benefit of R&D (should be >0 if R&D worthwhile): ", &
-              beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * grid_HR(2)**xi - wH * grid_HR(2)
+              beta * V_S_estimate * Gamma_RD * grid_HR(2)**xi - wH * grid_HR(2)
 
     end subroutine compute_distribution_diagnostics
 

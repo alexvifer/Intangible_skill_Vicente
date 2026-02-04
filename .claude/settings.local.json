@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(gfortran --version:*)",
+      "Bash(gfortran:*)",
+      "Bash(OMP_NUM_THREADS=8 ./model_fortran.exe:*)"
     ]
   }
 }

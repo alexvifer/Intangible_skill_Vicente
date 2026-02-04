@@ -1,0 +1,455 @@
+ 
+ ==========================================================================
+    HETEROGENEOUS FIRMS' MODEL WITH INTANGIBLE CAPITAL
+    Financial Frictions and Skill-Biased Stagnation
+ 
+    Author: Alejandro Vicente
+    Institution: University of Alicante
+    Date: January 2026
+ ==========================================================================
+ 
+ STEP 1: Setting up model...
+ 
+ Model parameters:
+  Discount factor (β):                0.9600
+  Risk-free rate (R = 1/β):           1.0417
+  Exit probability (ζ):               0.1000
+ 
+ Labor supply:
+  Unskilled (L̄):                      0.8500
+  Skilled (H̄):                        0.1500
+ 
+ Production function:
+  Capital share (α):                  0.3300
+  Returns to scale (ν):               0.8500
+  Elasticity σK (K-Q substitution):   0.6667
+  Elasticity σQ (S-HP substitution):  0.4000
+ 
+ Capital accumulation:
+  Tangible depreciation (δK):         0.1000
+  Intangible depreciation (δS):       0.1500
+  R&D productivity (Γ):               1.5000
+  R&D returns to scale (ξ):           0.9000
+ 
+ Financial frictions:
+  Tangible pledgeability (αK):        0.1810
+  Intangible pledgeability (αS):      0.0340
+  Pledgeability gap (αK - αS):        0.1470
+ 
+ Productivity process:
+  Persistence (ρz):                   0.9500
+  Std deviation (σz):                 0.1500
+ 
+ Grid dimensions:
+  Productivity (nz):                   11
+  Tangible capital (nK):               50
+  Intangible capital (nS):             50
+  Debt (nD):                           20
+  Total state space points:         *****
+ 
+ Arrays allocated successfully.
+  Memory for V arrays: ~   12.59 MB
+ 
+ ======================================
+ INITIALIZING GRIDS
+ ======================================
+   Grids initialized.
+    z grid:    11 points, range [   0.237,    4.226
+]
+    K grid:    50 points, range [   0.010,    2.000
+]
+    S grid:    50 points, range [   0.010,    2.500
+]
+    D grid:    20 points, range [   0.000,    1.200
+]
+ 
+   D grid (log-spaced, D(1)=0 then log from 0.001):
+    First 5:   0.000000,   0.001000,   0.001483,   0.002199,   0.003260
+    Mid:       0.015756,   0.023363,   0.034641
+    IK grid:   30 points, range [  -0.200,    0.800
+]
+ 
+   HR grid (log-spaced, max decoupled from Hbar):
+    Range: [  0.000000,   0.500000
+]
+    First 5:   0.000000,   0.000010,   0.000015,   0.000023,   0.000035
+    Hbar (aggregate supply):   0.150000, HR_max (per firm):   0.500000
+ 
+ STEP 2: Solving model...
+ 
+ 
+ ======================================
+ SOLVING FOR EQUILIBRIUM
+ ======================================
+ 
+Equilibrium iteration:   1
+  Wages: wL =   0.649562, wH =   0.968310
+ 
+ ======================================
+ SOLVING FIRM PROBLEM (VFI + HOWARD)
+ ======================================
+  Total state space points:   550000
+  Choice combinations (IK x HR):      900
+  D'' determination: ANALYTICAL (Khan & Thomas)
+    Type A: D''=0, div>0 (unconstrained, absorbing)
+    Type B: D''=D_needed, div=0 (potentially constrained)
+    Type C: D''=D_ub, div=0 (actually constrained)
+  Exit timing: after production, before investment
+  Exit value: max(Pi + K + S - R*D, 0)
+  Dividend constraint: div >= 0 (hard, no equity issuance)
+  Choice combinations (local):      121
+  Howard improvement frequency:   15
+  Howard evaluation steps:   20
+  OpenMP threads:    8
+ 
+   Initializing value function with stationary approximation...
+   Value function initialized.
+    V range: [      0.0000,      74.0284
+]
+  Iter     1: Policy IMPROVEMENT (FULL grid search)...
+           metric =  0.37136E+02
+ 
+  VFI converged in     4 iterations.
+  Final metric:  0.10129E-04
+ 
+ ======================================
+ COMPUTING STATIONARY DISTRIBUTION (SPARSE)
+ ======================================
+  Initial active states:       11
+  Dist Iter    10, metric =  0.73261E-01, active =       11
+  Dist Iter    20, metric =  0.25545E-01, active =       11
+  Dist Iter    30, metric =  0.89069E-02, active =       11
+  Dist Iter    40, metric =  0.31056E-02, active =       11
+  Dist Iter    50, metric =  0.10829E-02, active =      352
+  Dist Iter    60, metric =  0.16885E-01, active =      352
+  Dist Iter    70, metric =  0.58875E-02, active =      352
+  Dist Iter    80, metric =  0.20528E-02, active =      352
+  Dist Iter    90, metric =  0.71578E-03, active =      352
+  Dist Iter   100, metric =  0.24958E-03, active =     3869
+  Dist Iter   110, metric =  0.68713E-02, active =     3869
+  Dist Iter   120, metric =  0.23959E-02, active =     3869
+  Dist Iter   130, metric =  0.83539E-03, active =     3869
+  Dist Iter   140, metric =  0.29128E-03, active =     3869
+  Dist Iter   150, metric =  0.10156E-03, active =    11100
+  Dist Iter   160, metric =  0.23783E-02, active =    11100
+  Dist Iter   170, metric =  0.82925E-03, active =    11100
+  Dist Iter   180, metric =  0.28914E-03, active =    11100
+  Dist Iter   190, metric =  0.10082E-03, active =    11100
+ 
+  Distribution converged in   191 iterations.
+  Final metric:  0.90736E-04
+  Final active states:    16572
+ 
+   Market clearing:
+    Unskilled: demand =   0.789515, supply =   0.850000, excess =  -0.060485
+    Skilled:   demand =   0.133354, supply =   0.150000, excess =  -0.016646
+    Relative excess: L =   0.071159, H =   0.110971
+    Absolute excess: L =   0.060485, H =   0.016646
+ 
+  >>> Cumulative time elapsed:     2.97 minutes
+ 
+Equilibrium iteration:   2
+  Wages: wL =   0.647251, wH =   0.962937
+ 
+ ======================================
+ SOLVING FIRM PROBLEM (VFI + HOWARD)
+ ======================================
+  Total state space points:   550000
+  Choice combinations (IK x HR):      900
+  D'' determination: ANALYTICAL (Khan & Thomas)
+    Type A: D''=0, div>0 (unconstrained, absorbing)
+    Type B: D''=D_needed, div=0 (potentially constrained)
+    Type C: D''=D_ub, div=0 (actually constrained)
+  Exit timing: after production, before investment
+  Exit value: max(Pi + K + S - R*D, 0)
+  Dividend constraint: div >= 0 (hard, no equity issuance)
+  Choice combinations (local):      121
+  Howard improvement frequency:   15
+  Howard evaluation steps:   20
+  OpenMP threads:    8
+ 
+   Initializing value function with stationary approximation...
+   Value function initialized.
+    V range: [      0.0000,      74.2343
+]
+  Iter     1: Policy IMPROVEMENT (FULL grid search)...
+           metric =  0.37241E+02
+ 
+  VFI converged in     4 iterations.
+  Final metric:  0.10249E-04
+ 
+ ======================================
+ COMPUTING STATIONARY DISTRIBUTION (SPARSE)
+ ======================================
+  Initial active states:       11
+  Dist Iter    10, metric =  0.73261E-01, active =       11
+  Dist Iter    20, metric =  0.25545E-01, active =       11
+  Dist Iter    30, metric =  0.89069E-02, active =       11
+  Dist Iter    40, metric =  0.31056E-02, active =       11
+  Dist Iter    50, metric =  0.10829E-02, active =      352
+  Dist Iter    60, metric =  0.16793E-01, active =      352
+  Dist Iter    70, metric =  0.58554E-02, active =      352
+  Dist Iter    80, metric =  0.20416E-02, active =      352
+  Dist Iter    90, metric =  0.71188E-03, active =      352
+  Dist Iter   100, metric =  0.24822E-03, active =     3707
+  Dist Iter   110, metric =  0.72485E-02, active =     3707
+  Dist Iter   120, metric =  0.25274E-02, active =     3707
+  Dist Iter   130, metric =  0.88124E-03, active =     3707
+  Dist Iter   140, metric =  0.30727E-03, active =     3707
+  Dist Iter   150, metric =  0.10714E-03, active =    11143
+  Dist Iter   160, metric =  0.21430E-02, active =    11143
+  Dist Iter   170, metric =  0.74722E-03, active =    11143
+  Dist Iter   180, metric =  0.26054E-03, active =    11143
+  Dist Iter   190, metric =  0.90845E-04, active =    11143
+ 
+  Distribution converged in   190 iterations.
+  Final metric:  0.90845E-04
+  Final active states:    16502
+ 
+   Market clearing:
+    Unskilled: demand =   0.796508, supply =   0.850000, excess =  -0.053492
+    Skilled:   demand =   0.134320, supply =   0.150000, excess =  -0.015680
+    Relative excess: L =   0.062932, H =   0.104537
+    Absolute excess: L =   0.053492, H =   0.015680
+ 
+  >>> Cumulative time elapsed:     6.09 minutes
+ 
+Equilibrium iteration:   3
+  Wages: wL =   0.645214, wH =   0.957904
+ 
+ ======================================
+ SOLVING FIRM PROBLEM (VFI + HOWARD)
+ ======================================
+  Total state space points:   550000
+  Choice combinations (IK x HR):      900
+  D'' determination: ANALYTICAL (Khan & Thomas)
+    Type A: D''=0, div>0 (unconstrained, absorbing)
+    Type B: D''=D_needed, div=0 (potentially constrained)
+    Type C: D''=D_ub, div=0 (actually constrained)
+  Exit timing: after production, before investment
+  Exit value: max(Pi + K + S - R*D, 0)
+  Dividend constraint: div >= 0 (hard, no equity issuance)
+  Choice combinations (local):      121
+  Howard improvement frequency:   15
+  Howard evaluation steps:   20
+  OpenMP threads:    8
+ 
+   Initializing value function with stationary approximation...
+   Value function initialized.
+    V range: [      0.0000,      74.4187
+]
+  Iter     1: Policy IMPROVEMENT (FULL grid search)...
+           metric =  0.37336E+02
+ 
+  VFI converged in     4 iterations.
+  Final metric:  0.10357E-04
+ 
+ ======================================
+ COMPUTING STATIONARY DISTRIBUTION (SPARSE)
+ ======================================
+  Initial active states:       11
+  Dist Iter    10, metric =  0.73261E-01, active =       11
+  Dist Iter    20, metric =  0.25545E-01, active =       11
+  Dist Iter    30, metric =  0.89069E-02, active =       11
+  Dist Iter    40, metric =  0.31056E-02, active =       11
+  Dist Iter    50, metric =  0.10829E-02, active =      354
+  Dist Iter    60, metric =  0.18886E-01, active =      354
+  Dist Iter    70, metric =  0.65852E-02, active =      354
+  Dist Iter    80, metric =  0.22961E-02, active =      354
+  Dist Iter    90, metric =  0.80061E-03, active =      354
+  Dist Iter   100, metric =  0.27916E-03, active =     3774
+  Dist Iter   110, metric =  0.73947E-02, active =     3774
+  Dist Iter   120, metric =  0.25784E-02, active =     3774
+  Dist Iter   130, metric =  0.89902E-03, active =     3774
+  Dist Iter   140, metric =  0.31347E-03, active =     3774
+  Dist Iter   150, metric =  0.10930E-03, active =    11208
+  Dist Iter   160, metric =  0.21590E-02, active =    11208
+  Dist Iter   170, metric =  0.75279E-03, active =    11208
+  Dist Iter   180, metric =  0.26248E-03, active =    11208
+  Dist Iter   190, metric =  0.91522E-04, active =    11208
+ 
+  Distribution converged in   190 iterations.
+  Final metric:  0.91522E-04
+  Final active states:    16435
+ 
+   Market clearing:
+    Unskilled: demand =   0.803396, supply =   0.850000, excess =  -0.046604
+    Skilled:   demand =   0.136030, supply =   0.150000, excess =  -0.013970
+    Relative excess: L =   0.054828, H =   0.093133
+    Absolute excess: L =   0.046604, H =   0.013970
+ 
+  >>> Cumulative time elapsed:     9.30 minutes
+ 
+ ======================================
+ EQUILIBRIUM FOUND!
+ ======================================
+ 
+ ======================================
+ AGGREGATE STATISTICS
+ ======================================
+  Output (Y):                      0.981970
+  Consumption (C):                 0.823669
+  Tangible capital (K):            0.263298
+  Intangible capital (S):          0.184684
+  Tangible investment:             0.114554
+  Total debt (D):                  0.034231
+ 
+  Unskilled labor (L):             0.803396
+  Skilled labor - Prod (HP):       0.087083
+  Skilled labor - R&D (HR):        0.054386
+  Total skilled (HP+HR):           0.136030
+ 
+  Mass of firms:                   1.000000
+  Avg intangible intensity:        0.4123
+  Avg leverage:                    0.0764
+ 
+   Firm types (Khan & Thomas):
+    Type A (unconstrained):         26.70%
+    Type B (pot. constrained):       0.89%
+    Type C (act. constrained):      72.41%
+  Agg exit value (zeta-wtd):       0.080013
+ 
+ 
+ STEP 3: Computing diagnostics and saving results...
+ 
+ ======================================
+ DISTRIBUTION DIAGNOSTICS
+ ======================================
+  Number of firm types with positive mass:    16435
+  Total mass (should be 1):   1.000000
+ 
+   Mass at grid boundaries:
+    At K_min:     24.55%
+    At S_min:     24.45%
+    With HR>0:    81.71%
+    With D'>0 (choice):    73.30%
+ 
+    With D=0 (state):      31.93%
+ 
+   Debt choice analysis:
+    Avg D'' among D''>0:           0.046698
+    Grid step (D_max/nD-1):       0.063158
+    With D'' > 0.5*grid_step:    25.14%
+ 
+   NOTE: If avg D'' << grid_step, most D''>0 firms interpolate to D=0 state
+ 
+   Weighted Statistics (across firm distribution):
+   -----------------------------------------------
+ 
+   TOTAL CAPITAL (K+S):
+    Mean:       0.4480  Std:       0.9134
+    Min:        0.0200  Max:       4.5000
+    Quintiles:     0.0200 |     0.0467 |     0.1167 |     0.4236
+ 
+   TANGIBLE CAPITAL (K):
+    Mean:       0.2633  Std:       0.5030
+    Quintiles:     0.0100 |     0.0238 |     0.0780 |     0.2563
+ 
+   INTANGIBLE CAPITAL (S):
+    Mean:       0.1847  Std:       0.4227
+    Quintiles:     0.0100 |     0.0220 |     0.0433 |     0.1673
+ 
+   GROSS PROFITS (Y - wL*L - wH*HP):
+    Mean:       0.3802  Std:       1.1895
+    Quintiles:     0.0027 |     0.0119 |     0.0476 |     0.2362
+ 
+   OUTPUT (Y):
+    Mean:       0.9820  Std:       2.6247
+    Quintiles:     0.0103 |     0.0422 |     0.1539 |     0.7002
+ 
+   UNSKILLED LABOR (L):
+    Mean:       0.8034  Std:       1.9864
+    Quintiles:     0.0091 |     0.0373 |     0.1358 |     0.6180
+ 
+   SKILLED PRODUCTION LABOR (HP):
+    Mean:       0.0871  Std:       0.2126
+    Quintiles:     0.0018 |     0.0058 |     0.0147 |     0.0708
+ 
+   R&D LABOR (HR):
+    Mean:       0.0544  Std:       0.1243
+    Quintiles:     0.0002 |     0.0024 |     0.0086 |     0.0409
+ 
+   TANGIBLE INVESTMENT (I^K):
+    Mean:       0.1146  Std:       0.2022
+    Quintiles:     0.0000 |     0.0136 |     0.0455 |     0.1750
+ 
+   DEBT (D):
+    Mean:       0.0269  Std:       0.0556
+    Quintiles:     0.0000 |     0.0033 |     0.0106 |     0.0346
+ 
+   -----------------------------------------------
+   VALUE FUNCTION DIAGNOSTICS (for R&D incentives)
+   -----------------------------------------------
+ 
+   V(z_median, K_median, S, D_min) for varying S:
+    iS=  1, S=   0.010, V=  1.199418E+00
+    iS=  2, S=   0.011, V=  1.201612E+00
+    iS=  3, S=   0.013, V=  1.203591E+00
+    iS=  4, S=   0.014, V=  1.205641E+00
+    iS=  5, S=   0.016, V=  1.207770E+00
+    iS=  6, S=   0.018, V=  1.210134E+00
+    iS=  7, S=   0.020, V=  1.212396E+00
+    iS=  8, S=   0.022, V=  1.214758E+00
+    iS=  9, S=   0.025, V=  1.217234E+00
+    iS= 10, S=   0.028, V=  1.219948E+00
+ 
+  Estimated dV/dS at median state:   1.466526E+00
+ 
+   R&D PROFITABILITY CHECK:
+   (Benefit of HR = second grid point vs HR = 0)
+    wH (cost per unit HR):             0.957904
+    grid_HR(2):                        0.000010
+    Cost of HR(2):                     0.000010
+    S investment from HR(2):           0.000047
+    beta*dV/dS*dS:                     0.000067
+    Net benefit of R&D (should be >0 if R&D worthwhile):   0.000057
+ 
+ Computing Euler equation errors...
+  Interior points checked:     2134
+  Mean Euler error:          3.2794E-01
+  Max Euler error:           1.3965E+00
+   output/euler_errors.txt
+ 
+ Saving results to output files...
+ Results saved successfully.
+   output/aggregates.txt
+   output/distribution.txt
+   output/diagnostics.txt
+ 
+ Saving policy functions...
+   output/policies_by_K.csv
+   output/policies_by_S.csv
+   output/policies_by_z.csv
+   output/policies_3D.csv (for 3D plotting)
+ 
+ ==========================================================================
+    COUNTERFACTUAL EXPERIMENTS
+ ==========================================================================
+ 
+ To run counterfactual experiments:
+   1. Change Hbar in mod_parameters.f90
+   2. Change alpha_S to study pledgeability effects
+   3. Recompile and run
+ 
+ Arrays deallocated successfully.
+ 
+ ==========================================================================
+At line 158 of file src/main.f90 (unit = 5, file = 'stdin')
+Fortran runtime error: End of file
+
+Error termination. Backtrace:
+#0  0x2b124757 in finalize_transfer
+	at ../../../gcc-14.1.0/libgfortran/io/transfer.c:4399
+#1  0x2b0addfd in ???
+#2  0x2b150fbf in ???
+#3  0x2b09139d in ???
+#4  0x2b0914d5 in ???
+#5  0xb8a2e8d6 in ???
+#6  0xb976c53b in ???
+#7  0xffffffff in ???
+   Total computation time:     559.09 seconds
+ ==========================================================================
+ 
+ Program completed successfully.
+ 
+ Press Enter to exit...

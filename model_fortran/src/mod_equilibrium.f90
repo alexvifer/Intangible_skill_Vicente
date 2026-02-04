@@ -298,8 +298,8 @@ contains
         call cpu_time(time_start)
 
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.726152_dp
-        wH = 1.019053_dp
+        wL = 0.649562_dp
+        wH = 0.968310_dp
 
         do iter_outer = 1, maxiter_eq
 
@@ -429,12 +429,12 @@ contains
         write(unit_agg, '(A,F12.6)') 'Skilled_labor_RD_HR      ', agg_HR
         write(unit_agg, '(A,F12.6)') 'Unskilled_wage_wL        ', wL
         write(unit_agg, '(A,F12.6)') 'Skilled_wage_wH          ', wH
-        write(unit_agg, '(A,F12.6)') 'Frac_constrained         ', frac_constrained
+        write(unit_agg, '(A,F12.6)') 'Frac_unconstrained       ', frac_unconstrained
+        write(unit_agg, '(A,F12.6)') 'Frac_pot_constrained     ', frac_potentially_constrained
+        write(unit_agg, '(A,F12.6)') 'Frac_act_constrained     ', frac_constrained
         write(unit_agg, '(A,F12.6)') 'Avg_intang_intensity     ', avg_intang_intensity
         write(unit_agg, '(A,F12.6)') 'Avg_leverage             ', avg_leverage
-        write(unit_agg, '(A,F12.6)') 'Agg_equity_issuance      ', agg_equity
-        write(unit_agg, '(A,F12.6)') 'Agg_equity_cost          ', lambda_equity * agg_equity
-        write(unit_agg, '(A,F12.6)') 'Frac_equity_issuing      ', frac_equity_issuing
+        write(unit_agg, '(A,F12.6)') 'Agg_exit_value           ', agg_exit_val
         close(unit_agg)
 
         ! Save distribution (sparse format: only non-zero entries)
@@ -552,12 +552,12 @@ contains
                                                       - wH*pol_HP((nz+1)/2, 1, 1, 1)
         write(unit_diag, *)
 
-        ! Equity issuance parameters
-        write(unit_diag, '(A)') 'EQUITY ISSUANCE PARAMETERS:'
-        write(unit_diag, '(A,F12.6)') '  lambda_equity:          ', lambda_equity
-        write(unit_diag, '(A,F12.6)') '  Agg equity issuance:    ', agg_equity
-        write(unit_diag, '(A,F12.6)') '  Agg equity cost:        ', lambda_equity * agg_equity
-        write(unit_diag, '(A,F10.2,A)') '  Frac issuing equity:    ', frac_equity_issuing * 100.0_dp, '%'
+        ! Firm type classification (Khan & Thomas)
+        write(unit_diag, '(A)') 'FIRM TYPE CLASSIFICATION (Khan & Thomas):'
+        write(unit_diag, '(A,F10.2,A)') '  Type A (unconstrained, mu=0,lam=0):  ', frac_unconstrained * 100.0_dp, '%'
+        write(unit_diag, '(A,F10.2,A)') '  Type B (pot.constr., mu>0,lam=0):    ', frac_potentially_constrained * 100.0_dp, '%'
+        write(unit_diag, '(A,F10.2,A)') '  Type C (act.constr., mu>0,lam>0):    ', frac_constrained * 100.0_dp, '%'
+        write(unit_diag, '(A)') '  Dividend constraint: div >= 0 (hard, no equity issuance)'
         write(unit_diag, *)
 
         ! R&D profitability analysis
@@ -568,13 +568,14 @@ contains
         write(unit_diag, '(A,F12.6)') '  wH (cost per HR):                ', wH
         write(unit_diag, '(A,F12.6)') '  Gamma_RD:                        ', Gamma_RD
         write(unit_diag, '(A,F12.6)') '  xi:                              ', xi
-        write(unit_diag, '(A,F12.6)') '  beta*(1-zeta):                   ', beta * (1.0_dp - zeta)
+        write(unit_diag, '(A,F12.6)') '  beta:                            ', beta
         write(unit_diag, '(A,F12.6)') '  At HR=0.01, dS = Gamma*HR^xi:    ', Gamma_RD * 0.01_dp**xi
         write(unit_diag, '(A,ES16.6)') '  Marginal benefit at HR=0.01:     ', &
-              beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * xi * 0.01_dp**(xi - 1.0_dp)
+              beta * V_S_estimate * Gamma_RD * xi * 0.01_dp**(xi - 1.0_dp)
         write(unit_diag, '(A,F12.6)') '  Marginal cost (wH):              ', wH
         write(unit_diag, '(A,ES16.6)') '  Net marginal benefit:            ', &
-              beta * (1.0_dp - zeta) * V_S_estimate * Gamma_RD * xi * 0.01_dp**(xi - 1.0_dp) - wH
+              beta * V_S_estimate * Gamma_RD * xi * 0.01_dp**(xi - 1.0_dp) - wH
+        write(unit_diag, '(A)') '  (No (1-zeta) factor: V already includes exit probability)'
         write(unit_diag, *)
 
         ! Budget constraint analysis at entry
@@ -591,42 +592,51 @@ contains
         write(unit_diag, '(A,F12.6)') '  Total expenses:                  ', &
               pol_IK((nz+1)/2, 1, 1, 1) + wH * pol_HR((nz+1)/2, 1, 1, 1)
         block
-            real(dp) :: entry_div, entry_payout
-            entry_div = pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) &
-                        - wH*pol_HP((nz+1)/2, 1, 1, 1) &
-                        - R * grid_D(1) + pol_Dprime((nz+1)/2, 1, 1, 1) &
+            real(dp) :: entry_div, entry_Pi
+            entry_Pi = pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) &
+                       - wH*pol_HP((nz+1)/2, 1, 1, 1)
+            entry_div = entry_Pi - R * grid_D(1) + pol_Dprime((nz+1)/2, 1, 1, 1) &
                         - pol_IK((nz+1)/2, 1, 1, 1) - wH * pol_HR((nz+1)/2, 1, 1, 1)
-            if (entry_div >= 0.0_dp) then
-                entry_payout = entry_div
-            else
-                entry_payout = (1.0_dp + lambda_equity) * entry_div
-            end if
-            write(unit_diag, '(A,F12.6)') '  Dividends (resources - expenses):', entry_div
-            write(unit_diag, '(A,F12.6)') '  Payout (after equity cost):      ', entry_payout
-            write(unit_diag, '(A,F12.6)') '  lambda_equity:                   ', lambda_equity
+            write(unit_diag, '(A,F12.6)') '  Dividends (must be >= 0):        ', entry_div
+            write(unit_diag, '(A,F12.6)') '  Exit value at entry:             ', &
+                  max(entry_Pi + grid_K(1) + grid_S(1) - R * grid_D(1), 0.0_dp)
         end block
         write(unit_diag, *)
 
-        ! Collateral constraint
+        ! Collateral constraint (D' <= alpha_K*K' + alpha_S*S')
         write(unit_diag, '(A)') 'COLLATERAL CONSTRAINT AT ENTRY:'
-        write(unit_diag, '(A,F12.6)') '  alpha_K * K_min:                 ', alpha_K * grid_K(1)
-        write(unit_diag, '(A,F12.6)') '  alpha_S * S_min:                 ', alpha_S * grid_S(1)
-        write(unit_diag, '(A,F12.6)') '  Max borrowing:                   ', alpha_K * grid_K(1) + alpha_S * grid_S(1)
+        write(unit_diag, '(A,F12.6)') '  alpha_K * K'':                    ', alpha_K * pol_Kprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  alpha_S * S'':                    ', alpha_S * pol_Sprime((nz+1)/2, 1, 1, 1)
+        write(unit_diag, '(A,F12.6)') '  Max borrowing (alpha*K''+alpha*S''): ', &
+              alpha_K * pol_Kprime((nz+1)/2, 1, 1, 1) + alpha_S * pol_Sprime((nz+1)/2, 1, 1, 1)
         write(unit_diag, '(A,F12.6)') '  Actual D'':                       ', pol_Dprime((nz+1)/2, 1, 1, 1)
         write(unit_diag, '(A,L)') '  Constraint binding?              ', &
-              pol_Dprime((nz+1)/2, 1, 1, 1) >= (alpha_K * grid_K(1) + alpha_S * grid_S(1)) - 0.01_dp
+              pol_Dprime((nz+1)/2, 1, 1, 1) >= (alpha_K * pol_Kprime((nz+1)/2, 1, 1, 1) &
+              + alpha_S * pol_Sprime((nz+1)/2, 1, 1, 1)) - 0.01_dp
         write(unit_diag, *)
-        write(unit_diag, '(A)') 'EXIT REPAYMENT:'
-        write(unit_diag, '(A)')    '  Scrap value:                     K'' (tangible only, S'' lost)'
-        write(unit_diag, '(A,F12.6)') '  K'' at entry:                     ', pol_Kprime((nz+1)/2, 1, 1, 1)
-        write(unit_diag, '(A,F12.6)') '  R*D'' at entry:                   ', R * pol_Dprime((nz+1)/2, 1, 1, 1)
-        write(unit_diag, '(A,F12.6)') '  Exit payoff at entry:            ', &
-              max(pol_Kprime((nz+1)/2, 1, 1, 1) - R * pol_Dprime((nz+1)/2, 1, 1, 1), 0.0_dp)
-        write(unit_diag, '(A,F12.6)') '  K'' at median:                    ', pol_Kprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
-        write(unit_diag, '(A,F12.6)') '  R*D'' at median:                  ', R * pol_Dprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
-        write(unit_diag, '(A,F12.6)') '  Exit payoff at median:           ', &
-              max(pol_Kprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1) &
-              - R * pol_Dprime((nz+1)/2, (nK+1)/2, (nS+1)/2, 1), 0.0_dp)
+        write(unit_diag, '(A)') 'EXIT VALUE (after production, before investment):'
+        write(unit_diag, '(A)') '  exit_val = max(Pi + K + S - R*D, 0)'
+        write(unit_diag, '(A)') '  Firms sell undepreciated K AND S, repay R*D'
+        block
+            real(dp) :: Pi_entry, Pi_median
+            Pi_entry = pol_Y((nz+1)/2, 1, 1, 1) - wL*pol_L((nz+1)/2, 1, 1, 1) &
+                       - wH*pol_HP((nz+1)/2, 1, 1, 1)
+            Pi_median = pol_Y((nz+1)/2, (nK+1)/2, (nS+1)/2, 1) &
+                        - wL*pol_L((nz+1)/2, (nK+1)/2, (nS+1)/2, 1) &
+                        - wH*pol_HP((nz+1)/2, (nK+1)/2, (nS+1)/2, 1)
+            write(unit_diag, '(A,F12.6)') '  Pi at entry:                     ', Pi_entry
+            write(unit_diag, '(A,F12.6)') '  K at entry:                      ', grid_K(1)
+            write(unit_diag, '(A,F12.6)') '  S at entry:                      ', grid_S(1)
+            write(unit_diag, '(A,F12.6)') '  R*D at entry:                    ', R * grid_D(1)
+            write(unit_diag, '(A,F12.6)') '  Exit value at entry:             ', &
+                  max(Pi_entry + grid_K(1) + grid_S(1) - R * grid_D(1), 0.0_dp)
+            write(unit_diag, '(A,F12.6)') '  Pi at median:                    ', Pi_median
+            write(unit_diag, '(A,F12.6)') '  K at median:                     ', grid_K((nK+1)/2)
+            write(unit_diag, '(A,F12.6)') '  S at median:                     ', grid_S((nS+1)/2)
+            write(unit_diag, '(A,F12.6)') '  Exit value at median:            ', &
+                  max(Pi_median + grid_K((nK+1)/2) + grid_S((nS+1)/2) - R * grid_D(1), 0.0_dp)
+            write(unit_diag, '(A,F12.6)') '  Agg exit value:                  ', agg_exit_val
+        end block
 
         close(unit_diag)
         print *, "  output/diagnostics.txt"
@@ -737,7 +747,9 @@ contains
     ! DESCRIPTION:
     !   Computes Euler equation errors to assess solution accuracy.
     !   For interior solutions, the FOC for tangible investment is:
-    !     1 + phi_K * (I^K/K) = beta*(1-zeta)*E[dV/dK']
+    !     1 + phi_K * (I^K/K) = beta*E[dV/dK']
+    !   (No (1-zeta) factor: V already incorporates exit probability
+    !    via V = zeta*exit_val + (1-zeta)*max(W,0), and dV/dK' includes both terms.)
     !
     !   The Euler error is: |LHS - RHS| / LHS
     !   Reports mean, max, and distribution of errors across states.
@@ -800,7 +812,7 @@ contains
                         EV_minus = expect_V(iz, max(Kprime - dK_step, K_min), Sprime, Dprime)
                         dV_dKp = (EV_plus - EV_minus) / (2.0_dp * dK_step)
 
-                        RHS = beta * (1.0_dp - zeta) * dV_dKp
+                        RHS = beta * dV_dKp
 
                         ! Euler error (relative)
                         if (abs(LHS) > epsilon) then
@@ -836,7 +848,7 @@ contains
             write(unit_euler, '(A,ES16.6)') 'Mean Euler error:        ', mean_error
             write(unit_euler, '(A,ES16.6)') 'Max Euler error:         ', max_error
             write(unit_euler, *)
-            write(unit_euler, '(A)') 'Note: Euler error = |1 + phi*(I/K) - beta*(1-zeta)*E[dV/dK'']| / LHS'
+            write(unit_euler, '(A)') 'Note: Euler error = |1 + phi*(I/K) - beta*E[dV/dK'']| / LHS'
             write(unit_euler, '(A)') 'Good accuracy: mean < 0.01, max < 0.05'
             close(unit_euler)
             print *, "  output/euler_errors.txt"

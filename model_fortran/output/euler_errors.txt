@@ -1,8 +1,8 @@
 EULER EQUATION ERROR DIAGNOSTICS
 ================================
-Interior points checked:      218
-Mean Euler error:            3.443116E-01
-Max Euler error:             1.132675E+00
+Interior points checked:     3773
+Mean Euler error:            4.196962E-01
+Max Euler error:             2.819931E+00
  
-Note: Euler error = |1 + phi*(I/K) - beta*(1-zeta)*E[dV/dK']| / LHS
+Note: Euler error = |1 + phi*(I/K) - beta*E[dV/dK']| / LHS
 Good accuracy: mean < 0.01, max < 0.05
