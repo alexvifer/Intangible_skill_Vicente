@@ -88,16 +88,6 @@ H_{j,t} = H^P_{j,t} + H^R_{j,t}.
 \label{eq:skilled_labor_total}
 \end{equation}
 
-\subsubsection{Adjustment Costs}
-
-Following the investment literature \citep{cooper2006dynamics, khan2008idiosyncratic}, capital adjustment is subject to convex costs:
-\begin{equation}
-\Phi^K_{j,t} = \frac{\phi_K}{2} \frac{(I^K_{j,t})^2}{K_{j,t}}, \qquad
-\Phi^S_{j,t} = \frac{\phi_S}{2} \frac{(\Delta S_{j,t})^2}{S_{j,t}},
-\label{eq:adj_costs}
-\end{equation}
-where $\Delta S_{j,t} \equiv S_{j,t+1} - (1-\delta_S)S_{j,t} = \Gamma(H^R_{j,t})^{\xi}$ is gross intangible investment. Setting $\phi_K = \phi_S = 0$ nests the frictionless case.
-
 \subsection{Financial Frictions}
 
 \subsubsection{Collateral Constraint}
@@ -156,7 +146,7 @@ Define gross profits from production:
 
 Dividends distributed to shareholders are:
 \begin{equation}
-\text{Div} = \pi(z, K, S) - I^K - \Phi^K - \Phi^S - w_H H^R - (1+r) D + D'.
+\text{Div} = \pi(z, K, S) - I^K - w_H H^R - (1+r) D + D'.
 \label{eq:dividends}
 \end{equation}
 
@@ -177,7 +167,7 @@ V(z, K, S, D) = \zeta \, V^{exit}(z, K, S, D) \;+\; (1-\zeta) \max_{I^K, H^R, D'
 \end{equation}
 subject to:
 \begin{itemize}
-\item Dividends: $\text{Div} = \pi(z, K, S) - I^K - \Phi^K - \Phi^S - w_H H^R - (1+r) D + D'$
+\item Dividends: $\text{Div} = \pi(z, K, S) - I^K - w_H H^R - (1+r) D + D'$
 
 \item Capital accumulation: $K' = (1-\delta_K) K + I^K$, \quad $S' = (1-\delta_S) S + \Gamma (H^R)^{\xi}$
 
@@ -194,7 +184,7 @@ The exit value $V^{exit}$ depends only on the current state, not on investment c
 
 Following the logic of \citet{khan2008idiosyncratic}, the optimal debt choice $D'$ can be determined analytically for each $(I^K, H^R)$ combination. Define:
 \[
-\text{cash flow} \equiv \pi(z,K,S) - (1+r)D, \qquad \text{expenses} \equiv I^K + \Phi^K + \Phi^S + w_H H^R.
+\text{cash flow} \equiv \pi(z,K,S) - (1+r)D, \qquad \text{expenses} \equiv I^K + w_H H^R.
 \]
 The net financing need is $D_{\text{needed}} = \text{expenses} - \text{cash flow}$. Given that $\beta(1+r) = 1$, the net value of an additional dollar of debt is $-(1-\zeta)\E[\mu'] \le 0$, reflecting the expected future shadow cost of funds. Thus the firm never borrows more than necessary. The solution is:
 \begin{itemize}
@@ -218,11 +208,11 @@ With $\beta(1+r) = 1$, this simplifies to $\mu = \lambda + (1-\zeta)\E[\mu']$. F
 
 \paragraph{FOC for Tangible Investment ($I^K$).}
 \begin{equation}
-(1 + \mu)\left(1 + \phi_K \frac{I^K}{K}\right) = \lambda \alpha_K + \beta \E[V_{K'}].
+(1 + \mu) = \lambda \alpha_K + \beta \E[V_{K'}].
 \label{eq:foc_IK}
 \end{equation}
 
-The left-hand side is the marginal cost: purchasing one unit plus adjustment costs, valued at $(1+\mu)$ reflecting the shadow cost of internal funds. The right-hand side has two components:
+The left-hand side is the marginal cost of purchasing one unit of capital, valued at $(1+\mu)$ reflecting the shadow cost of internal funds. The right-hand side has two components:
 \begin{enumerate}
 \item $\lambda \alpha_K$: the immediate collateral benefit---investment increases $K'$, relaxing the current-period borrowing constraint.
 \item $\beta \E[V_{K'}]$: the expected marginal value of additional capital, incorporating both the liquidation return in exit states and the continuation value for survivors.
@@ -230,27 +220,26 @@ The left-hand side is the marginal cost: purchasing one unit plus adjustment cos
 
 \paragraph{Envelope Condition for $K$.}
 \begin{equation}
-V_K = \zeta\left[\frac{\partial \pi}{\partial K} + (1-\delta_K)\right] + (1-\zeta)\left\{(1+\mu) \frac{\partial \pi}{\partial K} + (1+\mu) \frac{\phi_K}{2}\left(\frac{I^K}{K}\right)^2 + (1-\delta_K)\Big[\lambda \alpha_K + \beta \E[V_{K'}]\Big]\right\}.
+V_K = \zeta\left[\frac{\partial \pi}{\partial K} + (1-\delta_K)\right] + (1-\zeta)\left\{(1+\mu) \frac{\partial \pi}{\partial K} + (1-\delta_K)\Big[\lambda \alpha_K + \beta \E[V_{K'}]\Big]\right\}.
 \label{eq:envelope_K}
 \end{equation}
 
-Each envelope decomposes into an exit component (weighted by $\zeta$) and a continuation component (weighted by $1-\zeta$). The exit term $\partial\pi/\partial K + (1-\delta_K)$ is the marginal liquidation value of capital. In continuation, $(1+\mu)\frac{\phi_K}{2}(I^K/K)^2$ reflects that higher capital reduces adjustment costs, while $\lambda\alpha_K(1-\delta_K)$ captures the collateral benefit of undepreciated capital.
+Each envelope decomposes into an exit component (weighted by $\zeta$) and a continuation component (weighted by $1-\zeta$). The exit term $\partial\pi/\partial K + (1-\delta_K)$ is the marginal liquidation value of capital. In continuation, $\lambda\alpha_K(1-\delta_K)$ captures the collateral benefit of undepreciated capital.
 
 Combining \eqref{eq:foc_IK} and \eqref{eq:envelope_K} yields the Euler equation:
 \begin{align}
-(1 + \mu_t)\left(1 + \phi_K \frac{I^K_t}{K_t}\right) &= \lambda_t \alpha_K + \beta \E_t\Bigg[ \zeta\left(\frac{\partial \pi_{t+1}}{\partial K_{t+1}} + 1-\delta_K\right) \nonumber \\
-&\quad + (1-\zeta)\bigg\{(1+\mu_{t+1}) \frac{\partial \pi_{t+1}}{\partial K_{t+1}} + (1+\mu_{t+1}) \frac{\phi_K}{2}\left(\frac{I^K_{t+1}}{K_{t+1}}\right)^2 \nonumber \\
-&\quad + (1-\delta_K)\Big(\lambda_{t+1} \alpha_K + \beta \E_{t+1}[V_{K,t+2}]\Big)\bigg\}\Bigg].
+(1 + \mu_t) &= \lambda_t \alpha_K + \beta \E_t\Bigg[ \zeta\left(\frac{\partial \pi_{t+1}}{\partial K_{t+1}} + 1-\delta_K\right) \nonumber \\
+&\quad + (1-\zeta)\bigg\{(1+\mu_{t+1}) \frac{\partial \pi_{t+1}}{\partial K_{t+1}} + (1-\delta_K)\Big(\lambda_{t+1} \alpha_K + \beta \E_{t+1}[V_{K,t+2}]\Big)\bigg\}\Bigg].
 \label{eq:euler_K}
 \end{align}
 
 \paragraph{FOC for Intangible Investment (via $H^R$).} Since $\partial S'/\partial H^R = \Gamma \xi (H^R)^{\xi-1}$:
 \begin{equation}
-(1+\mu)\left(w_H + \phi_S \frac{\Delta S}{S} \cdot \Gamma \xi (H^R)^{\xi-1}\right) = \Big[\lambda \alpha_S + \beta \E[V_{S'}]\Big] \cdot \Gamma \xi (H^R)^{\xi-1}.
+(1+\mu) \, w_H = \Big[\lambda \alpha_S + \beta \E[V_{S'}]\Big] \cdot \Gamma \xi (H^R)^{\xi-1}.
 \label{eq:foc_HR}
 \end{equation}
 
-Define the marginal cost of producing intangibles as $q_S \equiv w_H / [\Gamma \xi (H^R)^{\xi-1}]$. Abstracting from adjustment costs, the FOC simplifies to:
+Defining the marginal cost of producing intangibles as $q_S \equiv w_H / [\Gamma \xi (H^R)^{\xi-1}]$, this can be written as:
 \begin{equation}
 (1+\mu) \cdot q_S = \lambda \alpha_S + \beta \E[V_{S'}].
 \label{eq:foc_S}
@@ -258,7 +247,7 @@ Define the marginal cost of producing intangibles as $q_S \equiv w_H / [\Gamma \
 
 \paragraph{Envelope Condition for $S$.}
 \begin{equation}
-V_S = \zeta\left[\frac{\partial \pi}{\partial S} + (1-\delta_S)\right] + (1-\zeta)\left\{(1+\mu) \frac{\partial \pi}{\partial S} + (1+\mu) \frac{\phi_S}{2}\left(\frac{\Delta S}{S}\right)^2 + (1-\delta_S)\Big[\lambda \alpha_S + \beta \E[V_{S'}]\Big]\right\}.
+V_S = \zeta\left[\frac{\partial \pi}{\partial S} + (1-\delta_S)\right] + (1-\zeta)\left\{(1+\mu) \frac{\partial \pi}{\partial S} + (1-\delta_S)\Big[\lambda \alpha_S + \beta \E[V_{S'}]\Big]\right\}.
 \label{eq:envelope_S}
 \end{equation}
 
@@ -286,9 +275,9 @@ since $\alpha_K > \alpha_S$.
 
 For unconstrained firms ($\lambda = 0$), the collateral terms vanish and investment depends only on marginal products---the first-best allocation.
 
-\paragraph{Capital Composition Distortion.} Rearranging the FOCs in steady state:
+\paragraph{Capital Composition Distortion.} Rearranging the FOCs:
 \begin{equation}
-\frac{\text{MB}_K - \lambda \alpha_K}{\text{MB}_S - \lambda \alpha_S} = \frac{(1+\mu)(1 + \phi_K I^K/K)}{(1+\mu) q_S},
+\frac{\text{MB}_K - \lambda \alpha_K}{\text{MB}_S - \lambda \alpha_S} = \frac{1}{q_S},
 \label{eq:capital_ratio}
 \end{equation}
 where $\text{MB}_K \equiv \beta\E[V_{K'}]$ and $\text{MB}_S \equiv \beta\E[V_{S'}]$ denote the expected marginal value terms (including both liquidation and continuation returns). For constrained firms, since $\alpha_K > \alpha_S$, the numerator is reduced more than the denominator, distorting capital composition toward tangibles.
@@ -332,7 +321,7 @@ B = \int D_j \, d\Psi^*.
 
 \item \textbf{Goods market clears:}
 \[
-C + \int \big(I^K_j + \Phi^K_j + \Phi^S_j\big) d\Psi^* = \int Y_j \, d\Psi^* + \zeta \int \big[(1-\delta_K)K_j + (1-\delta_S)S_j\big] d\Psi^* - \zeta (K_0 + S_0).
+C + \int I^K_j \, d\Psi^* = \int Y_j \, d\Psi^* + \zeta \int \big[(1-\delta_K)K_j + (1-\delta_S)S_j\big] d\Psi^* - \zeta (K_0 + S_0).
 \]
 The right-hand side adds output, the depreciated capital recovered from exiting firms, and subtracts the capital endowed to entrants.
 

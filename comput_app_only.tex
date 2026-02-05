@@ -1,0 +1,155 @@
+\section{Computational Appendix}
+\label{app:computation}
+
+This appendix describes the numerical methods used to solve the stationary recursive competitive equilibrium defined in Section~\ref{sec:quantitative_model}. The four-dimensional state space $(z, K, S, D)$ and the interaction between financial frictions and two types of capital require careful attention to grid design, interpolation, and convergence acceleration.
+
+\subsection{Solution Algorithm}
+
+The equilibrium is computed by iterating on wages $(w_L, w_H)$ until both labor markets clear. For each wage pair, the algorithm solves the firm's Bellman equation via value function iteration (VFI), computes the stationary distribution of firms, and evaluates aggregate labor demands. The three nested loops are:
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{Outer loop (wages):} Update $(w_L, w_H)$ until $|\int L_j \, d\Psi^* - \bar{L}| < \tau_{\text{eq}}$ and $|\int (H^P_j + H^R_j) \, d\Psi^* - \bar{H}| < \tau_{\text{eq}}$.
+\item \textbf{Middle loop (distribution):} For given policies, iterate on $\Psi$ until $\|\Psi^{n+1} - \Psi^n\|_\infty < \tau_{\text{dist}}$.
+\item \textbf{Inner loop (VFI):} Solve the Bellman equation \eqref{eq:value_function} until $\|V^{n+1} - V^n\|_\infty < \tau_{\text{VFI}}$.
+\end{enumerate}
+Tolerances are set to $\tau_{\text{VFI}} = 10^{-4}$, $\tau_{\text{dist}} = 10^{-4}$, and $\tau_{\text{eq}} = 5 \times 10^{-2}$ (absolute excess demand).
+
+\subsection{Discretization}
+
+\subsubsection{State Space}
+
+\paragraph{Productivity.} The AR(1) process $\log z' = \rho_z \log z + \sigma_z \varepsilon$ is discretized using the \citet{tauchen1986} method with $n_z = 11$ grid points spanning $\pm 3$ unconditional standard deviations. The stationary distribution $\pi_z$ of the Markov chain is computed by power iteration to machine precision.
+
+\paragraph{Capital grids.} The tangible and intangible capital grids are logarithmically spaced:
+\[
+K_i = K_{\min} \exp\!\left(\frac{i-1}{n_K - 1} \log \frac{K_{\max}}{K_{\min}}\right), \quad i = 1, \ldots, n_K,
+\]
+with $n_K = n_S = 50$, $K \in [0.01, 2.0]$, and $S \in [0.01, 2.5]$. Logarithmic spacing concentrates grid points at low capital levels where marginal products---and hence value function curvature---are highest. This is particularly important for intangible capital given the strong complementarity with skilled labor ($\rho_Q < 0$), which generates steep marginal products near $S_{\min}$.
+
+\paragraph{Debt grid.} The debt grid uses a hybrid structure: the first point is zero, and the remaining $n_D - 1$ points are logarithmically spaced from $10^{-3}$ to $D_{\max} = 1.20$. This design provides fine resolution at low debt levels where most firms operate, while covering the full collateral range. Total grid points: $n_D = 20$.
+
+The total state space contains $n_z \times n_K \times n_S \times n_D = 11 \times 50 \times 50 \times 20 = 550{,}000$ points.
+
+\subsubsection{Choice Variables}
+
+\paragraph{Tangible investment.} The $I^K$ grid uses a three-segment design with $n_{I^K} = 30$ points:
+\begin{itemize}
+\item Disinvestment: $\lfloor n_{I^K}/5 \rfloor$ linearly spaced points on $[-0.20, 0)$,
+\item Small investment: $\lfloor 2 n_{I^K}/5 \rfloor$ linearly spaced points on $[0, 0.05]$,
+\item Large investment: remaining points linearly spaced on $(0.05, 0.80]$.
+\end{itemize}
+The middle segment provides fine resolution for small and entry-stage firms, while the outer segments cover disinvestment and large-scale investment.
+
+\paragraph{R\&D labor.} The $H^R$ grid uses a two-segment logarithmically spaced design with $n_{H^R} = 30$ points. The first point is zero (no R\&D). The lower segment allocates $\lfloor 2 n_{H^R}/3 \rfloor$ points logarithmically from $10^{-5}$ to $0.02$; the upper segment covers $(0.02, 0.50]$ with the remaining points. The concentration of grid points at low $H^R$ values is critical because the R\&D production function $\Gamma (H^R)^\xi$ with $\xi < 1$ has high curvature near zero. The per-firm maximum $H^R_{\max} = 0.50$ exceeds the aggregate skilled labor supply $\bar{H} = 0.15$, allowing high-productivity firms to optimally choose large R\&D expenditures. Market clearing restricts the \emph{weighted average} across the distribution, not the individual firm's choice.
+
+\paragraph{New debt.} The debt choice $D'$ is determined analytically rather than by grid search, as described in Section~\ref{app:analytical_Dprime}.
+
+\subsection{Value Function Iteration with Howard's Policy Improvement}
+\label{app:vfi}
+
+The Bellman equation
+\[
+V(z, K, S, D) = \zeta \, V^{exit} + (1-\zeta) \max\!\big\{W^*(z,K,S,D),\; 0\big\}
+\]
+is solved using VFI enhanced with Howard's policy improvement algorithm \citep{howard1960dynamic}. The algorithm alternates between two types of steps.
+
+\paragraph{Policy improvement (every 15 iterations).} The algorithm performs full optimization over the $(I^K, H^R)$ choice grid while computing $D'$ analytically. This step is expensive: it evaluates all feasible choice combinations at each state point and computes continuation values via trilinear interpolation on the precomputed expected value array $\text{EV}(z,\cdot)$ (see Section~\ref{app:interpolation}).
+
+To balance solution accuracy against computational cost, the algorithm employs local search. After the first iteration (which performs a full grid search), subsequent policy improvement steps restrict the search to a neighborhood of $\pm 5$ grid points around the previous optimal indices in both $I^K$ and $H^R$. This reduces the effective choice set from $n_{I^K} \times n_{H^R} = 900$ to at most $11 \times 11 = 121$ combinations per state point. Every tenth policy improvement step reverts to a full grid search to guard against local optima.
+
+\paragraph{Policy evaluation (other iterations).} Between policy improvements, the value function is updated using the \emph{fixed} policy functions without re-optimization. Given stored policies $(I^K_*, H^R_*, D'_*)$, the step simply recomputes:
+\[
+V^{n+1}(z,K,S,D) = \zeta \, V^{exit} + (1-\zeta) \max\!\big\{\text{Div}_* + \beta \, \E[V^n(z', K'_*, S'_*, D'_*) \mid z],\; 0\big\}.
+\]
+Up to 20 consecutive evaluation steps are performed between each policy improvement, with early termination if the sup-norm metric falls below $0.1 \times \tau_{\text{VFI}}$. Policy evaluation requires only continuation value computation (no optimization), reducing per-iteration cost by roughly an order of magnitude.
+
+\paragraph{Initialization.} The value function is initialized with a stationary approximation that accounts for the exit structure. At each state point, the initial value is:
+\[
+V^0(z,K,S,D) = \zeta \cdot V^{exit}_0 + (1-\zeta) \cdot \max\!\left\{\frac{\pi_0 - r D}{1 - \beta(1-\zeta)},\; 0\right\},
+\]
+where $V^{exit}_0 = \max\{\pi_0 + (1-\delta_K)K + (1-\delta_S)S - (1+r)D, 0\}$ and $\pi_0$ is gross profit at the current state. The perpetuity discount factor $[1 - \beta(1-\zeta)]^{-1}$ accounts for both discounting and exit probability. This initialization substantially accelerates convergence compared to a cold start at $V^0 = 0$, which would make all future investments appear worthless in early iterations.
+
+\paragraph{Warm starting.} After the first equilibrium iteration, subsequent VFI solves reuse the value function and policy indices from the previous wage iteration. Since wage adjustments are typically small, the previous solution provides an excellent initial guess.
+
+\subsection{Analytical Determination of $D'$}
+\label{app:analytical_Dprime}
+
+Following the logic of \citet{khan2008idiosyncratic}, the optimal debt choice is determined analytically for each $(I^K, H^R)$ combination, eliminating one dimension from the numerical search. The key insight is that with $\beta(1+r) = 1$, over-borrowing is never optimal: each additional dollar of debt above the financing need carries a cost $\zeta(1+r)$ in exit states (debt must be repaid) and yields only $1$ dollar today, with a net present cost of $(1-\zeta)\E[\mu'] \ge 0$ from tightening future dividend constraints.
+
+Define:
+\[
+\text{cash flow} \equiv \pi(z,K,S) - (1+r)D, \qquad \text{expenses} \equiv I^K + w_H H^R,
+\]
+and $D_{\text{needed}} \equiv \text{expenses} - \text{cash flow}$. The firm borrows exactly what it needs, subject to the collateral constraint $\bar{D} \equiv \alpha_K K' + \alpha_S S'$:
+\begin{itemize}
+\item \textbf{Type A} ($\mu = 0, \lambda = 0$): If $D_{\text{needed}} \le 0$, set $D' = 0$ and $\text{Div} = -D_{\text{needed}} > 0$. The firm self-finances all expenses from internal cash flow and distributes the surplus.
+
+\item \textbf{Type B} ($\mu > 0, \lambda = 0$): If $0 < D_{\text{needed}} \le \bar{D}$, set $D' = D_{\text{needed}}$ and $\text{Div} = 0$. The firm borrows exactly the financing gap. The dividend constraint binds but the collateral constraint does not.
+
+\item \textbf{Type C} ($\mu > 0, \lambda > 0$): If $D_{\text{needed}} = \bar{D}$, both constraints bind. In practice, detecting Type~C on a discrete grid requires a marginal check: after identifying the optimal $(I^K_*, H^R_*)$, the algorithm verifies whether increasing either $I^K$ or $H^R$ by one grid step would render the choice infeasible (i.e., $D_{\text{needed}} > \bar{D}$). If so, the firm is classified as actually constrained.
+
+\item \textbf{Infeasible}: If $D_{\text{needed}} > \bar{D}$, this $(I^K, H^R)$ combination cannot be financed and is skipped.
+\end{itemize}
+
+This classification reduces the Bellman equation's inner loop from a three-dimensional search over $(I^K, H^R, D')$ to a two-dimensional search over $(I^K, H^R)$ with a single analytical evaluation per combination, yielding a substantial speed gain.
+
+\subsection{Static Labor Allocation}
+
+For given $(z, K, S)$ and wages $(w_L, w_H)$, optimal static labor choices $(L^*, H^{P*})$ are determined by the intratemporal first-order conditions:
+\[
+\frac{\partial Y}{\partial L} = w_L, \qquad \frac{\partial Y}{\partial H^P} = w_H.
+\]
+
+Since these depend only on $(z, K, S)$ and wages---not on debt $D$ or investment choices---they are precomputed for all $(z, K, S)$ triplets before each policy improvement step. This eliminates redundant computation across the $n_D = 20$ debt grid points, reducing the number of static labor solves by a factor of 20.
+
+The nested CES production structure makes closed-form solutions unavailable. Instead, $(L^*, H^{P*})$ are computed by nested bisection. For each candidate $L$, optimal $H^P(L)$ is found by bisecting on $\partial Y / \partial H^P = w_H$ (40 iterations, tolerance $10^{-6}$). Then $L$ is determined by bisecting on $\partial Y / \partial L = w_L$ evaluated at $H^{P*}(L)$ (50 iterations, tolerance $10^{-6}$). Bisection is preferred over Newton-type methods for robustness at extreme state combinations where marginal products can span several orders of magnitude.
+
+\subsection{Interpolation and Expected Values}
+\label{app:interpolation}
+
+\paragraph{Trilinear interpolation.} Continuation values require evaluating $V$ at next-period states $(K', S', D')$ that generically lie off the grid. Trilinear interpolation in $(K, S, D)$ is used, with productivity $z$ remaining discrete. Grid locations are found by binary search in $O(\log n)$ time. When policies exceed grid bounds, the interpolation permits linear extrapolation, though this occurs rarely given the grid design.
+
+\paragraph{Precomputed expected values.} A critical optimization precomputes the conditional expectation over future productivity. Before each VFI step, the array
+\[
+\text{EV}(z, K_i, S_j, D_k) = \sum_{z'} \Pi_z(z, z') \cdot V(z', K_i, S_j, D_k)
+\]
+is computed for all grid points, where $\Pi_z$ is the Markov transition matrix. Inside the choice loop, expected continuation values are obtained by trilinear interpolation on $\text{EV}$ rather than on $V$. This moves the $O(n_z)$ summation outside the innermost loop, reducing the cost of each continuation value evaluation from $O(n_z \times 8) = 88$ operations (11 productivity states, 8 interpolation corners) to $O(8)$ operations---an $n_z$-fold speedup for the bottleneck computation.
+
+\subsection{Stationary Distribution}
+
+The stationary distribution $\Psi^*(z, K, S, D)$ is computed by forward iteration on a histogram defined over the state space grid.
+
+\paragraph{Transition step.} In each iteration, mass at state $(z, K, S, D)$ transitions as follows. With probability $\zeta$, the firm exits; the corresponding mass is removed. With probability $1 - \zeta$, the firm survives and moves to $(z', K'(z,K,S,D), S'(z,K,S,D), D'(z,K,S,D))$, where $z'$ is drawn from the Markov transition and $(K', S', D')$ are given by the policy functions. Since next-period states generically fall between grid nodes, mass is distributed to the eight neighboring grid nodes using trilinear interpolation weights. Interpolation weights are clamped to $[0,1]$ to prevent negative mass assignments when policies lie near grid boundaries.
+
+\paragraph{Entry.} A mass $\zeta$ of entrants enters each period with $D_0 = 0$, productivity drawn from the stationary distribution $\pi_z$ of the AR(1) process, and capital endowments $(K_0, S_0) = (\E_{\Psi^*}[K], \E_{\Psi^*}[S])$. Entry capital is placed on the grid using bilinear interpolation in $(K, S)$ at the first debt node ($D = 0$).
+
+\paragraph{Dampening and normalization.} The distribution is updated with dampening: $\Psi^{n+1} = \eta \, \tilde{\Psi}^{n+1} + (1 - \eta) \, \Psi^n$, where $\eta = 0.10$ and $\tilde{\Psi}^{n+1}$ is the new iterate. After each update, the distribution is renormalized to sum to one to prevent mass drift from numerical rounding.
+
+\paragraph{Sparse acceleration.} The equilibrium distribution is typically concentrated on a subset of the state space. The algorithm maintains a sparse representation tracking only states with mass above $10^{-10}$, which is rebuilt every 50 iterations. The sparse iteration processes only active states, yielding substantial speedups when the number of active states is much smaller than the total grid size of 550,000.
+
+\subsection{Equilibrium Iteration}
+
+The outer loop updates wages using a proportional control rule with adaptive step size. Given aggregate labor demands $(L^d, H^d)$ from the stationary distribution, wages are updated as:
+\[
+w_L^{n+1} = w_L^n \left(1 + \eta_w \frac{L^d - \bar{L}}{\bar{L}}\right), \qquad
+w_H^{n+1} = w_H^n \left(1 + \eta_w \frac{H^d - \bar{H}}{\bar{H}}\right),
+\]
+where $\eta_w = 0.15$ is the base step size. If absolute excess demand increases by more than 5\% relative to the previous iteration in either market, the effective step is halved to $\eta_w / 2$ for that iteration. This adaptive safeguard prevents oscillatory divergence.
+
+Entry capital endowments $(K_0, S_0)$ are updated after each equilibrium iteration to equal the cross-sectional means $(\E_{\Psi^*}[K], \E_{\Psi^*}[S])$ from the current stationary distribution, as required by the entry condition \eqref{eq:entry_condition}.
+
+\subsection{Solution Accuracy}
+
+\paragraph{Euler equation errors.} After the equilibrium is found, solution accuracy is assessed by computing Euler equation errors for the tangible investment FOC at interior states (excluding boundary states, corner solutions, and constrained firms where the Euler equation does not hold with equality). The marginal value $\partial V / \partial K'$ is approximated by centered finite differences on the expected value function.
+
+\paragraph{Mass conservation.} The distribution is renormalized at each iteration to prevent numerical drift, and interpolation weight clamping ensures non-negative mass assignments.
+
+\subsection{Parallelization}
+
+The algorithm is parallelized using OpenMP directives. The state space loops in both the VFI step and the distribution computation are independent conditional on the current value function and distribution, respectively, allowing parallelization across CPU cores. The VFI step uses \texttt{COLLAPSE(2)} on the outer $(z, K)$ loops with \texttt{SCHEDULE(dynamic)} to handle load imbalance across states with varying numbers of feasible choices. Aggregate computation uses OpenMP reduction clauses.
+
+\subsection{Implementation Details}
+
+The model is implemented in Fortran 90/95 with double precision arithmetic throughout. All CES aggregators include safeguards for numerical stability at extreme input values: inputs are bounded below by $10^{-6}$ to prevent negative exponents from generating infinities, and marginal products are capped at $10^6$ to avoid overflow. The code is compiled with full optimization (\texttt{-O2}) and OpenMP enabled.
+
+\bibliographystyle{apalike}
+\bibliography{references}
