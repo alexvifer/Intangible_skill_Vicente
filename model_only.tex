@@ -137,7 +137,7 @@ V^{exit}(z, K, S, D) = \max\big\{\pi(z, K, S) + (1-\delta_K)K + (1-\delta_S)S - 
 \end{equation}
 Exiting firms collect gross profits, sell undepreciated capital at its depreciated value, repay debt, and distribute the residual (bounded below by zero under limited liability) to shareholders.
 
-\item \textbf{Investment and financing (survivors):} With probability $(1-\zeta)$, the firm survives and chooses tangible investment $I^K_t$, R\&D labor $H^R_t$, and new debt $D_{t+1}$ subject to the collateral constraint \eqref{eq:collateral_constraint} and the non-negative dividend constraint.
+\item \textbf{Investment, financing, and repayment (survivors):} With probability $(1-\zeta)$, the firm survives. The firm repays maturing debt $(1+r)D_t$, chooses tangible investment $I^K_t$, R\&D labor $H^R_t$, and new debt $D_{t+1}$ subject to the collateral constraint \eqref{eq:collateral_constraint} and the non-negative dividend constraint.
 
 \item \textbf{Dividend payment:} The firm pays dividends $\text{Div}_t \ge 0$ to shareholders.
 
@@ -196,7 +196,7 @@ Following the logic of \citet{khan2008idiosyncratic}, the optimal debt choice $D
 \[
 \text{cash flow} \equiv \pi(z,K,S) - (1+r)D, \qquad \text{expenses} \equiv I^K + \Phi^K + \Phi^S + w_H H^R.
 \]
-The net financing need is $D_{\text{needed}} = \text{expenses} - \text{cash flow}$. Given that $\beta(1+r) = 1$ and exit risk makes each dollar of excess debt costly (expected loss $\zeta(1+r)$ per dollar), the firm never borrows more than necessary. The solution is:
+The net financing need is $D_{\text{needed}} = \text{expenses} - \text{cash flow}$. Given that $\beta(1+r) = 1$, the net value of an additional dollar of debt is $-(1-\zeta)\E[\mu'] \le 0$, reflecting the expected future shadow cost of funds. Thus the firm never borrows more than necessary. The solution is:
 \begin{itemize}
 \item \textbf{Type A} ($\mu = 0, \lambda = 0$): If $D_{\text{needed}} \le 0$, set $D' = 0$ and $\text{Div} = -D_{\text{needed}} > 0$.
 \item \textbf{Type B} ($\mu > 0, \lambda = 0$): If $0 < D_{\text{needed}} < \bar{D}$, set $D' = D_{\text{needed}}$ and $\text{Div} = 0$.
@@ -211,59 +211,60 @@ Let $\mu \ge 0$ denote the Lagrange multiplier on the dividend constraint \eqref
 
 \paragraph{FOC for Debt ($D'$).}
 \begin{equation}
-1 + \mu = \lambda + \beta(1-\zeta)(1+r) \E[(1 + \mu')].
+1 + \mu = \lambda + \beta(1+r) \E\big[\zeta + (1-\zeta)(1 + \mu')\big].
 \label{eq:foc_D}
 \end{equation}
-For an unconstrained firm ($\mu = \lambda = 0$), this reduces to $1 = \beta(1-\zeta)(1+r)$, which holds when exit risk exactly offsets the discount factor.
+With $\beta(1+r) = 1$, this simplifies to $\mu = \lambda + (1-\zeta)\E[\mu']$. For an unconstrained firm ($\mu = \lambda = 0$), this yields $\E[\mu'] = 0$: unconstrained firms expect to remain unconstrained.
 
 \paragraph{FOC for Tangible Investment ($I^K$).}
 \begin{equation}
-(1 + \mu)\left(1 + \phi_K \frac{I^K}{K}\right) = \lambda \alpha_K + \beta(1-\zeta) \E[V_{K'}].
+(1 + \mu)\left(1 + \phi_K \frac{I^K}{K}\right) = \lambda \alpha_K + \beta \E[V_{K'}].
 \label{eq:foc_IK}
 \end{equation}
 
 The left-hand side is the marginal cost: purchasing one unit plus adjustment costs, valued at $(1+\mu)$ reflecting the shadow cost of internal funds. The right-hand side has two components:
 \begin{enumerate}
 \item $\lambda \alpha_K$: the immediate collateral benefit---investment increases $K'$, relaxing the current-period borrowing constraint.
-\item $\beta(1-\zeta) \E[V_{K'}]$: the expected continuation value of additional capital.
+\item $\beta \E[V_{K'}]$: the expected marginal value of additional capital, incorporating both the liquidation return in exit states and the continuation value for survivors.
 \end{enumerate}
 
 \paragraph{Envelope Condition for $K$.}
 \begin{equation}
-V_K = (1+\mu) \frac{\partial \pi}{\partial K} + (1+\mu) \frac{\phi_K}{2}\left(\frac{I^K}{K}\right)^2 + (1-\delta_K)\Big[\lambda \alpha_K + \beta(1-\zeta) \E[V_{K'}]\Big].
+V_K = \zeta\left[\frac{\partial \pi}{\partial K} + (1-\delta_K)\right] + (1-\zeta)\left\{(1+\mu) \frac{\partial \pi}{\partial K} + (1+\mu) \frac{\phi_K}{2}\left(\frac{I^K}{K}\right)^2 + (1-\delta_K)\Big[\lambda \alpha_K + \beta \E[V_{K'}]\Big]\right\}.
 \label{eq:envelope_K}
 \end{equation}
 
-The term $(1+\mu) \frac{\phi_K}{2}(I^K/K)^2$ reflects that higher capital reduces adjustment costs for given investment. The collateral term $\lambda \alpha_K$ is multiplied by $(1-\delta_K)$ because only undepreciated capital carries forward.
+Each envelope decomposes into an exit component (weighted by $\zeta$) and a continuation component (weighted by $1-\zeta$). The exit term $\partial\pi/\partial K + (1-\delta_K)$ is the marginal liquidation value of capital. In continuation, $(1+\mu)\frac{\phi_K}{2}(I^K/K)^2$ reflects that higher capital reduces adjustment costs, while $\lambda\alpha_K(1-\delta_K)$ captures the collateral benefit of undepreciated capital.
 
 Combining \eqref{eq:foc_IK} and \eqref{eq:envelope_K} yields the Euler equation:
 \begin{align}
-(1 + \mu_t)\left(1 + \phi_K \frac{I^K_t}{K_t}\right) &= \lambda_t \alpha_K + \beta(1-\zeta) \E_t\Bigg[ (1+\mu_{t+1}) \frac{\partial \pi_{t+1}}{\partial K_{t+1}} + (1+\mu_{t+1}) \frac{\phi_K}{2}\left(\frac{I^K_{t+1}}{K_{t+1}}\right)^2 \nonumber \\
-&\quad + (1-\delta_K)\Big(\lambda_{t+1} \alpha_K + \beta(1-\zeta) \E_{t+1}[V_{K,t+2}]\Big)\Bigg].
+(1 + \mu_t)\left(1 + \phi_K \frac{I^K_t}{K_t}\right) &= \lambda_t \alpha_K + \beta \E_t\Bigg[ \zeta\left(\frac{\partial \pi_{t+1}}{\partial K_{t+1}} + 1-\delta_K\right) \nonumber \\
+&\quad + (1-\zeta)\bigg\{(1+\mu_{t+1}) \frac{\partial \pi_{t+1}}{\partial K_{t+1}} + (1+\mu_{t+1}) \frac{\phi_K}{2}\left(\frac{I^K_{t+1}}{K_{t+1}}\right)^2 \nonumber \\
+&\quad + (1-\delta_K)\Big(\lambda_{t+1} \alpha_K + \beta \E_{t+1}[V_{K,t+2}]\Big)\bigg\}\Bigg].
 \label{eq:euler_K}
 \end{align}
 
 \paragraph{FOC for Intangible Investment (via $H^R$).} Since $\partial S'/\partial H^R = \Gamma \xi (H^R)^{\xi-1}$:
 \begin{equation}
-(1+\mu)\left(w_H + \phi_S \frac{\Delta S}{S} \cdot \Gamma \xi (H^R)^{\xi-1}\right) = \Big[\lambda \alpha_S + \beta(1-\zeta) \E[V_{S'}]\Big] \cdot \Gamma \xi (H^R)^{\xi-1}.
+(1+\mu)\left(w_H + \phi_S \frac{\Delta S}{S} \cdot \Gamma \xi (H^R)^{\xi-1}\right) = \Big[\lambda \alpha_S + \beta \E[V_{S'}]\Big] \cdot \Gamma \xi (H^R)^{\xi-1}.
 \label{eq:foc_HR}
 \end{equation}
 
 Define the marginal cost of producing intangibles as $q_S \equiv w_H / [\Gamma \xi (H^R)^{\xi-1}]$. Abstracting from adjustment costs, the FOC simplifies to:
 \begin{equation}
-(1+\mu) \cdot q_S = \lambda \alpha_S + \beta(1-\zeta) \E[V_{S'}].
+(1+\mu) \cdot q_S = \lambda \alpha_S + \beta \E[V_{S'}].
 \label{eq:foc_S}
 \end{equation}
 
 \paragraph{Envelope Condition for $S$.}
 \begin{equation}
-V_S = (1+\mu) \frac{\partial \pi}{\partial S} + (1+\mu) \frac{\phi_S}{2}\left(\frac{\Delta S}{S}\right)^2 + (1-\delta_S)\Big[\lambda \alpha_S + \beta(1-\zeta) \E[V_{S'}]\Big].
+V_S = \zeta\left[\frac{\partial \pi}{\partial S} + (1-\delta_S)\right] + (1-\zeta)\left\{(1+\mu) \frac{\partial \pi}{\partial S} + (1+\mu) \frac{\phi_S}{2}\left(\frac{\Delta S}{S}\right)^2 + (1-\delta_S)\Big[\lambda \alpha_S + \beta \E[V_{S'}]\Big]\right\}.
 \label{eq:envelope_S}
 \end{equation}
 
 \paragraph{Envelope Condition for $D$.}
 \begin{equation}
-V_D = -(1+\mu)(1+r).
+V_D = -(1+r)\big[\zeta + (1-\zeta)(1+\mu)\big].
 \label{eq:envelope_D}
 \end{equation}
 
@@ -290,7 +291,7 @@ For unconstrained firms ($\lambda = 0$), the collateral terms vanish and investm
 \frac{\text{MB}_K - \lambda \alpha_K}{\text{MB}_S - \lambda \alpha_S} = \frac{(1+\mu)(1 + \phi_K I^K/K)}{(1+\mu) q_S},
 \label{eq:capital_ratio}
 \end{equation}
-where $\text{MB}_K$ and $\text{MB}_S$ denote the continuation value terms. For constrained firms, since $\alpha_K > \alpha_S$, the numerator is reduced more than the denominator, distorting capital composition toward tangibles.
+where $\text{MB}_K \equiv \beta\E[V_{K'}]$ and $\text{MB}_S \equiv \beta\E[V_{S'}]$ denote the expected marginal value terms (including both liquidation and continuation returns). For constrained firms, since $\alpha_K > \alpha_S$, the numerator is reduced more than the denominator, distorting capital composition toward tangibles.
 
 \subsection{Entry and Exit}
 

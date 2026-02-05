@@ -145,7 +145,7 @@ module mod_parameters
     integer, parameter :: maxiter_eq = 300         ! Max iterations for equilibrium (increased from 100)
     real(dp), parameter :: update_VFI = 1.0_dp     ! Full VFI update (no dampening needed with limited liability)
     real(dp), parameter :: update_dist = 0.10_dp   ! Update weight for distribution
-    real(dp), parameter :: update_wage = 0.05_dp   ! Update weight for wage iteration
+    real(dp), parameter :: update_wage = 0.15_dp   ! Update weight for wage iteration
 
     ! Howard's Policy Improvement parameters
     ! Do full policy optimization every howard_freq iterations

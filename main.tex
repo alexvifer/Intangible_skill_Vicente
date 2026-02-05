@@ -558,7 +558,7 @@ All three factors favor the unconstrained firm, so $\frac{dY_u}{d\bar{H}} > \fra
 \subsection{Environment}
 
 \subsubsection{Time and Agents}
-Time is discrete. A continuum of firms $j \in [0,1]$ faces idiosyncratic productivity $z_{j,t}$. Each firm holds tangible capital $K_{j,t}$, intangible capital $S_{j,t}$, and debt $D_{j,t}$. Firms exit with probability $\zeta \in (0,1)$; entrants draw $z_0 \sim F_z$ on $[\underline{z}, \overline{z}]$ and start with $K_0 = S_0 = D_0 = 0$, receiving initial equity $a_0 > 0$ financed by household transfers.
+Time is discrete. A continuum of firms $j \in [0,1]$ faces idiosyncratic productivity $z_{j,t}$. Each firm holds tangible capital $K_{j,t}$, intangible capital $S_{j,t}$, and debt $D_{j,t}$. Firms exit with probability $\zeta \in (0,1)$; entrants draw $z_0 \sim F_z$ on $[\underline{z}, \overline{z}]$ and start with $K_0 = \bar{K}$, $S_0 = \bar{S}$, $D_0 = 0$, where $\bar{K} = \E_{\Psi^*}[K]$ and $\bar{S} = \E_{\Psi^*}[S]$ are the cross-sectional means from the stationary distribution.
 
 \subsubsection{Household}
 A representative household owns all firms, supplies skilled and unskilled labor inelastically, and has standard preferences over consumption:
@@ -569,10 +569,10 @@ The household supplies $\bar{L}$ units of unskilled labor and $\bar{H}$ units of
 
 The household's budget constraint is:
 \begin{equation}
-C_t + B_{t+1} + T_t = w_L \bar{L} + w_H \bar{H} + (1+r) B_t + \Pi_t,
+C_t + B_{t+1} = w_L \bar{L} + w_H \bar{H} + (1+r) B_t + \Pi_t,
 \label{eq:hh_budget}
 \end{equation}
-where $B_t$ denotes household deposits at banks, $\Pi_t$ is aggregate firm dividends, and $T_t$ represents transfers to finance new entrants replacing exiting firms.
+where $B_t$ denotes household deposits at banks and $\Pi_t$ is aggregate firm dividends net of entry costs (i.e., $\Pi_t$ includes the value distributed by exiting firms minus the equity injected into entrants).
 
 The household's Euler equation with linear utility pins down:
 \begin{equation}
@@ -646,7 +646,7 @@ H_{j,t} = H^P_{j,t} + H^R_{j,t}.
 
 Following the investment literature \citep{cooper2006dynamics, khan2008idiosyncratic}, capital adjustment is subject to convex costs:
 \begin{equation}
-\Phi^K_{j,t} = \frac{\phi_K}{2} \frac{(I^K_{j,t})^2}{K_{j,t}}, \qquad 
+\Phi^K_{j,t} = \frac{\phi_K}{2} \frac{(I^K_{j,t})^2}{K_{j,t}}, \qquad
 \Phi^S_{j,t} = \frac{\phi_S}{2} \frac{(\Delta S_{j,t})^2}{S_{j,t}},
 \label{eq:adj_costs}
 \end{equation}
@@ -675,22 +675,25 @@ D_{j,t+1} \le \alpha_K K_{j,t+1} + \alpha_S S_{j,t+1}.
 \end{equation}
 Since $K_{j,t+1}$ and $S_{j,t+1}$ depend on current investment decisions, this creates a direct link between investment and borrowing capacity within the period.
 
-\subsubsection{Timing}
+\subsubsection{Within-Period Timing}
 
-The stages below describe the sequence of decisions within period $t$:
+The stages below describe the sequence of events within period $t$:
 
 \begin{enumerate}[leftmargin=*]
-\item \textbf{Beginning of period:} Firm enters with state $(z_{t-1}, K_t, S_t, D_t)$, where $D_t$ is debt to be repaid this period.
+\item \textbf{Enter with state:} Firm enters with $(K_t, S_t, D_t)$ and observes productivity $z_t$ drawn from the AR(1) process conditional on $z_{t-1}$.
 
-\item \textbf{Productivity realization:} Current productivity $z_t$ is drawn from the AR(1) process.
+\item \textbf{Static production:} The firm hires labor $(L_t, H^P_t)$ at wages $(w_L, w_H)$ and produces output $Y_t$. Gross profits are $\pi(z_t, K_t, S_t) = Y_t - w_L L_t - w_H H^P_t$.
 
-\item \textbf{Exit shock:} With probability $\zeta$, the firm exits: it produces, collects revenue net of wages, liquidates capital, repays debt $(1+r)D_t$, and distributes residual value to shareholders. With probability $(1-\zeta)$, the firm survives.
+\item \textbf{Exit shock:} With probability $\zeta$, the firm exits. The exit value is:
+\begin{equation}
+V^{exit}(z, K, S, D) = \max\big\{\pi(z, K, S) + (1-\delta_K)K + (1-\delta_S)S - (1+r)D,\; 0\big\}.
+\label{eq:exit_value}
+\end{equation}
+Exiting firms collect gross profits, sell undepreciated capital at its depreciated value, repay debt, and distribute the residual (bounded below by zero under limited liability) to shareholders.
 
-\item \textbf{Production decisions:} Surviving firms choose labor $(L_t, H^P_t)$ to maximize static profits.
+\item \textbf{Investment, financing, and repayment (survivors):} With probability $(1-\zeta)$, the firm survives. The firm repays maturing debt $(1+r)D_t$, chooses tangible investment $I^K_t$, R\&D labor $H^R_t$, and new debt $D_{t+1}$ subject to the collateral constraint \eqref{eq:collateral_constraint} and the non-negative dividend constraint.
 
-\item \textbf{Investment and financing:} Firms choose tangible investment $I^K_t$, R\&D labor $H^R_t$, and new debt $D_{t+1}$ subject to the collateral constraint.
-
-\item \textbf{Dividend payment:} Firms pay dividends $\text{Div}_t \ge 0$ to shareholders.
+\item \textbf{Dividend payment:} The firm pays dividends $\text{Div}_t \ge 0$ to shareholders.
 
 \item \textbf{End of period:} Firm enters $t+1$ with state $(z_t, K_{t+1}, S_{t+1}, D_{t+1})$.
 \end{enumerate}
@@ -699,52 +702,31 @@ The stages below describe the sequence of decisions within period $t$:
 
 \subsubsection{Budget Constraint and Dividends}
 
-The firm's budget constraint equates sources and uses of funds:
-\begin{equation}
-I^K_{j,t} + \Phi^K_{j,t} + \Phi^S_{j,t} + w_L L_{j,t} + w_H (H^P_{j,t} + H^R_{j,t}) + (1+r) D_{j,t} = Y_{j,t} + D_{j,t+1} + \text{Div}_{j,t}.
-\label{eq:budget_constraint}
-\end{equation}
-
 Define gross profits from production:
 \begin{equation}
-\Pi^{gross}_{j,t} \equiv Y_{j,t} - w_L L_{j,t} - w_H H^P_{j,t}.
+\pi(z, K, S) \equiv \max_{L, H^P} \Big\{ Y(z, K, S, L, H^P) - w_L L - w_H H^P \Big\}.
 \label{eq:gross_profits_def}
 \end{equation}
 
 Dividends distributed to shareholders are:
 \begin{equation}
-\text{Div}_{j,t} = \Pi^{gross}_{j,t} - I^K_{j,t} - \Phi^K_{j,t} - \Phi^S_{j,t} - w_H H^R_{j,t} - (1+r) D_{j,t} + D_{j,t+1}.
+\text{Div} = \pi(z, K, S) - I^K - \Phi^K - \Phi^S - w_H H^R - (1+r) D + D'.
 \label{eq:dividends}
 \end{equation}
 
 Firms cannot issue new equity:
 \begin{equation}
-\text{Div}_{j,t} \ge 0.
+\text{Div} \ge 0.
 \label{eq:div_constraint}
 \end{equation}
 
 \subsection{Firm Problem}
 
-\subsubsection{Static Production Problem}
+\subsubsection{Bellman Equation}
 
-Given capital $(K, S)$ and productivity $z$, the firm chooses labor $(L, H^P)$ to maximize static profits:
+The value function incorporates the exit shock explicitly:
 \begin{equation}
-\pi(z, K, S) = \max_{L, H^P} \Big\{ Y(z, K, S, L, H^P) - w_L L - w_H H^P \Big\}.
-\label{eq:profit_function}
-\end{equation}
-
-The first-order conditions are:
-\begin{equation}
-\frac{\partial Y}{\partial L} = w_L, \qquad \frac{\partial Y}{\partial H^P} = w_H.
-\label{eq:foc_labor}
-\end{equation}
-These yield policy functions $L^*(z, K, S)$ and $H^{P*}(z, K, S)$. Labor decisions are undistorted by financial frictions since labor is paid contemporaneously.
-
-\subsubsection{Dynamic Problem}
-
-The firm maximizes the expected present value of dividends. The state is $(z, K, S, D)$, and the value function satisfies:
-\begin{equation}
-V(z, K, S, D) = \max_{D', I^K, H^R} \Big\{ \text{Div} + \beta(1-\zeta) \E[V(z', K', S', D') \mid z] \Big\},
+V(z, K, S, D) = \zeta \, V^{exit}(z, K, S, D) \;+\; (1-\zeta) \max_{I^K, H^R, D'} \Big\{ \text{Div} + \beta \, \E\big[V(z', K', S', D') \mid z\big] \Big\},
 \label{eq:value_function}
 \end{equation}
 subject to:
@@ -756,7 +738,26 @@ subject to:
 \item Collateral constraint: $D' \le \alpha_K K' + \alpha_S S'$
 
 \item Non-negative dividends: $\text{Div} \ge 0$
+
+\item Limited liability on continuation: $\max\{\cdot, 0\}$ inside the $(1-\zeta)$ term
 \end{itemize}
+
+The exit value $V^{exit}$ depends only on the current state, not on investment choices. The continuation problem is solved by survivors who choose $(I^K, H^R, D')$.
+
+\subsubsection{Analytical Determination of $D'$}
+
+Following the logic of \citet{khan2008idiosyncratic}, the optimal debt choice $D'$ can be determined analytically for each $(I^K, H^R)$ combination. Define:
+\[
+\text{cash flow} \equiv \pi(z,K,S) - (1+r)D, \qquad \text{expenses} \equiv I^K + \Phi^K + \Phi^S + w_H H^R.
+\]
+The net financing need is $D_{\text{needed}} = \text{expenses} - \text{cash flow}$. Given that $\beta(1+r) = 1$, the net value of an additional dollar of debt is $-(1-\zeta)\E[\mu'] \le 0$, reflecting the expected future shadow cost of funds. Thus the firm never borrows more than necessary. The solution is:
+\begin{itemize}
+\item \textbf{Type A} ($\mu = 0, \lambda = 0$): If $D_{\text{needed}} \le 0$, set $D' = 0$ and $\text{Div} = -D_{\text{needed}} > 0$.
+\item \textbf{Type B} ($\mu > 0, \lambda = 0$): If $0 < D_{\text{needed}} < \bar{D}$, set $D' = D_{\text{needed}}$ and $\text{Div} = 0$.
+\item \textbf{Type C} ($\mu > 0, \lambda > 0$): If $D_{\text{needed}} = \bar{D} \equiv \alpha_K K' + \alpha_S S'$, the collateral constraint binds.
+\item \textbf{Infeasible}: If $D_{\text{needed}} > \bar{D}$, this $(I^K, H^R)$ combination cannot be financed.
+\end{itemize}
+This eliminates one dimension from the numerical optimization, leaving a grid search over $(I^K, H^R)$ only.
 
 \subsubsection{First-Order Conditions}
 
@@ -764,59 +765,60 @@ Let $\mu \ge 0$ denote the Lagrange multiplier on the dividend constraint \eqref
 
 \paragraph{FOC for Debt ($D'$).}
 \begin{equation}
-1 + \mu = \lambda + \beta(1-\zeta)(1+r) \E[(1 + \mu')].
+1 + \mu = \lambda + \beta(1+r) \E\big[\zeta + (1-\zeta)(1 + \mu')\big].
 \label{eq:foc_D}
 \end{equation}
-For an unconstrained firm ($\mu = \lambda = 0$), this reduces to $1 = \beta(1-\zeta)(1+r)$, which holds when exit risk exactly offsets the discount factor.
+With $\beta(1+r) = 1$, this simplifies to $\mu = \lambda + (1-\zeta)\E[\mu']$. For an unconstrained firm ($\mu = \lambda = 0$), this yields $\E[\mu'] = 0$: unconstrained firms expect to remain unconstrained.
 
 \paragraph{FOC for Tangible Investment ($I^K$).}
 \begin{equation}
-(1 + \mu)\left(1 + \phi_K \frac{I^K}{K}\right) = \lambda \alpha_K + \beta(1-\zeta) \E[V_{K'}].
+(1 + \mu)\left(1 + \phi_K \frac{I^K}{K}\right) = \lambda \alpha_K + \beta \E[V_{K'}].
 \label{eq:foc_IK}
 \end{equation}
 
 The left-hand side is the marginal cost: purchasing one unit plus adjustment costs, valued at $(1+\mu)$ reflecting the shadow cost of internal funds. The right-hand side has two components:
 \begin{enumerate}
 \item $\lambda \alpha_K$: the immediate collateral benefit---investment increases $K'$, relaxing the current-period borrowing constraint.
-\item $\beta(1-\zeta) \E[V_{K'}]$: the expected continuation value of additional capital.
+\item $\beta \E[V_{K'}]$: the expected marginal value of additional capital, incorporating both the liquidation return in exit states and the continuation value for survivors.
 \end{enumerate}
 
 \paragraph{Envelope Condition for $K$.}
 \begin{equation}
-V_K = (1+\mu) \frac{\partial \pi}{\partial K} + (1+\mu) \frac{\phi_K}{2}\left(\frac{I^K}{K}\right)^2 + (1-\delta_K)\Big[\lambda \alpha_K + \beta(1-\zeta) \E[V_{K'}]\Big].
+V_K = \zeta\left[\frac{\partial \pi}{\partial K} + (1-\delta_K)\right] + (1-\zeta)\left\{(1+\mu) \frac{\partial \pi}{\partial K} + (1+\mu) \frac{\phi_K}{2}\left(\frac{I^K}{K}\right)^2 + (1-\delta_K)\Big[\lambda \alpha_K + \beta \E[V_{K'}]\Big]\right\}.
 \label{eq:envelope_K}
 \end{equation}
 
-The term $(1+\mu) \frac{\phi_K}{2}(I^K/K)^2$ reflects that higher capital reduces adjustment costs for given investment. The collateral term $\lambda \alpha_K$ is multiplied by $(1-\delta_K)$ because only undepreciated capital carries forward.
+Each envelope decomposes into an exit component (weighted by $\zeta$) and a continuation component (weighted by $1-\zeta$). The exit term $\partial\pi/\partial K + (1-\delta_K)$ is the marginal liquidation value of capital. In continuation, $(1+\mu)\frac{\phi_K}{2}(I^K/K)^2$ reflects that higher capital reduces adjustment costs, while $\lambda\alpha_K(1-\delta_K)$ captures the collateral benefit of undepreciated capital.
 
 Combining \eqref{eq:foc_IK} and \eqref{eq:envelope_K} yields the Euler equation:
 \begin{align}
-(1 + \mu_t)\left(1 + \phi_K \frac{I^K_t}{K_t}\right) &= \lambda_t \alpha_K + \beta(1-\zeta) \E_t\Bigg[ (1+\mu_{t+1}) \frac{\partial \pi_{t+1}}{\partial K_{t+1}} + (1+\mu_{t+1}) \frac{\phi_K}{2}\left(\frac{I^K_{t+1}}{K_{t+1}}\right)^2 \nonumber \\
-&\quad + (1-\delta_K)\Big(\lambda_{t+1} \alpha_K + \beta(1-\zeta) \E_{t+1}[V_{K,t+2}]\Big)\Bigg].
+(1 + \mu_t)\left(1 + \phi_K \frac{I^K_t}{K_t}\right) &= \lambda_t \alpha_K + \beta \E_t\Bigg[ \zeta\left(\frac{\partial \pi_{t+1}}{\partial K_{t+1}} + 1-\delta_K\right) \nonumber \\
+&\quad + (1-\zeta)\bigg\{(1+\mu_{t+1}) \frac{\partial \pi_{t+1}}{\partial K_{t+1}} + (1+\mu_{t+1}) \frac{\phi_K}{2}\left(\frac{I^K_{t+1}}{K_{t+1}}\right)^2 \nonumber \\
+&\quad + (1-\delta_K)\Big(\lambda_{t+1} \alpha_K + \beta \E_{t+1}[V_{K,t+2}]\Big)\bigg\}\Bigg].
 \label{eq:euler_K}
 \end{align}
 
 \paragraph{FOC for Intangible Investment (via $H^R$).} Since $\partial S'/\partial H^R = \Gamma \xi (H^R)^{\xi-1}$:
 \begin{equation}
-(1+\mu)\left(w_H + \phi_S \frac{\Delta S}{S} \cdot \Gamma \xi (H^R)^{\xi-1}\right) = \Big[\lambda \alpha_S + \beta(1-\zeta) \E[V_{S'}]\Big] \cdot \Gamma \xi (H^R)^{\xi-1}.
+(1+\mu)\left(w_H + \phi_S \frac{\Delta S}{S} \cdot \Gamma \xi (H^R)^{\xi-1}\right) = \Big[\lambda \alpha_S + \beta \E[V_{S'}]\Big] \cdot \Gamma \xi (H^R)^{\xi-1}.
 \label{eq:foc_HR}
 \end{equation}
 
 Define the marginal cost of producing intangibles as $q_S \equiv w_H / [\Gamma \xi (H^R)^{\xi-1}]$. Abstracting from adjustment costs, the FOC simplifies to:
 \begin{equation}
-(1+\mu) \cdot q_S = \lambda \alpha_S + \beta(1-\zeta) \E[V_{S'}].
+(1+\mu) \cdot q_S = \lambda \alpha_S + \beta \E[V_{S'}].
 \label{eq:foc_S}
 \end{equation}
 
 \paragraph{Envelope Condition for $S$.}
 \begin{equation}
-V_S = (1+\mu) \frac{\partial \pi}{\partial S} + (1+\mu) \frac{\phi_S}{2}\left(\frac{\Delta S}{S}\right)^2 + (1-\delta_S)\Big[\lambda \alpha_S + \beta(1-\zeta) \E[V_{S'}]\Big].
+V_S = \zeta\left[\frac{\partial \pi}{\partial S} + (1-\delta_S)\right] + (1-\zeta)\left\{(1+\mu) \frac{\partial \pi}{\partial S} + (1+\mu) \frac{\phi_S}{2}\left(\frac{\Delta S}{S}\right)^2 + (1-\delta_S)\Big[\lambda \alpha_S + \beta \E[V_{S'}]\Big]\right\}.
 \label{eq:envelope_S}
 \end{equation}
 
 \paragraph{Envelope Condition for $D$.}
 \begin{equation}
-V_D = -(1+\mu)(1+r).
+V_D = -(1+r)\big[\zeta + (1-\zeta)(1+\mu)\big].
 \label{eq:envelope_D}
 \end{equation}
 
@@ -843,7 +845,16 @@ For unconstrained firms ($\lambda = 0$), the collateral terms vanish and investm
 \frac{\text{MB}_K - \lambda \alpha_K}{\text{MB}_S - \lambda \alpha_S} = \frac{(1+\mu)(1 + \phi_K I^K/K)}{(1+\mu) q_S},
 \label{eq:capital_ratio}
 \end{equation}
-where $\text{MB}_K$ and $\text{MB}_S$ denote the continuation value terms. For constrained firms, since $\alpha_K > \alpha_S$, the numerator is reduced more than the denominator, distorting capital composition toward tangibles.
+where $\text{MB}_K \equiv \beta\E[V_{K'}]$ and $\text{MB}_S \equiv \beta\E[V_{S'}]$ denote the expected marginal value terms (including both liquidation and continuation returns). For constrained firms, since $\alpha_K > \alpha_S$, the numerator is reduced more than the denominator, distorting capital composition toward tangibles.
+
+\subsection{Entry and Exit}
+
+A mass $\zeta$ of firms exits each period. Upon exit, shareholders receive $V^{exit}$ as defined in \eqref{eq:exit_value}. An equal mass $\zeta$ of new firms enters to maintain unit mass. Both the exit rate and entry mass are exogenous. Entrants draw productivity $z_0$ from the stationary distribution $F_z$ and are endowed with capital equal to the cross-sectional average:
+\begin{equation}
+K_0 = \E_{\Psi^*}[K], \qquad S_0 = \E_{\Psi^*}[S], \qquad D_0 = 0,
+\label{eq:entry_condition}
+\end{equation}
+where $\E_{\Psi^*}[\cdot]$ denotes the cross-sectional mean under the stationary distribution. The capital endowment $(K_0, S_0)$ and the stationary distribution $\Psi^*$ are jointly determined in a fixed point.
 
 \subsection{Equilibrium}
 
@@ -854,6 +865,7 @@ A stationary recursive equilibrium consists of:
 \item Firm value function $V(z, K, S, D)$ and policy functions $\{K'(\cdot), S'(\cdot), D'(\cdot), I^K(\cdot), H^R(\cdot), L(\cdot), H^P(\cdot)\}$,
 \item Wages $(w_L, w_H)$ and interest rate $r$,
 \item A stationary distribution of firms $\Psi^*(z, K, S, D)$,
+\item Entry capital $(K_0, S_0) = (\E_{\Psi^*}[K], \E_{\Psi^*}[S])$,
 \item Aggregate quantities $\{C, Y_{agg}, K_{agg}, S_{agg}, D_{agg}\}$,
 \end{enumerate}
 such that:
@@ -874,14 +886,11 @@ B = \int D_j \, d\Psi^*.
 
 \item \textbf{Goods market clears:}
 \[
-C + \int \big(I^K_j + \Phi^K_j + \Phi^S_j\big) d\Psi^* + T = \int Y_j \, d\Psi^*,
+C + \int \big(I^K_j + \Phi^K_j + \Phi^S_j\big) d\Psi^* = \int Y_j \, d\Psi^* + \zeta \int \big[(1-\delta_K)K_j + (1-\delta_S)S_j\big] d\Psi^* - \zeta (K_0 + S_0).
 \]
-where $T = \zeta a_0$ finances entrants.
+The right-hand side adds output, the depreciated capital recovered from exiting firms, and subtracts the capital endowed to entrants.
 
-\item \textbf{Free entry:} The expected value of an entrant equals required initial equity:
-\[
-\int V(z, 0, 0, 0) \, dF_z(z) = a_0.
-\]
+\item \textbf{Entry condition:} Entrants start at $(K_0, S_0, 0) = (\E_{\Psi^*}[K], \E_{\Psi^*}[S], 0)$.
 
 \item \textbf{Stationarity:} $\Psi^*$ is invariant under the transition implied by policy functions, exit, and entry.
 \end{enumerate}

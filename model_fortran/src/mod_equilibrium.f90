@@ -279,6 +279,8 @@ contains
         real(dp) :: update_wL, update_wH
         real(dp) :: time_start, time_current, time_elapsed_min
         real(dp) :: abs_excess_L, abs_excess_H
+        real(dp) :: prev_abs_excess_L, prev_abs_excess_H
+        real(dp) :: eff_step
 
         print *, ""
         print *, "======================================"
@@ -303,8 +305,12 @@ contains
         print '(A,F10.4,A,F10.4)', "  Initial entry capital: K0 = ", entry_K, ", S0 = ", entry_S
 
         ! Initial wage guess (wH higher due to skill scarcity with Hbar = 0.15)
-        wL = 0.649562_dp
-        wH = 0.968310_dp
+        wL = 0.763250_dp
+        wH = 1.145979_dp
+
+        ! Initialize tracking for adaptive step
+        prev_abs_excess_L = 1.0e10_dp
+        prev_abs_excess_H = 1.0e10_dp
 
         do iter_outer = 1, maxiter_eq
 
@@ -316,7 +322,8 @@ contains
             print '(A,F10.6,A,F10.6)', "  Wages: wL = ", wL, ", wH = ", wH
 
             ! Solve firm problem given wages
-            call solve_firm_problem()
+            ! Warm-start V from previous iteration (skip re-initialization)
+            call solve_firm_problem(warm_start = (iter_outer > 1))
 
             ! Compute stationary distribution (using optimized sparse method)
             call compute_stationary_distribution_sparse()
@@ -373,9 +380,21 @@ contains
                 exit
             end if
 
-            ! Update wages (simple fixed-point with dampening)
-            update_wL = wL * (1.0_dp + update_wage * excess_L / Lbar)
-            update_wH = wH * (1.0_dp + update_wage * excess_H / Hbar)
+            ! Adaptive wage update: use base step, halve if excess demand increased
+            eff_step = update_wage
+            if (iter_outer > 1) then
+                if (abs_excess_L > prev_abs_excess_L * 1.05_dp .or. &
+                    abs_excess_H > prev_abs_excess_H * 1.05_dp) then
+                    eff_step = update_wage * 0.5_dp
+                    print '(A,F8.4)', "  (Adaptive step reduced to ", eff_step, ")"
+                end if
+            end if
+            prev_abs_excess_L = abs_excess_L
+            prev_abs_excess_H = abs_excess_H
+
+            ! Update wages (proportional control with adaptive step)
+            update_wL = wL * (1.0_dp + eff_step * excess_L / Lbar)
+            update_wH = wH * (1.0_dp + eff_step * excess_H / Hbar)
 
             ! Bounds on wages (wide bounds to allow equilibrium to be found)
             wL = max(0.01_dp, min(100.0_dp, update_wL))

@@ -17,7 +17,7 @@
 !   depreciated tangible and intangible capital, repay debt R*D.
 !
 !   ANALYTICAL D' (3 regions, no grid search):
-!     Type A (mu=0, lambda=0): D'=0, div>0      -- unconstrained (absorbing)
+!     Type A (mu=0, lambda=0): D'=0, div>0      -- unconstrained
 !     Type B (mu>0, lambda=0): D'=D_needed, div=0 -- potentially constrained
 !     Type C (mu>0, lambda>0): D'=D_ub, div=0    -- actually constrained
 !     Infeasible: D_needed > D_ub, skip this (IK,HR)
@@ -708,14 +708,20 @@ contains
     !     - Policy Improvement (every howard_freq iterations): Full optimization
     !     - Policy Evaluation (other iterations): Just update V with fixed policy
     !===================================================================================
-    subroutine solve_firm_problem()
+    subroutine solve_firm_problem(warm_start)
         implicit none
+        logical, intent(in), optional :: warm_start
+        logical :: do_warm_start
         integer :: iter, eval_iter
         real(dp) :: metric, metric_eval
         integer :: total_states, total_choices
         logical :: do_improvement, first_improvement, do_full_search
         integer :: num_threads
         integer :: n_improvements
+
+        ! Determine whether to warm-start from previous V
+        do_warm_start = .true.
+        if (present(warm_start)) do_warm_start = warm_start
 
         print *, ""
         print *, "======================================"
@@ -743,24 +749,31 @@ contains
         print '(A,I4)', "  OpenMP threads: ", num_threads
         print *, ""
 
-        ! Initialize value function
-        call initialize_value_function()
+        if (do_warm_start) then
+            ! Warm-start: reuse V and policies from previous equilibrium iteration
+            print *, "  Warm-starting from previous value function."
+            print '(A,F12.4,A,F12.4)', "    V range: [", minval(V), ", ", maxval(V), "]"
+            V_new = V
+        else
+            ! Cold-start: initialize V from stationary approximation
+            call initialize_value_function()
 
-        ! Initialize policies
-        pol_IK = 0.0_dp
-        pol_HR = 0.0_dp
-        pol_Dprime = 0.0_dp
-        pol_Kprime = K_min
-        pol_Sprime = S_min
-        pol_L = 0.1_dp
-        pol_HP = 0.1_dp
-        pol_Y = 0.0_dp
-        pol_mu = 0.0_dp
-        pol_lambda = 0.0_dp
+            ! Initialize policies
+            pol_IK = 0.0_dp
+            pol_HR = 0.0_dp
+            pol_Dprime = 0.0_dp
+            pol_Kprime = K_min
+            pol_Sprime = S_min
+            pol_L = 0.1_dp
+            pol_HP = 0.1_dp
+            pol_Y = 0.0_dp
+            pol_mu = 0.0_dp
+            pol_lambda = 0.0_dp
 
-        ! Initialize policy indices to middle of grids
-        pol_iIK = nIK / 2
-        pol_iHR = nHR / 2
+            ! Initialize policy indices to middle of grids
+            pol_iIK = nIK / 2
+            pol_iHR = nHR / 2
+        end if
 
         first_improvement = .true.
         n_improvements = 0

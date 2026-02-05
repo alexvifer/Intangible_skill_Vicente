@@ -3,20 +3,20 @@
   "WorkspaceRootPath": "C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|c:\\users\\alexv\\onedrive\\documentos\\3-papers\\vicente_intangible_skill\\model_fortran\\src\\mod_equilibrium.f90||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|solutionrelative:src\\mod_equilibrium.f90||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\mod_firm_problem.f90||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|solutionrelative:src\\mod_firm_problem.f90||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\mod_parameters.f90||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|solutionrelative:src\\mod_parameters.f90||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\main.f90||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|solutionrelative:src\\main.f90||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\mod_firm_problem.f90||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|solutionrelative:src\\mod_firm_problem.f90||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|c:\\users\\alexv\\onedrive\\documentos\\3-papers\\vicente_intangible_skill\\model_fortran\\src\\mod_equilibrium.f90||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A139F991-A497-42C6-9F32-FB78D1C1CBF6}|model_fortran.vfproj|solutionrelative:src\\mod_equilibrium.f90||{8B382828-6202-11D1-8870-0000F87579D2}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,50 +26,50 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "mod_firm_problem.f90",
               "DocumentMoniker": "C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\mod_firm_problem.f90",
               "RelativeDocumentMoniker": "src\\mod_firm_problem.f90",
               "ToolTip": "C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\mod_firm_problem.f90",
               "RelativeToolTip": "src\\mod_firm_problem.f90",
-              "ViewState": "AgIAAHABAAAAAAAAAAAswPQCAAASAAAAAAAAAA==",
+              "ViewState": "AgIAAMECAAAAAAAAAAAAANICAAAdAAAAAAAAAA==",
               "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGdSURBVDhP7ZSxa1pRFIe/qAl9RJJAAg2CpYqYl5AhlzRTJ12yZXMsQgZFSjO4mMHFCpmyBnHuX9EgCt0ckgedgtBJLAkkqJAXKnrfzRB80ZeXxErHfnCW3\u002BF8lwOHi1KKer3OpBQKhSPTNC23Qik1o5RCSrnT6/UmsV4Ct0Cke36NspTd8K8v4ZufZUxoGAatVmvMMMTr9aLrOqFQCIDvb78hb/t2/\u002BOPPRa3V/CNzFCr1ahWq6ORjcfjQQhBMpkkHA4DMLeqoX/9AID23g8wLhxSKpWcEZ1Oh3w\u002BjxDCFvZvevw6/knkcIu55TcIITY8zkGAYDD4pAKBAFJK\u002Bv3HNZW0\u002BPP7DmkOAGg0GheuwkmZjyyye/WJd/trdua6shuappFIJNB1HYDQwSa\u002BhVkAKpXKqWEYZwAopRgMBjumaVrFYtGKxWJP7uu1SqfTn4cPT71yKpUil8s54\u002BmF7XabbrfrjKcXPsd/4QPNZvPVsizLOQbPHXYmk3FGEzMmjMfjRKPR0ehF/P6HH2aUv/1gXclms1/K5fIJQ\u002BG/5B6MC/MMF6TcdgAAAABJRU5ErkJggg==",
               "WhenOpened": "2026-01-27T08:54:19.572Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "mod_equilibrium.f90",
               "DocumentMoniker": "C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\mod_equilibrium.f90",
               "RelativeDocumentMoniker": "src\\mod_equilibrium.f90",
               "ToolTip": "C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\mod_equilibrium.f90",
               "RelativeToolTip": "src\\mod_equilibrium.f90",
-              "ViewState": "AgIAACABAAAAAAAAAAAawDoBAABBAAAAAAAAAA==",
+              "ViewState": "AgIAAI0BAAAAAAAAAAAawJYBAAA7AAAAAAAAAA==",
               "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGdSURBVDhP7ZSxa1pRFIe/qAl9RJJAAg2CpYqYl5AhlzRTJ12yZXMsQgZFSjO4mMHFCpmyBnHuX9EgCt0ckgedgtBJLAkkqJAXKnrfzRB80ZeXxErHfnCW3\u002BF8lwOHi1KKer3OpBQKhSPTNC23Qik1o5RCSrnT6/UmsV4Ct0Cke36NspTd8K8v4ZufZUxoGAatVmvMMMTr9aLrOqFQCIDvb78hb/t2/\u002BOPPRa3V/CNzFCr1ahWq6ORjcfjQQhBMpkkHA4DMLeqoX/9AID23g8wLhxSKpWcEZ1Oh3w\u002BjxDCFvZvevw6/knkcIu55TcIITY8zkGAYDD4pAKBAFJK\u002Bv3HNZW0\u002BPP7DmkOAGg0GheuwkmZjyyye/WJd/trdua6shuappFIJNB1HYDQwSa\u002BhVkAKpXKqWEYZwAopRgMBjumaVrFYtGKxWJP7uu1SqfTn4cPT71yKpUil8s54\u002BmF7XabbrfrjKcXPsd/4QPNZvPVsizLOQbPHXYmk3FGEzMmjMfjRKPR0ehF/P6HH2aUv/1gXclms1/K5fIJQ\u002BG/5B6MC/MMF6TcdgAAAABJRU5ErkJggg==",
               "WhenOpened": "2026-01-16T16:13:45.895Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "mod_parameters.f90",
               "DocumentMoniker": "C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\mod_parameters.f90",
               "RelativeDocumentMoniker": "src\\mod_parameters.f90",
               "ToolTip": "C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\mod_parameters.f90",
               "RelativeToolTip": "src\\mod_parameters.f90",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAGkAAAAAAAAAAAAAAGwAAAAfAAAAAAAAAA==",
               "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGdSURBVDhP7ZSxa1pRFIe/qAl9RJJAAg2CpYqYl5AhlzRTJ12yZXMsQgZFSjO4mMHFCpmyBnHuX9EgCt0ckgedgtBJLAkkqJAXKnrfzRB80ZeXxErHfnCW3\u002BF8lwOHi1KKer3OpBQKhSPTNC23Qik1o5RCSrnT6/UmsV4Ct0Cke36NspTd8K8v4ZufZUxoGAatVmvMMMTr9aLrOqFQCIDvb78hb/t2/\u002BOPPRa3V/CNzFCr1ahWq6ORjcfjQQhBMpkkHA4DMLeqoX/9AID23g8wLhxSKpWcEZ1Oh3w\u002BjxDCFvZvevw6/knkcIu55TcIITY8zkGAYDD4pAKBAFJK\u002Bv3HNZW0\u002BPP7DmkOAGg0GheuwkmZjyyye/WJd/trdua6shuappFIJNB1HYDQwSa\u002BhVkAKpXKqWEYZwAopRgMBjumaVrFYtGKxWJP7uu1SqfTn4cPT71yKpUil8s54\u002BmF7XabbrfrjKcXPsd/4QPNZvPVsizLOQbPHXYmk3FGEzMmjMfjRKPR0ehF/P6HH2aUv/1gXclms1/K5fIJQ\u002BG/5B6MC/MMF6TcdgAAAABJRU5ErkJggg==",
               "WhenOpened": "2026-01-15T10:56:22.92Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "main.f90",
               "DocumentMoniker": "C:\\Users\\alexv\\OneDrive\\Documentos\\3-Papers\\Vicente_Intangible_skill\\model_fortran\\src\\main.f90",
               "RelativeDocumentMoniker": "src\\main.f90",
